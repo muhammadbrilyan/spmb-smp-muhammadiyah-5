@@ -167,17 +167,19 @@ gate unduh berkas pribadi.
 
 ## Kredensial Default (GANTI SEBELUM GO-LIVE!)
 
-| Role | Username | Password |
-|------|----------|----------|
-| Operator | `operator` | `Op3r@torSM5!2026` |
-| Bendahara | `bendahara` | `B3nd@h@raSM5!2026` |
-| Kepsek | `kepsek` | `K3p@S3k@SM5!2026` |
-| Siswa (seed) | `siswa` | `siswa12345` |
+Seed SQL utama (Fase 11): akun **staf terkunci** (`'!LOCKED'`) — tidak bisa
+login sampai diatur via CLI. Akun siswa demo hanya di `database/seed_demo.sql`
+(UAT/opsional, juga terkunci).
 
-**Semua akun di atas harus diganti sebelum produksi.**
-Reset lupa password (CLI, tidak bisa via web):
-`php tools/set-password.php <username>` — ulangi password 2× (min 10).
-Setelah reset, akun staf akan dipaksa Ganti Password pada login berikutnya.
+| Role | Username | Password seed | Set password via |
+|------|----------|---------------|------------------|
+| Operator | `operator` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php operator` |
+| Bendahara | `bendahara` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php bendahara` |
+| Kepsek | `kepsek` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php kepsek` |
+| Siswa (demo, seed_demo.sql) | `siswa` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php siswa` |
+
+Setelah reset, akun staf akan **dipaksa Ganti Password** pada login berikutnya.
+Detail deploy: `docs/DEPLOY.md`.
 
 ## Environment Variables
 

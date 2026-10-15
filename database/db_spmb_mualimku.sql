@@ -30,6 +30,9 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS pengaturan_sekolah;
 DROP TABLE IF EXISTS login_attempts;
 DROP TABLE IF EXISTS rate_limit;
+DROP TABLE IF EXISTS notifikasi;
+DROP TABLE IF EXISTS wa_log;
+DROP TABLE IF EXISTS jenis_dokumen;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ---------------------------------------------------------------------
@@ -178,22 +181,17 @@ CREATE TABLE users (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Kredensial awal (GANTI sebelum go-live - lihat app/operator/panduan.php).
--- Password operator/bendahara/kepsek/siswa WAJIB diganti via menu Pengaturan / reset DB.
--- Hash bcrypt hasil PHP password_hash() - jangan commit password asli ke repository.
-INSERT INTO users (id, username, password_hash, role, nama_lengkap, jabatan) VALUES
-  ('usr-operator', 'operator',
-   '$2y$10$cCV3vfP22ehds/erObf1AORhgz7eHd9eo4VLGxhI0Tf.ltSQZto6K',
-   'operator', 'Ust. M. Rizky Pratama, S.Pd.', 'Operator SPMB & SIMS'),
-  ('usr-bendahara', 'bendahara',
-   '$2y$10$qMqVVnB4oMz7NOaZwNXsw.TXWMCqA1Y0rd6ERbBz6Zz6B.9PSRoM6',
-   'bendahara', 'Hj. Siti Rohmah, S.E.', 'Bendahara Sekolah'),
-  ('usr-kepsek', 'kepsek',
-   '$2y$10$qYXRbDZWJKJ5ZTKHCNGAJe8PO6mFU7J53Jc4.O74ovRYDJap/bXeu',
-   'kepsek', 'Drs. H. Ahmad Sudrajat, M.Pd', 'Kepala Sekolah'),
-  ('usr-siswa-0101', 'siswa',
-   '$2y$10$AVHe0zjfUmVZX4vnYkQNr.Z5kn5xYcXtzg222XqpSnIkagGuTOrDe',
-   'siswa', 'Aisyah Nur Salsabila', 'Calon Siswa SPMB');
+-- Fase 11 A3: akun staf sengaja DIKUNCI ('!LOCKED') — tidak bisa login apa pun
+-- hash lama yang pernah beredar di berkas teks. Setelah impor, jalankan untuk
+-- SETIAP akun staf:  php tools/set-password.php <username>
+-- Password akan diganti (bcrypt) + akun ditandai wajib_ganti_password = 1.
+INSERT INTO users (id, username, password_hash, role, nama_lengkap, jabatan, wajib_ganti_password) VALUES
+  ('usr-operator', 'operator', '!LOCKED', 'operator', 'Ust. M. Rizky Pratama, S.Pd.', 'Operator SPMB & SIMS', 1),
+  ('usr-bendahara', 'bendahara', '!LOCKED', 'bendahara', 'Hj. Siti Rohmah, S.E.', 'Bendahara Sekolah', 1),
+  ('usr-kepsek', 'kepsek', '!LOCKED', 'kepsek', 'Drs. H. Ahmad Sudrajat, M.Pd', 'Kepala Sekolah', 1);
+
+-- Akun siswa demo (usr-siswa-0101) & seluruh datanya dipindahkan ke
+-- database/seed_demo.sql (opsional, hanya untuk pengembangan / UAT).
 
 -- ---------------------------------------------------------------------
 -- 3. kelas - rombel & kuota (FR-02, CMS "Rombel Kelas")
@@ -260,7 +258,6 @@ INSERT INTO pendaftar
    jalur, is_luar_daerah, kelas_id, status_verifikasi, status_seleksi, status_akun, tahap,
    kred_sent_at, created_at)
 VALUES
-  ('prd-0101', 'usr-siswa-0101', 'REG-2025-0101', 'Aisyah Nur Salsabila',       '0129482099', 'P', 'Jl. Merdeka No. 12, Cikokol',        'SD Muhammadiyah 01 Tangerang', 'Tahfidz',  0, 'kls-7a', 'TERVERIFIKASI',    'PROSES',    'AKTIF',      'AKUN_TERKIRIM',    '2025-10-08 08:30:00', '2025-10-06 08:15:00'),
   ('prd-0102', NULL,                'REG-2025-0102', 'Muhammad Farhan Al-Ghidari','0118492041', 'L', 'Jl. KH. Hasyim Ashari No. 4',        'MI Negeri 1 Tangerang',        'Reguler',  0, 'kls-7a', 'TERVERIFIKASI',    'PROSES',    'AKTIF',      'AKUN_TERKIRIM',    '2025-10-08 08:35:00', '2025-10-06 09:40:00'),
   ('prd-0103', NULL,                'REG-2025-0103', 'Zahra Annisa Khairunnisa',  '0123910245', 'P', 'Perum Bumi Indah Blok C2',           'SDIT As-Syifa Karawaci',       'Prestasi', 0, NULL,     'MENUNGGU_VERIFIKASI', 'PROSES', 'BELUM_DIBUAT', 'MENUNGGU_PEMBAYARAN', NULL,                   '2025-10-07 10:05:00'),
   ('prd-0104', NULL,                'REG-2025-0104', 'Bilal Dwi Kurniawan',       '0117392812', 'L', 'Jl. Cikokol Raya No. 88',            'SD Negeri Cikokol 3',           'Reguler',  0, NULL,     'MENUNGGU_VERIFIKASI', 'PROSES', 'BELUM_DIBUAT', 'MENUNGGU_PEMBAYARAN', NULL,                   '2025-10-07 13:22:00'),
@@ -284,7 +281,6 @@ CREATE TABLE orang_tua (
 INSERT INTO orang_tua
   (id, pendaftar_id, nama_orang_tua, no_whatsapp, alamat, pekerjaan, penghasilan_bulanan)
 VALUES
-  ('ort-0101', 'prd-0101', 'H. Ahmad Fauzi',        '+6281299431102', 'Jl. Merdeka No. 12, Cikokol',  'Karyawan Swasta', 'Rp 5.000.000 - 7.500.000'),
   ('ort-0102', 'prd-0102', 'Siti Aminah',           '+6281388214099', 'Jl. KH. Hasyim Ashari No. 4', 'Guru',            'Rp 3.000.000 - 5.000.000'),
   ('ort-0103', 'prd-0103', 'Rahmat Hidayat',        '+6285719402391', 'Perum Bumi Indah Blok C2',    'Wiraswasta',      'Rp 7.500.000 - 10.000.000'),
   ('ort-0104', 'prd-0104', 'Dewi Lestari',          '+6282144789012', 'Jl. Cikokol Raya No. 88',     'Pegawai Negeri',  'Rp 5.000.000 - 7.500.000'),
@@ -326,7 +322,6 @@ CREATE TABLE pembayaran (
 INSERT INTO pembayaran
   (id, pendaftar_id, jenis_pembayaran, nominal, status, keterangan, verified_at, verified_by, created_at)
 VALUES
-  ('byr-0101', 'prd-0101', 'FORMULIR', 200000.00, 'VERIFIED', 'Transfer BSI', '2025-10-08 09:05:00', 'usr-bendahara', '2025-10-06 08:45:00'),
   ('byr-0102', 'prd-0102', 'FORMULIR', 200000.00, 'VERIFIED', 'Transfer BSI', '2025-10-08 09:10:00', 'usr-bendahara', '2025-10-06 09:52:00'),
   ('byr-0103', 'prd-0103', 'FORMULIR', 200000.00, 'PENDING',  'Menunggu unggah bukti', NULL, NULL, '2025-10-07 10:20:00'),
   ('byr-0104', 'prd-0104', 'FORMULIR', 200000.00, 'PENDING',  'Menunggu unggah bukti', NULL, NULL, '2025-10-07 13:35:00'),
@@ -441,7 +436,6 @@ CREATE TABLE seleksi (
 INSERT INTO seleksi
   (id, pendaftar_id, jadwal_id, nilai_cbt, nilai_btq, nilai_wawancara, nilai_akhir, hasil, input_by)
 VALUES
-  ('sel-0101', 'prd-0101', 'tes-01', 94, 92, 90, 94.5, 'LULUS',       'usr-operator'),
   ('sel-0102', 'prd-0102', 'tes-01', 88, 95, 92, 91.8, 'LULUS',       'usr-operator'),
   ('sel-0103', 'prd-0103', 'tes-01', 85, 87, 86, 86.2, 'PROSES',      'usr-operator'),
   ('sel-0104', 'prd-0104', 'tes-01', 90, 88, 87, 88.7, 'LULUS',       'usr-operator'),
@@ -465,7 +459,6 @@ CREATE TABLE penempatan_kelas (
 ) ENGINE=InnoDB;
 
 INSERT INTO penempatan_kelas (id, pendaftar_id, kelas_id, ditempatkan_oleh) VALUES
-  ('ptm-0101', 'prd-0101', 'kls-7a', 'usr-operator'),
   ('ptm-0102', 'prd-0102', 'kls-7a', 'usr-operator'),
   ('ptm-0105', 'prd-0105', 'kls-7b', 'usr-operator');
 
