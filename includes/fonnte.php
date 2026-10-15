@@ -128,10 +128,20 @@ function password_acak()
     return implode('', $pw);
 }
 
-/** Pesan WA instruksi pembayaran setelah registrasi awal. */
+/**
+ * Pesan WA instruksi pembayaran setelah registrasi awal.
+ * Fase 11 A4: hanya menampilkan metode yang AKTIF di pengaturan
+ * (transfer / QRIS / gateway online) — rekening tidak ditampilkan
+ * bila transfer nonaktif. Langkah akhir: akun & password dikirim via WA.
+ */
 function wa_pesan_instruksi(array $r)
 {
-    $biaya = number_format((float) ($GLOBALS['PENGATURAN']['biaya_formulir'] ?? 0), 0, ',', '.');
+    $P = $GLOBALS['PENGATURAN'];
+    $biaya = number_format((float) ($P['biaya_formulir'] ?? 0), 0, ',', '.');
+    $transferAktif = !empty($P['bayar_transfer_aktif']);
+    $qrisAktif     = !empty($P['bayar_qris_aktif']);
+    $gatewayAktif  = function_exists('gateway_tersedia') && gateway_tersedia();
+
     /* Tautan praktis (Fase 10): bayar/unggah bukti tanpa menunggu akun
      * (tautan pay_token) + cek status publik. */
     $tautanBayar = !empty($r['pay_token'])
@@ -139,23 +149,42 @@ function wa_pesan_instruksi(array $r)
         : '';
     $tautanCek = url_abs('app/spmb/cek-status.php');
 
-    $langkah23 = $tautanBayar !== ''
-        ? "2. Bayar / unggah bukti transfer lewat tautan ini:\n   {$tautanBayar}\n"
-          . "3. Lengkapi biodata & berkas persyaratan di portal setelah akun dibuat panitia.\n"
-        : "2. Unggah bukti transfer melalui portal siswa setelah akun dibuat operator.\n"
-          . "3. Lengkapi biodata & berkas persyaratan di portal.\n";
+    /* Susun langkah hanya dari metode aktif. */
+    $langkah = [];
+    if ($transferAktif) {
+        $langkah[] = "Transfer biaya formulir sebesar Rp {$biaya} ke:\n"
+            . "   " . ($P['nama_bank'] ?? '') . "\n"
+            . "   No. Rek : " . ($P['no_rekening'] ?? '') . "\n"
+            . "   a.n. " . ($P['atas_nama_rekening'] ?? '');
+    }
+    if ($qrisAktif) {
+        $langkah[] = 'Scan QRIS untuk membayar biaya formulir' . ($transferAktif ? ' (alternatif transfer)' : '') . '.';
+    }
+    if ($gatewayAktif) {
+        $langkah[] = 'Atau bayar online (virtual account, e-wallet, kartu) melalui halaman pembayaran.';
+    }
+    if (!$langkah) {
+        $langkah[] = 'Silakan hubungi panitia untuk informasi metode pembayaran.';
+    }
+    if ($tautanBayar !== '') {
+        $langkah[] = "Pembayaran & unggah bukti melalui tautan ini:\n   {$tautanBayar}";
+    }
+    /* Fase 11 A4 — langkah akhir yang selalu tampil. */
+    $langkah[] = 'Setelah pembayaran terverifikasi, akun dan password dikirim lewat WhatsApp.';
+
+    $no = 1;
+    $blok = '';
+    foreach ($langkah as $l) {
+        $blok .= $no++ . '. ' . $l . "\n";
+    }
 
     return "Assalamu'alaikum.\n\n"
-        . "Terima kasih telah mendaftar SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5') . ".\n\n"
+        . "Terima kasih telah mendaftar SPMB " . ($P['nama_sekolah'] ?? 'SMP Muhammadiyah 5') . ".\n\n"
         . "No. Pendaftaran : {$r['no']}\n"
         . "Nama Siswa : {$r['nama']}\n"
         . "Jalur : {$r['jalur']}\n\n"
         . "Langkah selanjutnya:\n"
-        . "1. Transfer biaya formulir sebesar Rp {$biaya} ke:\n"
-        . "   " . ($GLOBALS['PENGATURAN']['nama_bank'] ?? '') . "\n"
-        . "   No. Rek : " . ($GLOBALS['PENGATURAN']['no_rekening'] ?? '') . "\n"
-        . "   a.n. " . ($GLOBALS['PENGATURAN']['atas_nama_rekening'] ?? '') . "\n"
-        . $langkah23
+        . $blok
         . "\nCek status pendaftaran (siapkan 4 digit WA orang tua):\n   {$tautanCek}\n\n"
         . "Simpan nomor pendaftaran ini.";
 }

@@ -87,11 +87,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $galat[] = 'Anda harus menyetujui Syarat & Ketentuan.';
         }
 
+        /* Fase 11 A4: batas 3 registrasi per nomor WhatsApp per 24 jam
+         * (kunci lintas IP — hash SHA-256 nomor ternormalisasi). */
+        $kunciWa = null;
+        if (!$galat) {
+            $waNorm = wa_normalize($f['wa']);
+            if ($waNorm !== '') {
+                $kunciWa = hash('sha256', $waNorm);
+                if (!rate_limit_cek('registrasi_wa', 3, 1440, $kunciWa)) {
+                    $galat[] = 'Nomor WhatsApp ini sudah mencapai batas 3 pendaftaran hari ini. Gunakan nomor lain atau hubungi panitia.';
+                }
+            }
+        }
+
         if (!$galat) {
             rate_limit_catat('registrasi');
             $r = registrasi_baru($f['nama'], $f['wa'], $f['jalur'], $f['asal'], $regToken, $setujuSk);
             if ($r['ok']) {
                 $hasil = $r;
+                /* Catat batas per-WA hanya saat registrasi BARU tersimpan
+                 * (retry idempoten dengan key sama tidak dihitung). */
+                if ($kunciWa !== null && empty($r['reused'])) {
+                    rate_limit_catat('registrasi_wa', $kunciWa);
+                }
                 /* Token sudah dipakai — bersihkan agar render berikutnya (bila sukses) punya key baru. */
                 unset($_SESSION['reg_token']);
                 /* Kirim instruksi via WA bila gateway aktif (gagal tetap tidak membatalkan registrasi). */
@@ -110,6 +128,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $title = $hasil ? 'Registrasi Berhasil' : 'Registrasi Awal SPMB';
 $desc  = 'Formulir registrasi awal penerimaan murid baru ' . APP_SHORT . ' — nomor pendaftaran otomatis.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
+
+/* Fase 11 A4: metode yang ditampilkan di halaman sukses = yang AKTIF saja
+ * (sama dengan pesan WhatsApp instruksi). */
+$transferAktif = !empty($PENGATURAN['bayar_transfer_aktif']);
+$qrisAktif     = !empty($PENGATURAN['bayar_qris_aktif']);
+$gatewayAktif  = gateway_tersedia();
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 ?>
@@ -152,17 +176,25 @@ require_once __DIR__ . '/../../includes/partials/head.php';
           <div class="rounded-2xl border border-line p-4">
             <p class="font-semibold text-sm text-ink-900">1. Bayar Biaya Formulir</p>
             <p class="mt-1.5 text-[13px] text-ink-500 leading-relaxed">
-              Nominal: <strong class="text-ink-900"><?= rupiah($PENGATURAN['biaya_formulir']) ?></strong><br>
-              <?= e($PENGATURAN['nama_bank']) ?><br>
-              No. Rek: <span class="font-mono font-semibold"><?= e($PENGATURAN['no_rekening']) ?></span><br>
-              a.n. <?= e($PENGATURAN['atas_nama_rekening']) ?>
+              Nominal: <strong class="text-ink-900"><?= rupiah($PENGATURAN['biaya_formulir']) ?></strong>
+              <?php if ($transferAktif): ?>
+                <br><?= e($PENGATURAN['nama_bank']) ?>
+                <br>No. Rek: <span class="font-mono font-semibold"><?= e($PENGATURAN['no_rekening']) ?></span>
+                <br>a.n. <?= e($PENGATURAN['atas_nama_rekening']) ?>
+              <?php endif; ?>
+              <?php if ($qrisAktif): ?>
+                <br>Atau scan QRIS pada halaman pembayaran.
+              <?php endif; ?>
+              <?php if ($gatewayAktif): ?>
+                <br>Atau bayar online (virtual account, e-wallet, kartu) pada halaman pembayaran.
+              <?php endif; ?>
             </p>
           </div>
           <div class="rounded-2xl border border-line p-4">
-            <p class="font-semibold text-sm text-ink-900">2. Setoran Berkas</p>
+            <p class="font-semibold text-sm text-ink-900">2. Setelah Pembayaran Terverifikasi</p>
             <p class="mt-1.5 text-[13px] text-ink-500 leading-relaxed">
-              Operator akan membuatkan akun portal &amp; mengirim kredensial via WhatsApp orang tua.
-              Setelah masuk portal: lengkapi biodata, unggah berkas persyaratan &amp; bukti transfer.
+              Akun dan password dikirim lewat WhatsApp ke nomor yang didaftarkan.
+              Selanjutnya, masuk portal siswa untuk melengkapi biodata &amp; berkas persyaratan.
             </p>
             <?php if (!empty($hasil['wa_terkirim'])): ?>
               <p class="mt-2 text-[12px] text-[#065F46] font-semibold">✓ Instruksi juga dikirim via WhatsApp.</p>
