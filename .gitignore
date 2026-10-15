@@ -1,0 +1,22 @@
+# ============================================================
+# GITIGNORE — SMP Muhammadiyah 5 Kota Tangerang
+# ============================================================
+
+# Jangan commit kredensial & API key
+.env
+hak akses.txt
+
+# Unggahan pribadi (KK, akta, bukti transfer) — data sensitif
+storage/dokumen/*
+!storage/dokumen/.gitkeep
+
+# Backup / file sementara
+*.bak
+*.old
+*.swp
+*~
+tmp-*
+
+# OS
+Thumbs.db
+.DS_Store

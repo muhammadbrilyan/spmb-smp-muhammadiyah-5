@@ -1,0 +1,144 @@
+# DOKUMEN KEBUTUHAN PRODUK (PRD)
+## SISTEM INFORMASI PPDB BERBASIS WEBSITE & CMS — SMP MUHAMMADIYAH 5 KOTA TANGERANG
+
+---
+
+### 1. GAMBARAN UMUM PRODUK & TEKNOLOGI
+* **Nama Produk:** Sistem Informasi PPDB & CMS Manajemen Sekolah
+* **Instansi:** SMP Muhammadiyah 5 Kota Tangerang
+* **Target Peluncuran:** Minggu Pertama Oktober
+* **Metode Pengembangan:** Agile Development Method
+* **Arsitektur Aplikasi:** 
+  1. *Public SPMB Landing Page & Dynamic CMS View* (`/app/spmb`)
+  2. *Authenticated Student & Admin Portal* (`/app/siswa`, `/app/bendahara`, `/app/operator`, `/app/kepsek`)
+  3. *CMS Dynamic Settings Panel* (`/app/operator/pengaturan`)
+* **Tech Stack Utama:**
+  * **Framework:** Next.js (App Router, TypeScript)
+  * **Styling & Dynamic Theme:** Tailwind CSS (dengan CSS Variables / Dynamic Inline Theme), Shadcn UI
+  * **Database Engine:** MySQL (v8.0+)
+  * **ORM / Database Client:** Prisma ORM / Drizzle ORM / mysql2
+  * **File Storage:** Local Server Storage (`/public/uploads`) / Cloudinary / AWS S3
+  * **WhatsApp Gateway:** Fonnte API (`https://api.fonnte.com/send`)
+  * **AI Integration:** Google AI Studio (Gemini SDK `@google/genai`)
+
+---
+
+### 2. MATRIKS PERAN & HAK AKSES (RBAC)
+
+| Peran (Role) | Permisi Akses | Deskripsi & Hak Akses Utama |
+|---|---|---|
+| `siswa` | Authenticated | Mengisi biodata lengkap, unggah berkas (max 2MB), cek status verifikasi bayar, jadwal tes (offline/video call), hasil seleksi, dan penempatan kelas. |
+| `bendahara` | Authenticated | Verifikasi bukti bayar formulir & pembaharuan skema uang masuk (Lunas / Angsuran 1 / Angsuran 2). |
+| `operator` / `admin` | Authenticated | **Akses Penuh CMS:** Mengubah logo, nama sekolah, alamat, warna tema, nominal biaya, daftar/nama/kuota kelas, kelola kredensial WA via Fonnte, atur tes, & input seleksi. |
+| `kepsek` | Authenticated | *View-only* dashboard analitik keterisian kuota & rekapitulasi finansial. |
+
+---
+
+### 3. CAKUPAN FITUR (MVP + CMS SCOPE)
+
+1. **Portal SPMB Publik (`/app/spmb`):** Landing page dinamis yang merender identitas sekolah, logo, warna tema, dan biaya dari database CMS.
+2. **CMS Panel Pengaturan Sekolah (`/app/operator/pengaturan`):** Form untuk mengubah logo sekolah, nama instansi, alamat, nomor kontak panitia, warna utama website, dan nominal biaya formulir secara *real-time*.
+3. **CMS Panel Manajemen Kelas (`/app/operator/kelas`):** Fitur CRUD (Tambah, Edit, Hapus) nama kelas (contoh: 7A, 7B, 7C) dan alokasi kuota per kelas.
+4. **Portal Akun Siswa (`/app/siswa`):** Dashboard status, form biodata lengkap, toggle pendaftar luar daerah, tab unggah berkas.
+5. **Dashboard Bendahara (`/app/bendahara`):** Antrean verifikasi bukti transfer formulir & penetapan status uang masuk.
+6. **Dashboard Operator (`/app/operator`):** Generasi akun & kirim WA, penjadwalan tes, input nilai seleksi, penempatan kelas dinamis.
+7. **Dashboard Kepala Sekolah (`/app/kepsek`):** Ringkasan analitik eksekutif & progres keterisian kelas.
+
+---
+
+### 4. REQUIREMENT FUNGSIONAL DETAIL
+
+#### F-01: CMS Pengaturan Branding & Identitas Website
+* **FR-01.1:** Operator/Admin dapat mengunggah dan mengubah **Logo Sekolah** yang otomatis diperbarui di Header dan Modal Landing Page.
+* **FR-01.2:** Operator/Admin dapat mengubah **Nama Sekolah, Alamat Lengkap, Nomor Kontak Panitia, dan Rekening Bank**.
+* **FR-01.3:** Operator/Admin dapat memilih **Warna Utama Website (Primary Color)** melalui *Color Picker*. Sistem menerapkan warna ini secara dinamis pada tombol, header, dan aksen UI.
+* **FR-01.4:** Operator/Admin dapat mengubah **Nominal Biaya Formulir Pendaftaran** (default: Rp200.000) yang langsung berdampak pada seluruh instruksi pembayaran pendaftar baru.
+
+#### F-02: CMS Manajemen Kelas & Kuota Dinamis
+* **FR-02.1:** Operator/Admin dapat menambah, mengubah nama, atau menghapus kelas (contoh: Kelas 7A, 7B, 7C, dst.).
+* **FR-02.2:** Operator/Admin dapat menetapkan batas kuota individual per kelas (default: 30 siswa).
+* **FR-02.3:** Total target kuota pendaftaran merupakan penjumlahan otomatis dari seluruh kuota kelas aktif.
+
+#### F-03: Registrasi Awal & Pembayaran Formulir (Dinamis)
+* **FR-03.1:** Form registrasi awal mengambil nominal biaya formulir dan rekening pembayaran langsung dari tabel pengaturan CMS.
+* **FR-03.2:** Setelah registrasi awal, sistem menghasilkan `no_pendaftaran` unik dan mengunci form biodata sampai Bendahara melakukan verifikasi.
+
+#### F-04: Otentikasi & Akun Siswa
+* **FR-04.1:** Kredensial akun (username & password) di-generate oleh Operator dan dikirim via WhatsApp Gateway Fonnte ke nomor orang tua.
+
+#### F-05: Biodata, Verifikasi Keuangan & Seleksi
+* **FR-05.1:** Form biodata mencakup NISN, data diri, alamat, pekerjaan orang tua, dan toggle pendaftar luar daerah.
+* **FR-05.2:** Bendahara memverifikasi pembayaran formulir dan menetapkan status Uang Masuk.
+* **FR-05.3:** Operator menginput jadwal tes (offline/video call) dan menginput nilai seleksi (`LULUS` / `TIDAK_LULUS`).
+
+---
+
+### 5. SKEMA DATABASE & DATA MODEL (MYSQL DDL)
+
+```sql
+-- Skema Database MySQL PPDB & CMS SMP Muhammadiyah 5 Kota Tangerang
+
+CREATE DATABASE IF NOT EXISTS ppdb_smpm5 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE ppdb_smpm5;
+
+-- 1. Tabel Pengaturan CMS Sekolah (Single Row Config)
+CREATE TABLE pengaturan_sekolah (
+  id INT PRIMARY KEY DEFAULT 1,
+  nama_sekolah VARCHAR(150) NOT NULL DEFAULT 'SMP Muhammadiyah 5 Kota Tangerang',
+  alamat_sekolah TEXT,
+  logo_url TEXT,
+  warna_utama VARCHAR(20) DEFAULT '#0056b3', -- Hex Color Code
+  biaya_formulir DECIMAL(12,2) DEFAULT 200000.00,
+  nama_bank VARCHAR(50) DEFAULT 'Bank Syariah Indonesia (BSI)',
+  no_rekening VARCHAR(50) DEFAULT '1234567890',
+  atas_nama_rekening VARCHAR(100) DEFAULT 'SMP Muhammadiyah 5',
+  kontak_wa_panitia VARCHAR(20) DEFAULT '628123456789',
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Insert data default pengaturan CMS
+INSERT INTO pengaturan_sekolah (id, nama_sekolah, alamat_sekolah, warna_utama, biaya_formulir) 
+VALUES (1, 'SMP Muhammadiyah 5 Kota Tangerang', 'Jl. Perintis Kemerdekaan No. 1, Tangerang', '#0056b3', 200000.00)
+ON DUPLICATE KEY UPDATE id=1;
+
+-- 2. Tabel Users
+CREATE TABLE users (
+  id VARCHAR(36) PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('siswa', 'bendahara', 'operator', 'kepsek') NOT NULL DEFAULT 'siswa',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- 3. Tabel Pendaftar
+CREATE TABLE pendaftar (
+  id VARCHAR(36) PRIMARY KEY,
+  user_id VARCHAR(36),
+  no_pendaftaran VARCHAR(20) UNIQUE NOT NULL,
+  nama_siswa VARCHAR(100) NOT NULL,
+  asal_sekolah VARCHAR(100) NOT NULL,
+  is_luar_daerah TINYINT(1) DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- 4. Tabel Orang Tua
+CREATE TABLE orang_tua (
+  id VARCHAR(36) PRIMARY KEY,
+  pendaftar_id VARCHAR(36) NOT NULL,
+  nama_orang_tua VARCHAR(100) NOT NULL,
+  no_whatsapp VARCHAR(20) NOT NULL,
+  alamat TEXT,
+  pekerjaan VARCHAR(100),
+  penghasilan_bulanan VARCHAR(50),
+  FOREIGN KEY (pendaftar_id) REFERENCES pendaftar(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 5. Tabel Pembayaran
+CREATE TABLE pembayaran (
+  id VARCHAR(36) PRIMARY KEY,
+  pendaftar_id VARCHAR(36) NOT NULL,
+  jenis_pembayaran VARCHAR(20) NOT NULL, -- 'FORMULIR' atau 'UANG_MASUK'
+  nominal DECIMAL(12,2) NOT NULL,
+  bukti_transfer_url TEXT,
+  status ENUM('PENDING', 'VERIFIED', 'REJECTED', 'ANGSURAN_1', '

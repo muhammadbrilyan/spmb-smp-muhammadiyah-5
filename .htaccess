@@ -1,0 +1,61 @@
+# ============================================================
+# KEAMANAN APLIKASI — SMP Muhammadiyah 5 Kota Tangerang
+# ============================================================
+
+# --- Blok akses langsung ke folder sensitif ---
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Blok akses ke folder database
+  RewriteRule ^database/ - [F,L]
+
+  # Blok akses ke file SQL, MD, TXT di root
+  RewriteRule \.(sql|md|txt)$ - [F,L]
+
+  # Blok akses ke file .env, .git, .htaccess
+  RewriteRule ^(\.env|\.git|\.htaccess) - [F,L]
+</IfModule>
+
+# --- Blok direct access ke file tertentu via FilesMatch ---
+<FilesMatch "\.(sql|md|txt|log|ini|bak|old|swp)$">
+  Require all denied
+</FilesMatch>
+
+# --- Sembunyikan directory listing ---
+Options -Indexes
+
+# --- Security Headers ---
+<IfModule mod_headers.c>
+  # Cegah clickjacking
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # Cegah MIME-type sniffing
+  Header always set X-Content-Type-Options "nosniff"
+
+  # Cegah referrer leak
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Kurangi info fingerprint browser
+  Header always set X-Powered-By ""
+
+  # CSP — unsafe-inline masih dibutuhkan untuk style/onclick inline PHP.
+  # unsafe-eval DIHAPUS karena Tailwind sudah di-build statis (tailwind.css).
+  # Tambahkan nonce sendiri bila ingin menghapus unsafe-inline di masa depan.
+  Header always set Content-Security-Policy "default-src 'self' 'unsafe-inline' https://app.sandbox.midtrans.com https://app.midtrans.com https://api.sandbox.midtrans.com https://api.midtrans.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://app.sandbox.midtrans.com https://app.midtrans.com; img-src 'self' data:;"
+
+  # HSTS — aktifkan otomatis hanya bila HTTPS terdeteksi (production).
+  # XAMPP lokal (http://localhost) TIDAK akan mengirim header ini.
+  # Di hosting dengan SSL, uncomment baris di bawah:
+  # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+
+# --- Blok akses ke includes/ via web ---
+<IfModule mod_rewrite.c>
+  RewriteRule ^includes/ - [F,L]
+</IfModule>
+
+# --- PHP settings tambahan (jika diizinkan) ---
+<IfModule mod_php.c>
+  php_flag display_errors Off
+  php_flag log_errors On
+</IfModule>

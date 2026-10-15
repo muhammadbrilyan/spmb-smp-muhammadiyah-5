@@ -1,0 +1,86 @@
+/* app.css — aturan global yang tidak dicakup utility Tailwind */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  background-color: #f8fafc;
+  color: #334155;
+}
+
+/* Material Symbols: seragamkan bobot & kerning */
+.ms {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.ms-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Scrollbar tipis khas dashboard */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+.scroll-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Ticker berjalan di bar atas landing page */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-track {
+  display: inline-flex;
+  min-width: 200%;
+  animation: ticker-scroll 38s linear infinite;
+}
+.ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+
+/* Garis bawah tab underline */
+.tab-underline[data-active="true"] {
+  color: #0056b3;
+  border-color: #0056b3;
+}
+
+/* Fokus keyboard yang konsisten */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid rgba(0, 86, 179, .55);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Animasi halus untuk modal & toast */
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-pop { animation: pop-in .18s ease-out both; }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.animate-fade { animation: fade-in .2s ease-out both; }
+
+/* Cetak (kartu/bukti) */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+}

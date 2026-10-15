@@ -1,0 +1,4 @@
+# Folder storage — TIDAK boleh diakses langsung via web.
+# Berkas pribadi (KK, akta, ijazah, bukti transfer) disajikan hanya
+# lewat app/api/dokumen.php yang mengecek login & kepemilikan.
+Require all denied

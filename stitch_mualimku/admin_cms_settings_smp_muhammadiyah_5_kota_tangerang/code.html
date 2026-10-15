@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin CMS - SMP Muhammadiyah 5 Kota Tangerang</title>
+<!-- Inter Font Family -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "background": "#f8f9ff",
+            "on-error-container": "#93000a",
+            "surface-container-high": "#dce9ff",
+            "on-primary": "#ffffff",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "tertiary-fixed-dim": "#adc6ff",
+            "surface-container-highest": "#d3e4fe",
+            "on-secondary": "#ffffff",
+            "surface-tint": "#115cb9",
+            "inverse-on-surface": "#eaf1ff",
+            "outline": "#727784",
+            "secondary": "#006c49",
+            "surface-variant": "#d3e4fe",
+            "tertiary": "#003f8b",
+            "on-primary-fixed-variant": "#004491",
+            "primary-fixed-dim": "#acc7ff",
+            "on-secondary-fixed": "#002113",
+            "on-surface-variant": "#424752",
+            "primary-container": "#0056b3",
+            "inverse-primary": "#acc7ff",
+            "secondary-fixed": "#6ffbbe",
+            "primary": "#003f87",
+            "on-tertiary-fixed-variant": "#004395",
+            "tertiary-container": "#0055b8",
+            "on-tertiary": "#ffffff",
+            "on-background": "#0b1c30",
+            "inverse-surface": "#213145",
+            "surface": "#f8f9ff",
+            "surface-container-low": "#eff4ff",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed": "#001a42",
+            "secondary-fixed-dim": "#4edea3",
+            "on-secondary-fixed-variant": "#005236",
+            "primary-fixed": "#d7e2ff",
+            "on-primary-container": "#bbd0ff",
+            "on-surface": "#0b1c30",
+            "on-tertiary-container": "#bcd0ff",
+            "secondary-container": "#6cf8bb",
+            "on-primary-fixed": "#001a40",
+            "surface-container": "#e5eeff",
+            "outline-variant": "#c2c6d4",
+            "surface-dim": "#cbdbf5",
+            "surface-bright": "#f8f9ff",
+            "tertiary-fixed": "#d8e2ff",
+            "on-secondary-container": "#00714d",
+            "surface-container-lowest": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "margin": "2rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "gutter": "1.5rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "body-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl": ["Inter"],
+            "caption": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "headline-md": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"]
+          },
+          "fontSize": {
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "caption": ["11px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500" }],
+            "headline-lg-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }],
+            "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body class="h-full bg-background font-body-md text-on-surface antialiased overflow-hidden flex">
+<!-- SIDEBAR NAVIGATION (Derived from SideNavBar Shared Component) -->
+<aside class="fixed inset-y-0 left-0 w-64 h-full flex flex-col bg-surface-container-lowest border-r border-outline-variant shadow-sm z-40 justify-between p-4">
+<div class="flex flex-col gap-6">
+<!-- Header Logo / Brand -->
+<div class="flex items-center gap-3 px-2 py-1">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined text-2xl" data-icon="school">school</span>
+</div>
+<div class="flex flex-col overflow-hidden">
+<span class="font-headline-md text-headline-md font-bold text-primary truncate leading-tight">SMP Muhammadiyah 5</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">SIMS &amp; PPDB Portal</span>
+</div>
+</div>
+<!-- Quick Action CTA -->
+<button class="w-full flex items-center justify-center gap-2 py-2 px-3 bg-secondary text-on-secondary rounded-lg font-label-md text-label-md hover:bg-on-secondary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-base" data-icon="add_circle">add_circle</span>
+<span>Pendaftaran Baru</span>
+</button>
+<!-- Navigation Tabs (Exact Tab Labels, highlighting 'Pengaturan Sistem') -->
+<nav class="flex flex-col gap-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- PPDB & SPMB -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="how_to_reg">how_to_reg</span>
+<span>PPDB &amp; SPMB</span>
+</a>
+<!-- Data Siswa -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="school">school</span>
+<span>Data Siswa</span>
+</a>
+<!-- Akademik -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="menu_book">menu_book</span>
+<span>Akademik</span>
+</a>
+<!-- Keuangan & SPP -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="payments">payments</span>
+<span>Keuangan &amp; SPP</span>
+</a>
+<!-- Pengaturan Sistem (ACTIVE) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low text-primary font-label-md text-label-md border-l-4 border-primary" href="#">
+<span class="material-symbols-outlined text-xl text-primary" data-icon="settings">settings</span>
+<span class="font-semibold">Pengaturan Sistem</span>
+</a>
+</nav>
+</div>
+<!-- Footer Profile & Utilities -->
+<div class="flex flex-col gap-3 pt-3 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help_outline">help_outline</span>
+<span>Bantuan &amp; Panduan</span>
+</a>
+<!-- Profile Container -->
+<div class="flex items-center gap-3 p-2 bg-surface-container rounded-lg">
+<div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold font-label-md text-label-md">
+          AF
+        </div>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-label-md text-label-md text-on-surface font-medium truncate">Ust. Ahmad Fauzi, S.Pd.</span>
+<span class="font-caption text-caption text-on-surface-variant truncate">Administrator CMS</span>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors p-1" title="Keluar">
+<span class="material-symbols-outlined text-lg" data-icon="logout">logout</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- MAIN VIEWPORT CONTAINER -->
+<div class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background">
+<!-- TOP NAVBAR (Derived from TopNavBar Shared Component) -->
+<header class="h-16 flex items-center justify-between px-6 w-full bg-surface-container-lowest border-b border-outline-variant shadow-sm z-30 shrink-0">
+<div class="flex items-center gap-4">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="hover:text-primary cursor-pointer transition-colors">Portal Akademik</span>
+<span class="text-outline-variant">/</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Pengaturan Sistem</span>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-semibold">CMS &amp; Portal Web SPMB</span>
+</nav>
+<span class="hidden lg:inline-block px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-surface-container text-on-surface-variant border border-outline-variant">
+          T.A. 2024/2025 Genap
+        </span>
+</div>
+<!-- Top Right Controls -->
+<div class="flex items-center gap-3">
+<!-- Quick Status Badge -->
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+<span>Status Portal: Publik / Live</span>
+</div>
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container text-label-md font-label-md transition-colors">
+<span class="material-symbols-outlined text-base" data-icon="open_in_new">open_in_new</span>
+<span>Pratinjau Portal Landing Page</span>
+</button>
+<button class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md shadow-sm transition-colors">
+<span class="material-symbols-outlined text-base" data-icon="save">save</span>
+<span>Simpan Semua Perubahan</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<button class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors relative" title="Notifikasi">
+<span class="material-symbols-outlined text-xl" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+</header>
+<!-- CONTENT CANVAS (Scrollable Area) -->
+<main class="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+<!-- PAGE TITLE & SUBTITLE SECTION -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-outline-variant">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">
+            Pusat Konfigurasi &amp; Pengaturan CMS Portal
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+            Kelola identitas visual, parameter keuangan PPDB, jadwal gelombang, serta kuota rombel kelas aktif SMP Muhammadiyah 5 Kota Tangerang.
+          </p>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="font-caption text-caption text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span> Terakhir sinkronisasi: Hari ini, 09:42 WIB
+          </span>
+</div>
+</div>
+<!-- TABS NAVIGATION BAR (Pill Segmented Style) -->
+<div class="p-1.5 bg-surface-container-low rounded-xl border border-outline-variant inline-flex w-full md:w-auto shadow-sm">
+<button class="tab-indicator flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm transition-all duration-150" id="tab-btn-1" onclick="switchTab('tab-branding')">
+<span class="material-symbols-outlined text-base" data-icon="palette">palette</span>
+<span>1. Branding &amp; Identitas Website</span>
+</button>
+<button class="tab-indicator flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all duration-150" id="tab-btn-2" onclick="switchTab('tab-biaya')">
+<span class="material-symbols-outlined text-base" data-icon="payments">payments</span>
+<span>2. Biaya &amp; Jadwal PPDB</span>
+</button>
+<button class="tab-indicator flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all duration-150" id="tab-btn-3" onclick="switchTab('tab-rombel')">
+<span class="material-symbols-outlined text-base" data-icon="meeting_room">meeting_room</span>
+<span>3. Manajemen Kelas Dinamis (Rombel CRUD)</span>
+</button>
+</div>
+<!-- TAB PANELS CONTAINER -->
+<!-- TAB 1: BRANDING & IDENTITAS WEBSITE -->
+<section class="tab-content space-y-6 block" id="tab-branding">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column: Visual Assets & Logo -->
+<div class="lg:col-span-4 space-y-6">
+<!-- School Emblem Upload Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Logo Sekolah &amp; Asset Visual</h3>
+<span class="font-caption text-caption text-on-surface-variant">PNG / SVG / WebP</span>
+</div>
+<div class="flex flex-col items-center text-center p-4 border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-low mb-4">
+<!-- Circular School Logo Preview -->
+<div class="relative w-28 h-28 rounded-full border-4 border-surface-container-lowest bg-surface-container flex items-center justify-center shadow-md overflow-hidden mb-3">
+<img class="w-full h-full object-cover" data-alt="Official round academic emblem seal of SMP Muhammadiyah 5 Kota Tangerang in vibrant deep blue and emerald green hues with gold Islamic calligraphy and solar rays set in a pristine high-trust administrative layout." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBINzO5KbqnyI0rzu-1bMqOIQFmZ6Zubcm9Vsdnf_TcGksH3cMytVpAT0SP6Q7rvyBqZVhXzM-cU3R4AYLTHCCqSjLF7SLhgbdBf_tA1MJwa9OVyJYDLe8soTid_09UGhvou4Xzw8jRJcrmI6yH3O5M3mjG9j8B0LasEl-4K5d3BasD3sK3cgOl6A3TzLooRVOqRmOvD6q7TM83AytDLTP6auVAYlvTuJ89kgFhrqTxe0dkjuFkvCDElw"/>
+</div>
+<div class="font-label-md text-label-md font-medium text-on-surface">Logo Utama Portal</div>
+<p class="font-caption text-caption text-on-surface-variant mt-1 max-w-[220px]">
+                  Rekomendasi 512 × 512 piksel dengan latar transparan. Maks. 2MB.
+                </p>
+<div class="flex items-center gap-2 mt-4">
+<button class="px-3 py-1.5 bg-primary-container text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-primary transition-colors flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="upload">upload</span>
+<span>Unggah Logo Baru</span>
+</button>
+<button class="px-3 py-1.5 border border-outline-variant bg-surface-container-lowest text-error hover:bg-surface-container rounded-lg font-label-sm text-label-sm transition-colors" title="Hapus">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+<!-- Favicon Preview Section -->
+<div class="pt-2 border-t border-outline-variant">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-2">Favicon Browser Tab (32 × 32 px)</label>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-lg border border-outline-variant">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded border border-outline-variant bg-surface-container-lowest flex items-center justify-center text-primary shadow-xs">
+<span class="material-symbols-outlined text-lg" data-icon="school">school</span>
+</div>
+<div>
+<div class="font-label-sm text-label-sm font-semibold text-on-surface">favicon-muh5.ico</div>
+<div class="font-caption text-caption text-on-surface-variant">Ukuran file: 24 KB</div>
+</div>
+</div>
+<button class="text-primary hover:underline font-label-sm text-label-sm">Ganti</button>
+</div>
+</div>
+</div>
+<!-- Brand Color Customizer Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold pb-3 border-b border-outline-variant mb-4">
+                Skema Warna Brand Portal
+              </h3>
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Warna Utama Website (Primary Accent)</label>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg border border-outline-variant shadow-inner" style="background-color: #0056b3;"></div>
+<input class="flex-1 h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="#0056b3"/>
+<button class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container text-on-surface-variant" title="Pilih Warna">
+<span class="material-symbols-outlined text-lg" data-icon="colorize">colorize</span>
+</button>
+</div>
+</div>
+<div>
+<label class="block font-caption text-caption text-on-surface-variant mb-2">Pilihan Palet Institusional Terstandar:</label>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-label-sm font-label-sm" title="Deep Blue Muhammadiyah">
+<span class="w-3.5 h-3.5 rounded-full bg-[#0056b3]"></span>
+<span>Deep Blue</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-label-sm font-label-sm" title="Emerald Green">
+<span class="w-3.5 h-3.5 rounded-full bg-[#10b981]"></span>
+<span>Emerald Teal</span>
+</button>
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-label-sm font-label-sm" title="Golden Amber">
+<span class="w-3.5 h-3.5 rounded-full bg-[#f59e0b]"></span>
+<span>Golden Amber</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: School Information & Live Ticker -->
+<div class="lg:col-span-8 space-y-6">
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold pb-3 border-b border-outline-variant mb-5">
+                Identitas &amp; Informasi Kontak Resmi
+              </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Nama Sekolah -->
+<div class="md:col-span-2">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nama Resmi Sekolah / Lembaga</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="SMP Muhammadiyah 5 Kota Tangerang"/>
+</div>
+<!-- Kontak WhatsApp -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Kontak WhatsApp Panitia PPDB</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-on-surface-variant material-symbols-outlined text-base" data-icon="chat">chat</span>
+<input class="w-full h-10 pl-9 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="0812-9876-5501"/>
+</div>
+</div>
+<!-- Email Resmi -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Email Resmi Institusi</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-on-surface-variant material-symbols-outlined text-base" data-icon="mail">mail</span>
+<input class="w-full h-10 pl-9 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="email" value="spmb@smpmuh5tng.sch.id"/>
+</div>
+</div>
+<!-- Alamat Lengkap Sekolah -->
+<div class="md:col-span-2">
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Alamat Lengkap Sekolah</label>
+<textarea class="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" rows="3">Jl. Raya Merdeka / KH. Ahmad Dahlan, Sukasari, Kec. Tangerang, Banten 15118</textarea>
+</div>
+</div>
+</div>
+<!-- Announcement Ticker & Short School Bio -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm space-y-5">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold pb-3 border-b border-outline-variant">
+                Pengumuman Ticker &amp; Profil Singkat Web
+              </h3>
+<!-- Running Text Ticker -->
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Running Text Pengumuman Header (Ticker Bar)</label>
+<span class="font-caption text-caption text-secondary font-medium flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Ditampilkan pada halaman terdepan
+                  </span>
+</div>
+<textarea class="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" rows="2">Pendaftaran PPDB Gelombang 1 Dibuka: 1 Oktober - 30 November | Kuota Terbatas 90 Siswa (Hanya 3 Rombel)! Hubungi Layanan SPMB: 0812-9876-5501</textarea>
+</div>
+<!-- Profil Singkat Sekolah -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Profil Singkat Sekolah (Hero Overview)</label>
+<textarea class="w-full p-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" rows="3">Lembaga pendidikan Islam modern di bawah naungan Dikdasmen PDM Kota Tangerang yang berorientasi tahfidz dan sains teknologi.</textarea>
+</div>
+<!-- Action Footer for Tab 1 -->
+<div class="pt-4 border-t border-outline-variant flex items-center justify-end gap-3">
+<button class="px-4 py-2 border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container font-label-md text-label-md transition-colors">
+                  Reset ke Default
+                </button>
+<button class="px-5 py-2 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary shadow-sm transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="save">save</span>
+<span>Simpan Pengaturan Branding</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- TAB 2: BIAYA & JADWAL PPDB -->
+<section class="tab-content space-y-6 hidden" id="tab-biaya">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Biaya Parameter Column -->
+<div class="lg:col-span-6 space-y-6">
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<div class="flex items-center gap-2 pb-3 border-b border-outline-variant mb-4">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="account_balance_wallet">account_balance_wallet</span>
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Struktur Tarif &amp; Biaya PPDB</h3>
+</div>
+<div class="space-y-4">
+<!-- Biaya Formulir -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Biaya Formulir Pendaftaran</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 font-semibold text-on-surface-variant font-label-md text-label-md">Rp</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="200.000"/>
+</div>
+<span class="font-caption text-caption text-on-surface-variant mt-1 block">Wajib diselesaikan saat penyerahan berkas awal.</span>
+</div>
+<!-- Nominal SPP -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nominal Biaya SPP Bulanan</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 font-semibold text-on-surface-variant font-label-md text-label-md">Rp</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="450.000"/>
+</div>
+</div>
+<!-- Uang Masuk / Pangkal -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Estimasi Total Uang Masuk / Pangkal</label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 font-semibold text-on-surface-variant font-label-md text-label-md">Rp</span>
+<input class="w-full h-10 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="4.800.000"/>
+</div>
+<span class="font-caption text-caption text-on-surface-variant mt-1 block">Mencakup seragam 5 stel, modul belajar 1 tahun, dan sarana awal.</span>
+</div>
+</div>
+</div>
+<!-- Rekening Bank Tujuan Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<div class="flex items-center gap-2 pb-3 border-b border-outline-variant mb-4">
+<span class="material-symbols-outlined text-secondary text-xl" data-icon="credit_card">credit_card</span>
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Rekening Bank Resmi Institusi</h3>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nama Bank Mitra</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="Bank Syariah Indonesia (BSI)"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nomor Rekening Virtual / Giro</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="714-239-5501"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Atas Nama Rekening</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="text" value="SMP MUHAMMADIYAH 5 TANGERANG"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Jadwal & Gelombang Column -->
+<div class="lg:col-span-6 space-y-6">
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<div class="flex items-center gap-2 pb-3 border-b border-outline-variant mb-4">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="calendar_month">calendar_month</span>
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Jadwal Gelombang Pendaftaran</h3>
+</div>
+<div class="space-y-4">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Tanggal Buka -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Tanggal Buka PPDB</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="date" value="2025-10-01"/>
+</div>
+<!-- Tanggal Tutup -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Tanggal Tutup PPDB</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="date" value="2025-11-30"/>
+</div>
+</div>
+<!-- Pengumuman Seleksi -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Tanggal Pengumuman Hasil Seleksi</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="date" value="2025-12-05"/>
+</div>
+<!-- Rich Text Simulation -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1.5">Deskripsi Gelombang &amp; Syarat Pendaftaran</label>
+<div class="border border-outline-variant rounded-lg overflow-hidden bg-surface-container-lowest">
+<!-- Simple Editor Toolbar -->
+<div class="flex items-center gap-1 p-2 bg-surface-container-low border-b border-outline-variant">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant font-bold text-xs" title="Bold">B</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant italic text-xs" title="Italic">I</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant underline text-xs" title="Underline">U</button>
+<span class="w-px h-4 bg-outline-variant mx-1"></span>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" title="Bullet List">
+<span class="material-symbols-outlined text-sm" data-icon="format_list_bulleted">format_list_bulleted</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" title="Numbered List">
+<span class="material-symbols-outlined text-sm" data-icon="format_list_numbered">format_list_numbered</span>
+</button>
+</div>
+<textarea class="w-full p-3 bg-surface-container-lowest border-0 font-body-md text-body-md focus:ring-0 outline-none" rows="5">Syarat Administrasi Wajib:
+1. Fotokopi Akta Kelahiran &amp; Kartu Keluarga (2 Lembar)
+2. Surat Keterangan Lulus / Raport SD Kelas 4 s/d 6
+3. Pasfoto 3x4 latar biru (3 Lembar)
+4. Membayar biaya formulir administrasi</textarea>
+</div>
+</div>
+<div class="pt-2 flex justify-end">
+<button class="px-5 py-2 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary shadow-sm transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="save">save</span>
+<span>Simpan Pengaturan Biaya &amp; Jadwal</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- TAB 3: MANAJEMEN KELAS DINAMIS (ROMBEL CRUD) -->
+<section class="tab-content space-y-6 hidden" id="tab-rombel">
+<!-- Total Quota Summary Banner -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-container text-primary mb-2">
+<span class="material-symbols-outlined text-sm" data-icon="info">info</span> Kuota SPMB T.A. 2025/2026
+              </span>
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface">
+                Total Target Kuota Pendaftaran: 90 Siswa
+              </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-0.5">
+                Hasil penjumlahan seluruh kapasitas aktif rombel Kelas 7A, 7B, 7C (Kapasitas ideal 30 siswa/rombel).
+              </p>
+</div>
+<!-- Progress Meter -->
+<div class="w-full md:w-72 bg-surface-container-low p-3.5 rounded-xl border border-outline-variant">
+<div class="flex justify-between items-center text-label-sm font-label-sm mb-1.5">
+<span class="text-on-surface-variant">Keterisian Terkini:</span>
+<span class="font-bold text-primary">43 / 90 Siswa (47.7%)</span>
+</div>
+<div class="w-full h-2.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 47.7%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Table Controls & Header -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="relative w-full sm:w-80">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-base" data-icon="search">search</span>
+<input class="w-full h-10 pl-9 pr-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Cari nama rombel kelas..." type="text"/>
+</div>
+<button class="flex items-center justify-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary transition-colors shadow-sm" onclick="toggleModal(true)">
+<span class="material-symbols-outlined text-base" data-icon="add">add</span>
+<span>+ Tambah Kelas Baru</span>
+</button>
+</div>
+<!-- CRUD DATA TABLE -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant h-10 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<th class="px-6 py-2 w-16">No</th>
+<th class="px-6 py-2">Nama Rombel Kelas</th>
+<th class="px-6 py-2">Batas Kapasitas</th>
+<th class="px-6 py-2">Jumlah Terisi</th>
+<th class="px-6 py-2">Status Keterisian</th>
+<th class="px-6 py-2 text-right">Aksi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 font-body-md text-body-md text-on-surface">
+<!-- Row 1: Kelas 7A -->
+<tr class="hover:bg-surface-container-low/50 transition-colors h-14">
+<td class="px-6 py-3 font-semibold text-on-surface-variant">1</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container font-semibold text-primary font-label-md text-label-md">
+                        Kelas 7A
+                      </span>
+<span class="text-xs text-on-surface-variant">(Reguler Tahfidz)</span>
+</div>
+</td>
+<td class="px-6 py-3 font-medium">30 Siswa</td>
+<td class="px-6 py-3 font-semibold text-on-surface">28 Siswa</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span> Hampir Penuh (Sisa 2)
+                    </span>
+</td>
+<td class="px-6 py-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container transition-colors" onclick="toggleModal(true)" title="Edit Rombel">
+<span class="material-symbols-outlined text-base" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container transition-colors" title="Hapus Rombel">
+<span class="material-symbols-outlined text-base" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Kelas 7B -->
+<tr class="hover:bg-surface-container-low/50 transition-colors h-14">
+<td class="px-6 py-3 font-semibold text-on-surface-variant">2</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container font-semibold text-primary font-label-md text-label-md">
+                        Kelas 7B
+                      </span>
+<span class="text-xs text-on-surface-variant">(Sains &amp; IT)</span>
+</div>
+</td>
+<td class="px-6 py-3 font-medium">30 Siswa</td>
+<td class="px-6 py-3 font-semibold text-on-surface">15 Siswa</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span> Tersedia 15 Kursi
+                    </span>
+</td>
+<td class="px-6 py-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container transition-colors" onclick="toggleModal(true)" title="Edit Rombel">
+<span class="material-symbols-outlined text-base" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container transition-colors" title="Hapus Rombel">
+<span class="material-symbols-outlined text-base" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Kelas 7C -->
+<tr class="hover:bg-surface-container-low/50 transition-colors h-14">
+<td class="px-6 py-3 font-semibold text-on-surface-variant">3</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container font-semibold text-primary font-label-md text-label-md">
+                        Kelas 7C
+                      </span>
+<span class="text-xs text-on-surface-variant">(Reguler Unggulan)</span>
+</div>
+</td>
+<td class="px-6 py-3 font-medium">30 Siswa</td>
+<td class="px-6 py-3 font-semibold text-on-surface">0 Siswa</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span> Kosong (30 Kursi)
+                    </span>
+</td>
+<td class="px-6 py-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container transition-colors" onclick="toggleModal(true)" title="Edit Rombel">
+<span class="material-symbols-outlined text-base" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container transition-colors" title="Hapus Rombel">
+<span class="material-symbols-outlined text-base" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Cadangan -->
+<tr class="hover:bg-surface-container-low/50 transition-colors h-14 opacity-75">
+<td class="px-6 py-3 font-semibold text-on-surface-variant">4</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container-low font-semibold text-on-surface-variant font-label-md text-label-md">
+                        Kelas 7D (Cadangan)
+                      </span>
+<span class="text-xs text-on-surface-variant">(Belum Dibuka)</span>
+</div>
+</td>
+<td class="px-6 py-3 font-medium">30 Siswa</td>
+<td class="px-6 py-3 font-semibold text-on-surface">0 Siswa</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-surface-container text-on-surface-variant border border-outline-variant">
+                      Non-Aktif
+                    </span>
+</td>
+<td class="px-6 py-3 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container transition-colors" onclick="toggleModal(true)" title="Edit Rombel">
+<span class="material-symbols-outlined text-base" data-icon="edit">edit</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-container transition-colors" title="Hapus Rombel">
+<span class="material-symbols-outlined text-base" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- INTEGRATED MODAL DIALOG PREVIEW FOR TAMBAH / EDIT KELAS BARU -->
+<div class="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden" id="modal-backdrop">
+<div class="bg-surface-container-lowest w-full max-w-lg rounded-2xl border border-outline-variant shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+<!-- Modal Header -->
+<div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="meeting_room">meeting_room</span>
+</div>
+<h3 class="font-headline-md text-headline-md font-semibold text-on-surface">Tambah Rombel Kelas Baru</h3>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded-lg" onclick="toggleModal(false)">
+<span class="material-symbols-outlined text-lg" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-6 space-y-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Nama Rombel Kelas</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Contoh: Kelas 7D" type="text" value="Kelas 7D"/>
+<span class="font-caption text-caption text-on-surface-variant mt-1 block">Akan ditampilkan di formulir pilihan minat pendaftar.</span>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Batas Kapasitas Maksimal (Integer)</label>
+<input class="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none" type="number" value="30"/>
+<span class="font-caption text-caption text-on-surface-variant mt-1 block">Batas maksimal murid per rombongan belajar.</span>
+</div>
+<!-- Toggle Switch -->
+<div class="pt-2 flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-outline-variant">
+<div>
+<div class="font-label-md text-label-md font-semibold text-on-surface">Buka untuk Alokasi PPDB</div>
+<div class="font-caption text-caption text-on-surface-variant">Rombel ini akan segera menerima pendaftaran kuota online.</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-end gap-3">
+<button class="px-4 py-2 border border-outline-variant bg-surface-container-lowest rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container transition-colors" onclick="toggleModal(false)">
+          Batal
+        </button>
+<button class="px-5 py-2 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary shadow-sm transition-colors" onclick="toggleModal(false)">
+          Simpan Rombel
+        </button>
+</div>
+</div>
+</div>
+<!-- Inline Tab & Modal Interaction Script -->
+<script>
+    function switchTab(tabId) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('block'));
+
+      // Show selected tab
+      const target = document.getElementById(tabId);
+      if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('block');
+      }
+
+      // Reset tab button states
+      const buttons = [
+        { id: 'tab-btn-1', target: 'tab-branding' },
+        { id: 'tab-btn-2', target: 'tab-biaya' },
+        { id: 'tab-btn-3', target: 'tab-rombel' }
+      ];
+
+      buttons.forEach(btn => {
+        const el = document.getElementById(btn.id);
+        if (btn.target === tabId) {
+          el.className = "tab-indicator flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm transition-all duration-150";
+        } else {
+          el.className = "tab-indicator flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all duration-150";
+        }
+      });
+    }
+
+    function toggleModal(show) {
+      const modal = document.getElementById('modal-backdrop');
+      if (show) {
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+  </script>
+</body></html>

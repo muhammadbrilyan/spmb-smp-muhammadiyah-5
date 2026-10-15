@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SMP Muhammadiyah 5 Kota Tangerang - SIMS &amp; PPDB Portal</title>
+<!-- Inter Font Family -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "background": "#f8f9ff",
+            "on-tertiary-fixed-variant": "#004395",
+            "on-background": "#0b1c30",
+            "on-secondary-container": "#00714d",
+            "on-primary": "#ffffff",
+            "tertiary": "#003f8b",
+            "error-container": "#ffdad6",
+            "secondary": "#006c49",
+            "on-primary-fixed": "#001a40",
+            "on-error": "#ffffff",
+            "tertiary-container": "#0055b8",
+            "surface-variant": "#d3e4fe",
+            "secondary-container": "#6cf8bb",
+            "primary-fixed": "#d7e2ff",
+            "surface-container-lowest": "#ffffff",
+            "primary-fixed-dim": "#acc7ff",
+            "outline": "#727784",
+            "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a",
+            "primary-container": "#0056b3",
+            "secondary-fixed": "#6ffbbe",
+            "inverse-primary": "#acc7ff",
+            "on-secondary-fixed-variant": "#005236",
+            "inverse-on-surface": "#eaf1ff",
+            "surface-dim": "#cbdbf5",
+            "surface-container-highest": "#d3e4fe",
+            "tertiary-fixed-dim": "#adc6ff",
+            "on-tertiary-container": "#bcd0ff",
+            "inverse-surface": "#213145",
+            "on-secondary": "#ffffff",
+            "surface-tint": "#115cb9",
+            "on-error-container": "#93000a",
+            "on-tertiary-fixed": "#001a42",
+            "on-surface": "#0b1c30",
+            "on-surface-variant": "#424752",
+            "primary": "#003f87",
+            "on-secondary-fixed": "#002113",
+            "on-primary-fixed-variant": "#004491",
+            "surface-container-low": "#eff4ff",
+            "tertiary-fixed": "#d8e2ff",
+            "surface-container-high": "#dce9ff",
+            "surface-bright": "#f8f9ff",
+            "surface-container": "#e5eeff",
+            "on-primary-container": "#bbd0ff",
+            "on-tertiary": "#ffffff",
+            "surface": "#f8f9ff",
+            "outline-variant": "#c2c6d4"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "gutter": "1.5rem",
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "margin": "2rem",
+            "space-md": "1rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "1rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-lg-mobile": ["Inter"],
+            "headline-xl": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "label-sm": ["Inter"],
+            "label-md": ["Inter"],
+            "body-md": ["Inter"],
+            "caption": ["Inter"],
+            "headline-md": ["Inter"]
+          },
+          "fontSize": {
+            "headline-lg-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "caption": ["11px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500" }],
+            "headline-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background text-on-surface antialiased font-body-md text-body-md selection:bg-surface-variant selection:text-primary">
+<div class="min-h-screen flex">
+<!-- Shared Component: SideNavBar -->
+<aside class="fixed inset-y-0 left-0 w-64 h-full flex flex-col bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline shadow-sm dark:shadow-none z-40 select-none">
+<!-- Top Branding Section -->
+<div class="p-4 border-b border-outline-variant/40 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm flex-shrink-0">
+<span class="material-symbols-outlined text-2xl" data-icon="school">school</span>
+</div>
+<div class="overflow-hidden">
+<h1 class="text-label-md font-label-md font-bold text-primary dark:text-inverse-primary truncate leading-tight">SMP Muhammadiyah 5</h1>
+<p class="text-caption font-caption text-on-surface-variant truncate">SIMS &amp; PPDB Portal</p>
+</div>
+</div>
+<!-- Quick Action CTA Button -->
+<div class="px-4 pt-4 pb-2">
+<button class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-tertiary-container text-on-primary py-2.5 px-3 rounded-lg font-label-md text-label-md shadow-sm transition-all duration-150 active:scale-[0.98]">
+<span class="material-symbols-outlined text-sm" data-icon="add_circle">add_circle</span>
+<span>Pendaftaran Baru</span>
+</button>
+</div>
+<!-- Main Navigation Tabs -->
+<nav class="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+<!-- 1. Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- 2. PPDB & SPMB (Active Screen) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-low dark:bg-surface-container-high text-primary dark:text-inverse-primary font-label-md text-label-md border-l-4 border-primary dark:border-inverse-primary shadow-xs" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="how_to_reg" style="font-variation-settings: 'FILL' 1;">how_to_reg</span>
+<span class="font-semibold">PPDB &amp; SPMB</span>
+<span class="ml-auto px-1.5 py-0.5 rounded-full text-caption font-caption bg-secondary-container text-on-secondary-container font-bold">348</span>
+</a>
+<!-- 3. Data Siswa -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="school">school</span>
+<span>Data Siswa</span>
+</a>
+<!-- 4. Akademik -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="menu_book">menu_book</span>
+<span>Akademik</span>
+</a>
+<!-- 5. Keuangan & SPP -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="payments">payments</span>
+<span>Keuangan &amp; SPP</span>
+</a>
+<!-- 6. Pengaturan Sistem -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+<span>Pengaturan Sistem</span>
+</a>
+</nav>
+<!-- Institutional Sub-Badge -->
+<div class="px-3 pb-3">
+<div class="p-3 bg-surface-container-low rounded-lg border border-outline-variant/30 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-secondary/15 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-lg" data-icon="verified_user">verified_user</span>
+</div>
+<div class="leading-tight overflow-hidden">
+<div class="text-caption font-caption font-bold text-on-surface truncate">Majelis Dikdasmen</div>
+<div class="text-caption font-caption text-on-surface-variant truncate">Kota Tangerang • Banten</div>
+</div>
+</div>
+</div>
+<!-- Footer Navigation Tabs -->
+<div class="p-3 border-t border-outline-variant/40 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help_outline">help_outline</span>
+<span>Bantuan &amp; Panduan</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-error hover:bg-error-container/40 font-label-md text-label-md transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="logout">logout</span>
+<span>Keluar</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Flow Container (Offset by Sidebar width: 256px / w-64) -->
+<div class="flex-1 ml-64 flex flex-col min-w-0">
+<!-- Shared Component: TopNavBar -->
+<header class="h-16 bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm dark:shadow-none flex items-center justify-between px-6 sticky top-0 z-30">
+<!-- Left: Search Bar & Academic Year Badge -->
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="relative w-full max-w-sm">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg" data-icon="search">search</span>
+<input class="w-full h-10 pl-9 pr-4 rounded-lg bg-surface border border-outline-variant/60 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 text-body-md font-body-md placeholder:text-outline text-on-surface transition-all" placeholder="Cari NISN, nama calon siswa, no. daftar..." type="text"/>
+</div>
+<!-- Academic Year Status Indicator -->
+<div class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high border border-outline-variant/40">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-label-sm font-label-sm text-primary font-semibold">T.A. 2024/2025 Genap</span>
+</div>
+</div>
+<!-- Right: Actions, Notifications & Profile -->
+<div class="flex items-center gap-3">
+<!-- Quick Export Action -->
+<button class="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-outline-variant rounded-lg text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all active:scale-95 shadow-xs">
+<span class="material-symbols-outlined text-base text-primary" data-icon="download">download</span>
+<span>Unduh Laporan</span>
+</button>
+<!-- Notification Bell Action with Badge -->
+<button aria-label="Notifikasi" class="relative p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors active:scale-95">
+<span class="material-symbols-outlined text-xl" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-surface-container-lowest"></span>
+</button>
+<!-- Help Icon Action -->
+<button aria-label="Bantuan" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors active:scale-95">
+<span class="material-symbols-outlined text-xl" data-icon="help_outline">help_outline</span>
+</button>
+<div class="h-6 w-px bg-outline-variant/60 mx-1"></div>
+<!-- Admin Profile Card Info -->
+<div class="flex items-center gap-3 pl-1">
+<div class="text-right hidden sm:block leading-tight">
+<div class="text-label-md font-label-md font-semibold text-on-surface">Ahmad Fauzi, S.Pd.</div>
+<div class="text-caption font-caption text-on-surface-variant">Administrator SIMS</div>
+</div>
+<div class="w-9 h-9 rounded-full ring-2 ring-primary/20 bg-surface-variant flex items-center justify-center font-label-md font-semibold text-primary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Professional Indonesian male school administrator portrait wearing neat formal batik uniform, smiling warmly against a bright neutral academic office background, soft natural studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVoYGicpq-TokS7Lkm_WbzguSv8LeyaEvWLJfX4Gew1Ptnb38r93aVT0Hhssks1-24FqF8GJPNvXt5u9AmIRe5Xcw7q41CNLPHW9zfPpuwKj_Ub-Mj9E5vRvkKA3UnkNjh0ks4eiEvMdFJWrp8nbp70WCHvZnajV6DyErYPqWmacrP3Vx_avmh3fWm4DnWRTT2BKqJGGwGA1JMgEm7zvmpTWDX9D7Urb0ZerU1GKhhsAHN_GqDYmatuA"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Workspace Canvas -->
+<main class="flex-1 p-6 lg:p-8 space-y-6">
+<!-- Page Header & Action Toolbar -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+<div>
+<!-- Breadcrumbs -->
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant mb-1">
+<span>Portal Akademik</span>
+<span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-semibold">PPDB &amp; SPMB</span>
+<span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface">Manajemen Pendaftaran</span>
+</div>
+<h2 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Manajemen Pendaftaran Siswa Baru (PPDB) 2024/2025</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mt-0.5">Gelombang 2 • Periode Pendaftaran: 1 Januari – 28 Februari 2025</p>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="inline-flex items-center gap-2 px-3.5 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all active:scale-95 shadow-xs">
+<span class="material-symbols-outlined text-base" data-icon="print">print</span>
+<span>Cetak Rekap</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary transition-all active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-base" data-icon="person_add">person_add</span>
+<span>Tambah Siswa Manual</span>
+</button>
+</div>
+</div>
+<!-- 5 Key KPI Stat Metric Cards (Shadcn UI Pattern) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+<!-- Card 1: Total Pendaftar -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/60 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-label-sm font-label-sm">Total Pendaftar</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-lg" data-icon="groups">groups</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="text-headline-xl font-headline-xl text-on-surface">348</div>
+<div class="flex items-center gap-1.5 mt-1 text-label-sm font-label-sm text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span>+12.4%</span>
+<span class="text-on-surface-variant font-normal">dari gel. 1</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Terverifikasi & Lulus -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/60 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-label-sm font-label-sm">Terverifikasi / Lulus</span>
+<div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-lg" data-icon="verified">verified</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="text-headline-xl font-headline-xl text-on-surface">215</div>
+<div class="flex items-center gap-1 mt-1 text-caption font-caption text-on-surface-variant">
+<span class="font-semibold text-secondary">61.7%</span>
+<span>dari total berkas masuk</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Menunggu Berkas / Pending -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/60 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-label-sm font-label-sm">Menunggu Berkas</span>
+<div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
+<span class="material-symbols-outlined text-lg" data-icon="pending_actions">pending_actions</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="text-headline-xl font-headline-xl text-on-surface">54</div>
+<div class="flex items-center gap-1 mt-1 text-caption font-caption text-amber-700">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
+<span>Perlu verifikasi admin</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Jadwal Tes & Wawancara -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/60 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-label-sm font-label-sm">Jadwal Tes &amp; Wawancara</span>
+<div class="w-8 h-8 rounded-lg bg-tertiary-container/15 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-lg" data-icon="event">event</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="text-headline-xl font-headline-xl text-on-surface">62</div>
+<div class="flex items-center gap-1 mt-1 text-caption font-caption text-on-surface-variant">
+<span>Tes CBT &amp; Al-Qur'an</span>
+</div>
+</div>
+</div>
+<!-- Card 5: Berkas Ditolak -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/60 shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-label-sm font-label-sm">Berkas Ditolak</span>
+<div class="w-8 h-8 rounded-lg bg-error-container/40 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-lg" data-icon="cancel">cancel</span>
+</div>
+</div>
+<div class="mt-3">
+<div class="text-headline-xl font-headline-xl text-on-surface">17</div>
+<div class="flex items-center gap-1 mt-1 text-caption font-caption text-error">
+<span class="material-symbols-outlined text-xs" data-icon="warning">warning</span>
+<span>Syarat belum terpenuhi</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter & Search Toolbar Container -->
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/60 shadow-xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+<div class="flex flex-wrap items-center gap-2.5 flex-1">
+<!-- Search by Name/NISN -->
+<div class="relative min-w-[220px] flex-1 sm:flex-initial">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg" data-icon="search">search</span>
+<input class="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-outline-variant/60 text-body-md font-body-md text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container" placeholder="Cari Nama / NISN / Asal SD..." type="text"/>
+</div>
+<!-- Filter Jalur Pendaftaran -->
+<div class="relative">
+<select class="h-9 pl-3 pr-8 rounded-lg bg-surface border border-outline-variant/60 text-body-md font-body-md text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container appearance-none cursor-pointer">
+<option value="">Semua Jalur Pendaftaran</option>
+<option value="reguler">Reguler</option>
+<option value="tahfidz">Prestasi Tahfidz Qur'an</option>
+<option value="akademik">Prestasi Akademik / Non</option>
+<option value="afirmasi">Afirmasi Muhammadiyah</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-sm" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Filter Status -->
+<div class="relative">
+<select class="h-9 pl-3 pr-8 rounded-lg bg-surface border border-outline-variant/60 text-body-md font-body-md text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container appearance-none cursor-pointer">
+<option value="">Semua Status Verifikasi</option>
+<option value="pending">Menunggu / Pending</option>
+<option value="verified">Terverifikasi / Lulus</option>
+<option value="scheduled">Jadwal Tes / Scheduled</option>
+<option value="rejected">Ditolak / Berkas Kurang</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-sm" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Reset Filter -->
+<button class="h-9 px-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg font-label-sm text-label-sm flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="filter_alt_off">filter_alt_off</span>
+<span>Reset</span>
+</button>
+</div>
+<!-- Secondary Actions inside Toolbar -->
+<div class="flex items-center gap-2">
+<button class="h-9 px-3.5 bg-surface border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-base" data-icon="badge">badge</span>
+<span>Cetak Kartu Ujian</span>
+</button>
+<button class="h-9 px-3 bg-surface border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container flex items-center justify-center transition-colors" title="Konfigurasi Kolom">
+<span class="material-symbols-outlined text-base" data-icon="view_column">view_column</span>
+</button>
+</div>
+</div>
+<!-- Shadcn UI Data Table Surface Container -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/60 shadow-xs overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface border-b border-outline-variant/60 h-10">
+<th class="w-10 px-4 py-2 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container" type="checkbox"/>
+</th>
+<th class="px-4 py-2 text-label-sm font-label-sm text-outline tracking-wider uppercase">No. Pendaftaran &amp; Tanggal</th>
+<th class="px-4 py-2 text-label-sm font-label-sm text-outline tracking-wider uppercase">Calon Siswa &amp; Asal Sekolah</th>
+<th class="px-4 py-2 text-label-sm font-label-sm text-outline tracking-wider uppercase">NISN</th>
+<th class="px-4 py-2 text-label-sm font-label-sm text-outline tracking-wider uppercase">Jalur Masuk</th>
+<th class="px-4 py-2 text-label-sm font-label-sm text-outline tracking-wider uppercase">Status Berkas</th>
+<th class="px-4 py-2 text-label-sm font-label-sm text-outline tracking-wider uppercase text-right">Aksi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/30 text-body-md font-body-md">
+<!-- Row 1: Terverifikasi / Lulus -->
+<tr class="hover:bg-surface-container-low transition-colors duration-150">
+<td class="w-10 px-4 py-3 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="px-4 py-3">
+<div class="font-label-md font-semibold text-primary">REG-2025-0101</div>
+<div class="text-caption font-caption text-outline">12 Jan 2025, 09:30 WIB</div>
+</td>
+<td class="px-4 py-3">
+<div class="font-semibold text-on-surface">Muhammad Farhan Pratama</div>
+<div class="text-caption font-caption text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="school">school</span>
+                      SD Muhammadiyah 1 Kota Tangerang
+                    </div>
+</td>
+<td class="px-4 py-3 font-mono text-label-md text-on-surface-variant">0118492041</td>
+<td class="px-4 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-caption font-caption font-semibold bg-surface-container text-tertiary border border-surface-container-high">
+                      Prestasi Tahfidz (3 Juz)
+                    </span>
+</td>
+<td class="px-4 py-3">
+<!-- Status Badge: Verified / Lulus (#10b981 / green) -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-caption font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                      Terverifikasi / Lulus
+                    </span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Detail Siswa">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded transition-colors" title="Verifikasi">
+<span class="material-symbols-outlined text-lg" data-icon="how_to_reg">how_to_reg</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Cetak Berkas">
+<span class="material-symbols-outlined text-lg" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Menunggu / Pending -->
+<tr class="hover:bg-surface-container-low transition-colors duration-150">
+<td class="w-10 px-4 py-3 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="px-4 py-3">
+<div class="font-label-md font-semibold text-primary">REG-2025-0102</div>
+<div class="text-caption font-caption text-outline">12 Jan 2025, 10:14 WIB</div>
+</td>
+<td class="px-4 py-3">
+<div class="font-semibold text-on-surface">Aisyah Nur Salsabila</div>
+<div class="text-caption font-caption text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="school">school</span>
+                      MI Nurul Huda Karawaci
+                    </div>
+</td>
+<td class="px-4 py-3 font-mono text-label-md text-on-surface-variant">0129482099</td>
+<td class="px-4 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-caption font-caption font-semibold bg-surface-container text-on-surface-variant border border-surface-container-high">
+                      Reguler
+                    </span>
+</td>
+<td class="px-4 py-3">
+<!-- Status Badge: Pending / Menunggu (#f59e0b / yellow) -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-caption font-semibold bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
+                      Menunggu / Pending
+                    </span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Detail Siswa">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded transition-colors" title="Verifikasi">
+<span class="material-symbols-outlined text-lg" data-icon="how_to_reg">how_to_reg</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Cetak Berkas">
+<span class="material-symbols-outlined text-lg" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Jadwal Tes / Scheduled -->
+<tr class="hover:bg-surface-container-low transition-colors duration-150">
+<td class="w-10 px-4 py-3 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="px-4 py-3">
+<div class="font-label-md font-semibold text-primary">REG-2025-0103</div>
+<div class="text-caption font-caption text-outline">12 Jan 2025, 11:05 WIB</div>
+</td>
+<td class="px-4 py-3">
+<div class="font-semibold text-on-surface">Fakhri Dwi Ramadhan</div>
+<div class="text-caption font-caption text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="school">school</span>
+                      SDN Sukasari 4 Kota Tangerang
+                    </div>
+</td>
+<td class="px-4 py-3 font-mono text-label-md text-on-surface-variant">0117392812</td>
+<td class="px-4 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-caption font-caption font-semibold bg-surface-container text-tertiary border border-surface-container-high">
+                      Prestasi Sains &amp; Robotik
+                    </span>
+</td>
+<td class="px-4 py-3">
+<!-- Status Badge: Scheduled / Jadwal Tes (#3b82f6 / blue) -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-caption font-semibold bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span>
+                      Jadwal Tes (18 Jan)
+                    </span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Detail Siswa">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded transition-colors" title="Verifikasi">
+<span class="material-symbols-outlined text-lg" data-icon="how_to_reg">how_to_reg</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Cetak Berkas">
+<span class="material-symbols-outlined text-lg" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Ditolak / Berkas Kurang -->
+<tr class="hover:bg-surface-container-low transition-colors duration-150">
+<td class="w-10 px-4 py-3 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="px-4 py-3">
+<div class="font-label-md font-semibold text-primary">REG-2025-0104</div>
+<div class="text-caption font-caption text-outline">13 Jan 2025, 08:22 WIB</div>
+</td>
+<td class="px-4 py-3">
+<div class="font-semibold text-on-surface">Zahra Annisa Khairina</div>
+<div class="text-caption font-caption text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="school">school</span>
+                      SDIT Al-Ittihad Cipondoh
+                    </div>
+</td>
+<td class="px-4 py-3 font-mono text-label-md text-on-surface-variant">0123910245</td>
+<td class="px-4 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-caption font-caption font-semibold bg-surface-container text-on-surface-variant border border-surface-container-high">
+                      Reguler
+                    </span>
+</td>
+<td class="px-4 py-3">
+<!-- Status Badge: Rejected / Ditolak (#ef4444 / red) -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-caption font-semibold bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#ef4444]"></span>
+                      Ditolak / Berkas Kurang
+                    </span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Detail Siswa">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded transition-colors" title="Verifikasi">
+<span class="material-symbols-outlined text-lg" data-icon="how_to_reg">how_to_reg</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Cetak Berkas">
+<span class="material-symbols-outlined text-lg" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Terverifikasi / Lulus -->
+<tr class="hover:bg-surface-container-low transition-colors duration-150">
+<td class="w-10 px-4 py-3 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="px-4 py-3">
+<div class="font-label-md font-semibold text-primary">REG-2025-0105</div>
+<div class="text-caption font-caption text-outline">13 Jan 2025, 09:45 WIB</div>
+</td>
+<td class="px-4 py-3">
+<div class="font-semibold text-on-surface">Rizky Maulana Alamsyah</div>
+<div class="text-caption font-caption text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="school">school</span>
+                      SD Muhammadiyah 2 Batusari
+                    </div>
+</td>
+<td class="px-4 py-3 font-mono text-label-md text-on-surface-variant">0115598101</td>
+<td class="px-4 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-caption font-caption font-semibold bg-surface-container text-tertiary border border-surface-container-high">
+                      Afirmasi Muhammadiyah
+                    </span>
+</td>
+<td class="px-4 py-3">
+<!-- Status Badge: Verified / Lulus -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-caption font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                      Terverifikasi / Lulus
+                    </span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Detail Siswa">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded transition-colors" title="Verifikasi">
+<span class="material-symbols-outlined text-lg" data-icon="how_to_reg">how_to_reg</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Cetak Berkas">
+<span class="material-symbols-outlined text-lg" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Menunggu / Pending -->
+<tr class="hover:bg-surface-container-low transition-colors duration-150">
+<td class="w-10 px-4 py-3 text-center">
+<input class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary-container" type="checkbox"/>
+</td>
+<td class="px-4 py-3">
+<div class="font-label-md font-semibold text-primary">REG-2025-0106</div>
+<div class="text-caption font-caption text-outline">13 Jan 2025, 11:20 WIB</div>
+</td>
+<td class="px-4 py-3">
+<div class="font-semibold text-on-surface">Nadira Putri Az-Zahra</div>
+<div class="text-caption font-caption text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="school">school</span>
+                      SDN Poris Pelawad 1
+                    </div>
+</td>
+<td class="px-4 py-3 font-mono text-label-md text-on-surface-variant">0128841029</td>
+<td class="px-4 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-caption font-caption font-semibold bg-surface-container text-on-surface-variant border border-surface-container-high">
+                      Reguler
+                    </span>
+</td>
+<td class="px-4 py-3">
+<!-- Status Badge: Pending / Menunggu -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-caption font-caption font-semibold bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
+                      Menunggu / Pending
+                    </span>
+</td>
+<td class="px-4 py-3 text-right">
+<div class="flex items-center justify-end gap-1">
+<button class="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Detail Siswa">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-surface-container rounded transition-colors" title="Verifikasi">
+<span class="material-symbols-outlined text-lg" data-icon="how_to_reg">how_to_reg</span>
+</button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded transition-colors" title="Cetak Berkas">
+<span class="material-symbols-outlined text-lg" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer (Shadcn UI Structure) -->
+<div class="p-4 bg-surface border-t border-outline-variant/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-body-md font-body-md">
+<div class="text-on-surface-variant text-label-sm font-label-sm">
+              Menampilkan <span class="font-semibold text-on-surface">1 - 6</span> dari <span class="font-semibold text-on-surface">348</span> calon siswa baru
+            </div>
+<div class="flex items-center gap-1">
+<!-- Previous Button -->
+<button class="h-8 px-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-label-sm font-label-sm flex items-center gap-1 disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+<span>Sebelumnya</span>
+</button>
+<!-- Page Numbers -->
+<button class="h-8 w-8 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold flex items-center justify-center shadow-xs">
+                1
+              </button>
+<button class="h-8 w-8 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-sm text-label-sm flex items-center justify-center">
+                2
+              </button>
+<button class="h-8 w-8 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-sm text-label-sm flex items-center justify-center">
+                3
+              </button>
+<span class="px-1 text-outline">...</span>
+<button class="h-8 w-8 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-sm text-label-sm flex items-center justify-center">
+                35
+              </button>
+<!-- Next Button -->
+<button class="h-8 px-2.5 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface hover:bg-surface-container text-label-sm font-label-sm flex items-center gap-1">
+<span>Selanjutnya</span>
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Institutional Workflow Guidelines Footer Card -->
+<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-xl" data-icon="info">info</span>
+</div>
+<div>
+<div class="font-label-md font-semibold text-on-surface">Prosedur Verifikasi Dokumen &amp; Berkas Ujian CBT</div>
+<div class="text-caption font-caption text-on-surface-variant">Calon siswa yang terverifikasi otomatis menerima kartu ujian digital dan notifikasi WhatsApp Orang Tua/Wali.</div>
+</div>
+</div>
+<button class="text-primary hover:text-tertiary-container font-label-md text-label-md font-semibold flex items-center gap-1 flex-shrink-0">
+<span>Panduan SOP PPDB</span>
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</main>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Operasional Operator PPDB - SMP Muhammadiyah 5 Kota Tangerang</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              DEFAULT: '#0056b3',
+              hover: '#004494',
+              light: '#eff6ff',
+            },
+            accent: {
+              emerald: '#10b981',
+              emeraldHover: '#059669',
+              emeraldLight: '#ecfdf5',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1;
+    }
+    .tab-btn.active {
+      background-color: #0056b3;
+      color: #ffffff;
+      box-shadow: 0 4px 6px -1px rgba(0, 86, 179, 0.2);
+    }
+    .tab-btn:not(.active) {
+      background-color: #f1f5f9;
+      color: #475569;
+    }
+    .tab-btn:not(.active):hover {
+      background-color: #e2e8f0;
+      color: #0f172a;
+    }
+    .tab-panel {
+      display: none;
+    }
+    .tab-panel.active {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex">
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 left-0 z-30 shadow-sm">
+    <!-- Brand / Institution -->
+    <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-md shadow-primary/20">
+        <span class="material-symbols-outlined fill text-2xl">school</span>
+      </div>
+      <div>
+        <h1 class="font-bold text-sm leading-tight text-slate-900">SMP Muhammadiyah 5</h1>
+        <p class="text-xs text-slate-500 font-medium">Kota Tangerang • SIMS</p>
+      </div>
+    </div>
+
+    <!-- Quick CTA -->
+    <div class="px-4 pt-4">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-xs font-semibold text-emerald-800">WA Gateway Online</span>
+        </div>
+        <span class="text-[10px] bg-emerald-200/80 text-emerald-900 px-1.5 py-0.5 rounded font-mono font-medium">99.4%</span>
+      </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm font-medium transition">
+        <span class="material-symbols-outlined text-[20px]">dashboard</span>
+        Dashboard Utama
+      </a>
+      
+      <a href="#" class="flex items-center justify-between px-3 py-2 rounded-lg bg-blue-50 text-primary font-semibold text-sm border-l-4 border-primary">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-[20px] fill">how_to_reg</span>
+          PPDB & SPMB
+        </div>
+        <span class="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">OPERATOR</span>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm font-medium transition">
+        <span class="material-symbols-outlined text-[20px]">groups</span>
+        Data Siswa
+      </a>
+      
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm font-medium transition">
+        <span class="material-symbols-outlined text-[20px]">menu_book</span>
+        Akademik
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm font-medium transition">
+        <span class="material-symbols-outlined text-[20px]">payments</span>
+        Keuangan & SPP
+      </a>
+
+      <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm font-medium transition">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        Pengaturan Sistem
+      </a>
+    </nav>
+
+    <!-- User Profile & Help Footer -->
+    <div class="p-3 border-t border-slate-200 bg-slate-50/50">
+      <div class="flex items-center gap-3 p-2 rounded-lg bg-white border border-slate-200 shadow-xs mb-2">
+        <div class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs">
+          RP
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold text-slate-900 truncate">Ust. M. Rizky, S.Pd.</p>
+          <p class="text-[11px] text-slate-500 truncate">Operator PPDB 2025</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between px-1 text-xs text-slate-500 font-medium">
+        <a href="#" class="hover:text-slate-800 flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">help</span> Panduan
+        </a>
+        <a href="#" class="hover:text-rose-600 flex items-center gap-1 text-rose-500">
+          <span class="material-symbols-outlined text-[16px]">logout</span> Keluar
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="ml-64 flex-1 flex flex-col min-h-screen">
+    
+    <!-- TOP APP BAR -->
+    <header class="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20">
+      <div class="flex items-center gap-3 text-sm text-slate-500">
+        <span class="text-slate-400">Portal Akademik</span>
+        <span class="material-symbols-outlined text-[16px] text-slate-400">chevron_right</span>
+        <span class="text-slate-400">PPDB & SPMB</span>
+        <span class="material-symbols-outlined text-[16px] text-slate-400">chevron_right</span>
+        <span class="font-semibold text-slate-800">Operasional Operator PPDB</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- TA Badge -->
+        <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700">
+          <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
+          <span>T.A. 2025/2026 Gel. 1</span>
+        </div>
+
+        <!-- Notification Button -->
+        <button class="relative p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition">
+          <span class="material-symbols-outlined">notifications</span>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full"></span>
+        </button>
+
+        <!-- Export Action -->
+        <button class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition">
+          <span class="material-symbols-outlined text-[18px]">download</span>
+          Export Rekap PPDB
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <div class="p-8 space-y-6 max-w-7xl w-full mx-auto">
+      
+      <!-- HERO HEADER -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Dashboard Operasional & Seleksi PPDB</h2>
+          <p class="text-sm text-slate-600 mt-1">
+            SMP Muhammadiyah 5 Kota Tangerang • Otomatisasi Akun, Pengiriman Kredensial WA, Penjadwalan Tes, dan Alokasi Rombel
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            WhatsApp Server: Terhubung (42ms)
+          </span>
+        </div>
+      </div>
+
+      <!-- METRIC CARDS OVERVIEW -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Metric 1 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500">
+            <span class="text-xs font-semibold uppercase tracking-wider">Akun Siswa Terbit</span>
+            <span class="material-symbols-outlined text-primary p-1.5 bg-blue-50 rounded-lg">badge</span>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-extrabold text-slate-900">215</span>
+              <span class="text-xs text-slate-500 font-medium">/ 215 Calon</span>
+            </div>
+            <p class="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">check_circle</span>
+              100% Siap Terverifikasi
+            </p>
+          </div>
+        </div>
+
+        <!-- Metric 2 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500">
+            <span class="text-xs font-semibold uppercase tracking-wider">Tes Terjadwal</span>
+            <span class="material-symbols-outlined text-amber-500 p-1.5 bg-amber-50 rounded-lg">event</span>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-extrabold text-slate-900">184</span>
+              <span class="text-xs text-slate-500 font-medium">Siswa Terjadwal</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+              142 Tatap Muka • 42 Video Call
+            </p>
+          </div>
+        </div>
+
+        <!-- Metric 3 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500">
+            <span class="text-xs font-semibold uppercase tracking-wider">Hasil Seleksi</span>
+            <span class="material-symbols-outlined text-emerald-600 p-1.5 bg-emerald-50 rounded-lg">grade</span>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-extrabold text-slate-900">146</span>
+              <span class="text-xs text-slate-500 font-medium">Telah Dinilai</span>
+            </div>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">128 Lulus</span>
+              <span class="text-[11px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">18 Proses</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric 4 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500">
+            <span class="text-xs font-semibold uppercase tracking-wider">Alokasi Rombel</span>
+            <span class="material-symbols-outlined text-indigo-600 p-1.5 bg-indigo-50 rounded-lg">meeting_room</span>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-extrabold text-slate-900">43</span>
+              <span class="text-xs text-slate-500 font-medium">/ 90 Kuota (3 Rombel)</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2">
+              <div class="bg-indigo-600 h-1.5 rounded-full" style="width: 47.7%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN TAB CONTROLS (TABS 1-4) -->
+      <div class="bg-slate-200/70 p-1.5 rounded-xl flex items-center gap-1.5 overflow-x-auto border border-slate-300/60 shadow-xs">
+        <button onclick="switchTab('tab1')" id="btn-tab1" class="tab-btn active flex-1 min-w-[200px] flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-lg font-semibold text-xs md:text-sm transition duration-150">
+          <span class="material-symbols-outlined text-[18px]">forward_to_inbox</span>
+          1. Manajemen Akun & WA Gateway
+        </button>
+        <button onclick="switchTab('tab2')" id="btn-tab2" class="tab-btn flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-lg font-semibold text-xs md:text-sm transition duration-150">
+          <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
+          2. Penjadwalan Tes Seleksi
+        </button>
+        <button onclick="switchTab('tab3')" id="btn-tab3" class="tab-btn flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-lg font-semibold text-xs md:text-sm transition duration-150">
+          <span class="material-symbols-outlined text-[18px]">fact_check</span>
+          3. Input Hasil Seleksi
+        </button>
+        <button onclick="switchTab('tab4')" id="btn-tab4" class="tab-btn flex-1 min-w-[180px] flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-lg font-semibold text-xs md:text-sm transition duration-150">
+          <span class="material-symbols-outlined text-[18px]">door_sliding</span>
+          4. Penempatan Kelas (Rombel)
+        </button>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 1: MANAJEMEN AKUN & WHATSAPP GATEWAY  -->
+      <!-- ========================================== -->
+      <div id="tab1" class="tab-panel active space-y-4">
+        <!-- Action Toolbar -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="relative flex-1 md:w-80">
+              <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+              <input type="text" placeholder="Cari No. REG, Nama Siswa, Sekolah..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            </div>
+            <select class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs md:text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
+              <option>Semua Status Akun</option>
+              <option>Belum Dibuat</option>
+              <option>Aktif</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+            <button onclick="showToast('Mengirim kredensial massal...')" class="inline-flex items-center gap-2 bg-accent-emerald hover:bg-accent-emeraldHover text-white px-4 py-2 rounded-lg font-semibold text-xs md:text-sm shadow-sm transition">
+              <span class="material-symbols-outlined text-[18px]">mark_chat_read</span>
+              Generate & Kirim WA Terpilih
+            </button>
+          </div>
+        </div>
+
+        <!-- Verified Applicants Table -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <th class="p-4 w-12 text-center">
+                    <input type="checkbox" class="rounded text-primary focus:ring-primary border-slate-300">
+                  </th>
+                  <th class="p-4">No. Pendaftaran</th>
+                  <th class="p-4">Nama Siswa & Asal Sekolah</th>
+                  <th class="p-4">No. WA Orang Tua</th>
+                  <th class="p-4">Status Akun</th>
+                  <th class="p-4">Status Kredensial</th>
+                  <th class="p-4 text-right">Aksi Operator</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs md:text-sm">
+                <!-- Row 1 -->
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-4 text-center">
+                    <input type="checkbox" class="rounded text-primary focus:ring-primary border-slate-300">
+                  </td>
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0101</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Aisyah Nur Salsabila</p>
+                    <p class="text-xs text-slate-500">SD Muhammadiyah 01 Tangerang • Tahfidz</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">+62 812-9943-1102</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <span class="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[14px]">done_all</span> Terkirim (08:30 WIB)
+                    </span>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="openWAPayloadModal('REG-2025-0101', 'Aisyah Nur Salsabila', '+62 812-9943-1102', 'aisyah.salsabila', 'Kirim Ulang Kredensial')" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-200">
+                      <span class="material-symbols-outlined text-[16px] text-emerald-600">chat</span>
+                      Kirim Ulang
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 2 -->
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-4 text-center">
+                    <input type="checkbox" class="rounded text-primary focus:ring-primary border-slate-300">
+                  </td>
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0102</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Muhammad Farhan Al-Ghifari</p>
+                    <p class="text-xs text-slate-500">MI Negeri 1 Tangerang • Reguler</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">+62 813-8821-4099</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <span class="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[14px]">done_all</span> Terkirim (08:35 WIB)
+                    </span>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="openWAPayloadModal('REG-2025-0102', 'Muhammad Farhan Al-Ghifari', '+62 813-8821-4099', 'farhan.ghifari', 'Kirim Ulang Kredensial')" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition border border-slate-200">
+                      <span class="material-symbols-outlined text-[16px] text-emerald-600">chat</span>
+                      Kirim Ulang
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 3 -->
+                <tr class="hover:bg-slate-50/80 transition bg-amber-50/30">
+                  <td class="p-4 text-center">
+                    <input type="checkbox" checked class="rounded text-primary focus:ring-primary border-slate-300">
+                  </td>
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0103</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Zahra Annisa Khairunnisa</p>
+                    <p class="text-xs text-slate-500">SDIT As-Syifa Karawaci • Prestasi</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">+62 857-1940-2391</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Belum Dibuat
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <span class="text-xs text-amber-700 font-medium flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[14px]">schedule</span> Menunggu Operator
+                    </span>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="openWAPayloadModal('REG-2025-0103', 'Zahra Annisa Khairunnisa', '+62 857-1940-2391', 'zahra.annisa', 'Generate & Kirim Kredensial WA')" class="inline-flex items-center gap-1.5 bg-accent-emerald hover:bg-accent-emeraldHover text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-xs transition">
+                      <span class="material-symbols-outlined text-[16px]">send</span>
+                      Generate & Kirim WA
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 4 -->
+                <tr class="hover:bg-slate-50/80 transition bg-amber-50/30">
+                  <td class="p-4 text-center">
+                    <input type="checkbox" checked class="rounded text-primary focus:ring-primary border-slate-300">
+                  </td>
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0104</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Bilal Dwi Kurniawan</p>
+                    <p class="text-xs text-slate-500">SD Negeri Cikokol 3 • Reguler</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">+62 821-4478-9012</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Belum Dibuat
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <span class="text-xs text-amber-700 font-medium flex items-center gap-1">
+                      <span class="material-symbols-outlined text-[14px]">schedule</span> Menunggu Operator
+                    </span>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="openWAPayloadModal('REG-2025-0104', 'Bilal Dwi Kurniawan', '+62 821-4478-9012', 'bilal.kurniawan', 'Generate & Kirim Kredensial WA')" class="inline-flex items-center gap-1.5 bg-accent-emerald hover:bg-accent-emeraldHover text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-xs transition">
+                      <span class="material-symbols-outlined text-[16px]">send</span>
+                      Generate & Kirim WA
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: PENJADWALAN TES SELEKSI             -->
+      <!-- ========================================== -->
+      <div id="tab2" class="tab-panel space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Formulir Penjadwalan -->
+          <div class="lg:col-span-7 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">Formulir Jadwal Ujian & Seleksi</h3>
+                <p class="text-xs text-slate-500">Tentukan moda ujian (Offline Kampus atau Video Call daring untuk luar kota).</p>
+              </div>
+              <span class="p-2 bg-blue-50 text-primary rounded-lg material-symbols-outlined">edit_calendar</span>
+            </div>
+
+            <form onsubmit="event.preventDefault(); showToast('Jadwal tes berhasil disimpan & undangan WA terkirim!');" class="space-y-4">
+              <!-- Select Student -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Pilih Calon Siswa (Terverifikasi)</label>
+                <select class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20">
+                  <option>REG-2025-0103 — Zahra Annisa Khairunnisa (SDIT As-Syifa Karawaci)</option>
+                  <option>REG-2025-0104 — Bilal Dwi Kurniawan (SDN Cikokol 3)</option>
+                  <option>REG-2025-0105 — Rizky Maulana Alamsyah (SD Muhammadiyah 2 Batusari)</option>
+                  <option>REG-2025-0106 — Nadira Putri Az-Zahra (SDN Poris Pelawad 1)</option>
+                </select>
+              </div>
+
+              <!-- Mode Seleksi Radio Pill -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Moda Ujian Seleksi</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="flex items-center gap-3 p-3 rounded-lg border-2 border-primary bg-blue-50/50 cursor-pointer">
+                    <input type="radio" name="testMode" value="offline" checked onchange="toggleTestMode('offline')" class="text-primary focus:ring-primary">
+                    <div>
+                      <p class="font-bold text-xs md:text-sm text-slate-900">Tatap Muka (Offline)</p>
+                      <p class="text-[11px] text-slate-500">Kampus SMP Muh 5 Tangerang</p>
+                    </div>
+                  </label>
+
+                  <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-300 hover:border-slate-400 cursor-pointer">
+                    <input type="radio" name="testMode" value="online" onchange="toggleTestMode('online')" class="text-primary focus:ring-primary">
+                    <div>
+                      <p class="font-bold text-xs md:text-sm text-slate-900">Video Call (Daring)</p>
+                      <p class="text-[11px] text-slate-500">Khusus Pendaftar Luar Daerah</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Date and Time -->
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Tanggal Pelaksanaan</label>
+                  <input type="date" value="2025-01-25" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Waktu Sesi</label>
+                  <input type="time" value="08:30" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                </div>
+              </div>
+
+              <!-- Conditional: Ruangan (Offline) -->
+              <div id="field-offline">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Nomor Ruangan & Lokasi (Untuk Offline)
+                </label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">meeting_room</span>
+                  <input type="text" value="Lab Komputer CBT 1 (Lantai 2 Gedung Utama)" placeholder="Contoh: Ruang 204 CBT" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">Calon siswa harap hadir 15 menit sebelum waktu sesi.</p>
+              </div>
+
+              <!-- Conditional: Video Call Link (Online) -->
+              <div id="field-online" class="hidden">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Tautan Video Call (Google Meet / Zoom URL)
+                </label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">videocam</span>
+                  <input type="url" value="https://meet.google.com/muh-smp5-seleksi" placeholder="https://meet.google.com/xxx-xxxx-xxx" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20">
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1">Tautan akan dikirim otomatis ke nomor WhatsApp orang tua pendaftar luar kota.</p>
+              </div>
+
+              <!-- Submit -->
+              <div class="pt-2">
+                <button type="submit" class="w-full bg-primary hover:bg-primary-hover text-white py-2.5 rounded-lg font-bold text-sm shadow-md shadow-primary/20 flex items-center justify-center gap-2 transition">
+                  <span class="material-symbols-outlined text-[18px]">send</span>
+                  Simpan Jadwal & Kirim Undangan via WhatsApp
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Jadwal Terjadwal Mendatang Preview -->
+          <div class="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center justify-between">
+              <span>Sesi Seleksi Terdekat</span>
+              <span class="text-xs text-primary font-semibold">Lihat Kalender</span>
+            </h3>
+
+            <div class="space-y-3 flex-1">
+              <div class="p-3 rounded-lg border border-slate-200 bg-slate-50">
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-bold text-slate-900">Sabtu, 25 Jan 2025 • 08:30 WIB</span>
+                  <span class="bg-blue-100 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">OFFLINE CBT</span>
+                </div>
+                <p class="text-xs font-semibold text-slate-800">Aisyah Nur Salsabila</p>
+                <p class="text-[11px] text-slate-500">Ruang: Lab CBT 1 • Penguji: Ustzh. Fatimah</p>
+              </div>
+
+              <div class="p-3 rounded-lg border border-slate-200 bg-slate-50">
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-bold text-slate-900">Sabtu, 25 Jan 2025 • 10:00 WIB</span>
+                  <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded">ONLINE VC</span>
+                </div>
+                <p class="text-xs font-semibold text-slate-800">Fakhri Dwi Ramadhan (Luar Kota)</p>
+                <p class="text-[11px] text-slate-500">Google Meet • Penguji: Ust. Ahmad Fauzi</p>
+              </div>
+
+              <div class="p-3 rounded-lg border border-slate-200 bg-slate-50">
+                <div class="flex items-center justify-between text-xs mb-1">
+                  <span class="font-bold text-slate-900">Sabtu, 25 Jan 2025 • 13:00 WIB</span>
+                  <span class="bg-blue-100 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">OFFLINE CBT</span>
+                </div>
+                <p class="text-xs font-semibold text-slate-800">Muhammad Farhan Al-Ghifari</p>
+                <p class="text-[11px] text-slate-500">Ruang: Ruang 204 • Penguji: Ust. Burhanuddin</p>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+              <span class="text-xs text-slate-500">Total 184 pendaftar sudah memiliki jadwal resmi.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: INPUT HASIL TES SELEKSI             -->
+      <!-- ========================================== -->
+      <div id="tab3" class="tab-panel space-y-4">
+        <!-- Info Banner -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-2xl">menu_book</span>
+            <div>
+              <h4 class="text-xs md:text-sm font-bold text-slate-900">Format Penilaian Seleksi PPDB (Skala 0 - 100)</h4>
+              <p class="text-xs text-slate-600">Komponen: Baca-Tulis (Bobot 30%), BTQ Al-Qur'an (Bobot 40%), Hafalan Surat (Bobot 30%). Syarat Lulus: Nilai Akhir &ge; 70.</p>
+            </div>
+          </div>
+          <button onclick="showToast('Semua nilai tersimpan & status terbaharui!')" class="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition">
+            Simpan & Publikasikan Nilai
+          </button>
+        </div>
+
+        <!-- Score Entry Table -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <th class="p-4">No. Reg & Calon Siswa</th>
+                  <th class="p-4 w-36">Nilai Baca-Tulis (0-100)</th>
+                  <th class="p-4 w-36">Nilai BTQ (0-100)</th>
+                  <th class="p-4 w-36">Nilai Hafalan (0-100)</th>
+                  <th class="p-4 w-28 text-center">Rata-Rata</th>
+                  <th class="p-4 w-44">Status Seleksi</th>
+                  <th class="p-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs md:text-sm">
+                <!-- Siswa 1 (LULUS) -->
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-4">
+                    <span class="font-mono text-xs font-bold text-primary">REG-2025-0101</span>
+                    <p class="font-bold text-slate-900">Aisyah Nur Salsabila</p>
+                    <p class="text-[11px] text-slate-500">SD Muhammadiyah 01 • Jalur Tahfidz</p>
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="92" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="95" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="90" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4 text-center">
+                    <span class="inline-block px-2.5 py-1 rounded bg-blue-50 font-bold text-primary text-sm">92.3</span>
+                  </td>
+                  <td class="p-4">
+                    <select class="w-full bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold text-xs rounded-lg px-2.5 py-2">
+                      <option selected>LULUS</option>
+                      <option>PROSES</option>
+                      <option>TIDAK LULUS</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="showToast('Nilai Aisyah berhasil diperbarui')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-medium">Update</button>
+                  </td>
+                </tr>
+
+                <!-- Siswa 2 (LULUS) -->
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-4">
+                    <span class="font-mono text-xs font-bold text-primary">REG-2025-0102</span>
+                    <p class="font-bold text-slate-900">Muhammad Farhan Al-Ghifari</p>
+                    <p class="text-[11px] text-slate-500">MI Negeri 1 Tangerang • Jalur Reguler</p>
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="84" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="80" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="78" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4 text-center">
+                    <span class="inline-block px-2.5 py-1 rounded bg-blue-50 font-bold text-primary text-sm">80.6</span>
+                  </td>
+                  <td class="p-4">
+                    <select class="w-full bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold text-xs rounded-lg px-2.5 py-2">
+                      <option selected>LULUS</option>
+                      <option>PROSES</option>
+                      <option>TIDAK LULUS</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="showToast('Nilai Farhan berhasil diperbarui')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-medium">Update</button>
+                  </td>
+                </tr>
+
+                <!-- Siswa 3 (PROSES) -->
+                <tr class="hover:bg-slate-50/80 transition bg-amber-50/20">
+                  <td class="p-4">
+                    <span class="font-mono text-xs font-bold text-primary">REG-2025-0103</span>
+                    <p class="font-bold text-slate-900">Zahra Annisa Khairunnisa</p>
+                    <p class="text-[11px] text-slate-500">SDIT As-Syifa Karawaci • Jalur Prestasi</p>
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="88" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-white">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="" placeholder="Belum" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-amber-300 rounded font-bold text-center text-slate-800 bg-amber-50">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="" placeholder="Belum" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-amber-300 rounded font-bold text-center text-slate-800 bg-amber-50">
+                  </td>
+                  <td class="p-4 text-center">
+                    <span class="inline-block px-2.5 py-1 rounded bg-slate-100 font-medium text-slate-500 text-xs">-</span>
+                  </td>
+                  <td class="p-4">
+                    <select class="w-full bg-amber-50 border border-amber-300 text-amber-800 font-bold text-xs rounded-lg px-2.5 py-2">
+                      <option>LULUS</option>
+                      <option selected>PROSES</option>
+                      <option>TIDAK LULUS</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="showToast('Nilai parsial tersimpan')" class="text-xs bg-primary text-white hover:bg-primary-hover px-3 py-1.5 rounded font-medium">Simpan</button>
+                  </td>
+                </tr>
+
+                <!-- Siswa 4 (TIDAK LULUS) -->
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-4">
+                    <span class="font-mono text-xs font-bold text-primary">REG-2025-0099</span>
+                    <p class="font-bold text-slate-900">Dicky Bagas Permadi</p>
+                    <p class="text-[11px] text-slate-500">SDN Sukasari 4 • Jalur Reguler</p>
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="55" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="48" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4">
+                    <input type="number" value="50" min="0" max="100" class="w-24 px-2.5 py-1.5 border border-slate-300 rounded font-bold text-center text-slate-800 bg-slate-50">
+                  </td>
+                  <td class="p-4 text-center">
+                    <span class="inline-block px-2.5 py-1 rounded bg-rose-50 font-bold text-rose-600 text-sm">51.0</span>
+                  </td>
+                  <td class="p-4">
+                    <select class="w-full bg-rose-50 border border-rose-300 text-rose-800 font-bold text-xs rounded-lg px-2.5 py-2">
+                      <option>LULUS</option>
+                      <option>PROSES</option>
+                      <option selected>TIDAK LULUS</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <button onclick="showToast('Status TIDAK LULUS dikonfirmasi')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-medium">Update</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: PENEMPATAN KELAS & ROMBEL           -->
+      <!-- ========================================== -->
+      <div id="tab4" class="tab-panel space-y-6">
+        
+        <!-- WARNING ALERT LOGIC BANNER -->
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-xs flex items-start gap-3">
+          <span class="material-symbols-outlined text-amber-600 text-2xl mt-0.5">warning</span>
+          <div class="flex-1">
+            <h4 class="font-bold text-amber-900 text-sm">Aturan Kapasitas Maksimal Rombel (Maks. 30 Siswa / Kelas)</h4>
+            <p class="text-xs text-amber-800 mt-0.5">
+              Sesuai standar Permendikbud & Majelis Dikdasmen, tiap rombel dibatasi tepat 30 siswa. Sistem secara otomatis menonaktifkan opsi rombel dan menampilkan tanda <strong>"Kelas Penuh (30/30)"</strong> bila kuota tercapai.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3 ACTIVE CLASS CAPACITY CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          
+          <!-- Card Kelas 7A (28/30 - Hampir Penuh) -->
+          <div class="bg-white rounded-xl border-2 border-amber-400 p-5 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded">Rombel A</span>
+                <h3 class="text-xl font-extrabold text-slate-900 mt-1">Kelas 7A</h3>
+              </div>
+              <div class="text-right">
+                <span class="text-2xl font-black text-amber-600">28</span>
+                <span class="text-sm font-bold text-slate-400">/ 30</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-2.5 mb-3">
+              <div class="bg-amber-500 h-2.5 rounded-full" style="width: 93.3%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-100">
+              <span class="font-medium">Wali Kelas: Dra. Hj. Nurjanah</span>
+              <span class="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Sisa 2 Kursi</span>
+            </div>
+            <p class="text-[11px] text-amber-700 font-semibold mt-2">
+              ⚠️ Peringatan: Hampir mencapai kuota maksimal 30!
+            </p>
+          </div>
+
+          <!-- Card Kelas 7B (15/30 - Kuota Tersedia) -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Rombel B</span>
+                <h3 class="text-xl font-extrabold text-slate-900 mt-1">Kelas 7B</h3>
+              </div>
+              <div class="text-right">
+                <span class="text-2xl font-black text-primary">15</span>
+                <span class="text-sm font-bold text-slate-400">/ 30</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-2.5 mb-3">
+              <div class="bg-primary h-2.5 rounded-full" style="width: 50%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-100">
+              <span class="font-medium">Wali Kelas: Drs. H. Suwandi</span>
+              <span class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Sisa 15 Kursi</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">Status: Terbuka untuk pendaftar baru</p>
+          </div>
+
+          <!-- Card Kelas 7C (0/30 - Kosong) -->
+          <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded">Rombel C</span>
+                <h3 class="text-xl font-extrabold text-slate-900 mt-1">Kelas 7C</h3>
+              </div>
+              <div class="text-right">
+                <span class="text-2xl font-black text-slate-500">0</span>
+                <span class="text-sm font-bold text-slate-400">/ 30</span>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-2.5 mb-3">
+              <div class="bg-slate-300 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-100">
+              <span class="font-medium">Wali Kelas: Siti Maryam, S.Pd.</span>
+              <span class="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">Sisa 30 Kursi</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2">Status: Belum dimulai alokasi</p>
+          </div>
+        </div>
+
+        <!-- STUDENT ASSIGNMENT TABLE -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">Alokasi Siswa Lulus Seleksi ke Rombel</h3>
+              <p class="text-xs text-slate-500">Pilih rombel aktif untuk santri/siswa yang telah dinyatakan LULUS.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-slate-500">Simulasi Kondisi Penuh:</span>
+              <button onclick="toggleSimulasiPenuh()" id="btn-toggle-simulasi" class="text-xs font-bold px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 transition">
+                Kunci Kelas 7A (Simulasi 30/30)
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <th class="p-4">No. Pendaftaran</th>
+                  <th class="p-4">Nama Siswa & Jalur</th>
+                  <th class="p-4">Nilai Akhir</th>
+                  <th class="p-4">Status Seleksi</th>
+                  <th class="p-4 w-72">Penempatan Kelas (Dropdown Selector)</th>
+                  <th class="p-4 text-right">Status Penempatan</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 text-xs md:text-sm">
+                <!-- Siswa 1 -->
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0101</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Aisyah Nur Salsabila</p>
+                    <p class="text-xs text-slate-500">Tahfidz Quran • SD Muh 01</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-bold text-slate-900">92.3</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">
+                      LULUS
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <select class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs md:text-sm font-medium class-select">
+                      <option class="opt-7a" value="7A" selected>Kelas 7A (28/30 - Tersisa 2)</option>
+                      <option value="7B">Kelas 7B (15/30 - Tersisa 15)</option>
+                      <option value="7C">Kelas 7C (0/30 - Tersisa 30)</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                      <span class="material-symbols-outlined text-[14px]">done</span> Terdaftar di 7A
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Siswa 2 -->
+                <tr class="hover:bg-slate-50/80 transition">
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0102</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Muhammad Farhan Al-Ghifari</p>
+                    <p class="text-xs text-slate-500">Reguler • MI Negeri 1 Tangerang</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-bold text-slate-900">80.6</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">
+                      LULUS
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <select class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs md:text-sm font-medium class-select">
+                      <option class="opt-7a" value="7A">Kelas 7A (28/30 - Tersisa 2)</option>
+                      <option value="7B" selected>Kelas 7B (15/30 - Tersisa 15)</option>
+                      <option value="7C">Kelas 7C (0/30 - Tersisa 30)</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">
+                      <span class="material-symbols-outlined text-[14px]">done</span> Terdaftar di 7B
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Siswa 3 (Belum Alokasi) -->
+                <tr class="hover:bg-slate-50/80 transition bg-amber-50/20">
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0105</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Rizky Maulana Alamsyah</p>
+                    <p class="text-xs text-slate-500">Afirmasi • SD Muhammadiyah 2</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-bold text-slate-900">85.0</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">
+                      LULUS
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <select onchange="showToast('Rizky Maulana ditempatkan di ' + this.value)" class="w-full bg-white border-2 border-primary rounded-lg px-3 py-2 text-xs md:text-sm font-semibold text-primary class-select">
+                      <option value="" disabled selected>-- Pilih Kelas Penempatan --</option>
+                      <option class="opt-7a" value="Kelas 7A">Kelas 7A (28/30 - Tersisa 2)</option>
+                      <option value="Kelas 7B">Kelas 7B (15/30 - Tersisa 15)</option>
+                      <option value="Kelas 7C">Kelas 7C (0/30 - Tersisa 30)</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded">
+                      <span class="material-symbols-outlined text-[14px]">pending</span> Belum Dialokasikan
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Siswa 4 (Belum Alokasi) -->
+                <tr class="hover:bg-slate-50/80 transition bg-amber-50/20">
+                  <td class="p-4 font-mono font-bold text-primary">REG-2025-0106</td>
+                  <td class="p-4">
+                    <p class="font-bold text-slate-900">Nadira Putri Az-Zahra</p>
+                    <p class="text-xs text-slate-500">Reguler • SDN Poris Pelawad 1</p>
+                  </td>
+                  <td class="p-4">
+                    <span class="font-bold text-slate-900">79.5</span>
+                  </td>
+                  <td class="p-4">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">
+                      LULUS
+                    </span>
+                  </td>
+                  <td class="p-4">
+                    <select onchange="showToast('Nadira Putri ditempatkan di ' + this.value)" class="w-full bg-white border-2 border-primary rounded-lg px-3 py-2 text-xs md:text-sm font-semibold text-primary class-select">
+                      <option value="" disabled selected>-- Pilih Kelas Penempatan --</option>
+                      <option class="opt-7a" value="Kelas 7A">Kelas 7A (28/30 - Tersisa 2)</option>
+                      <option value="Kelas 7B">Kelas 7B (15/30 - Tersisa 15)</option>
+                      <option value="Kelas 7C">Kelas 7C (0/30 - Tersisa 30)</option>
+                    </select>
+                  </td>
+                  <td class="p-4 text-right">
+                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded">
+                      <span class="material-symbols-outlined text-[14px]">pending</span> Belum Dialokasikan
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL: PREVIEW PAYLOAD WHATSAPP KREDENSIAL -->
+  <div id="modal-wa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="bg-emerald-600 px-6 py-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="material-symbols-outlined text-2xl">chat</span>
+          <div>
+            <h3 id="modal-wa-title" class="font-bold text-sm">Automated WhatsApp Credential Payload</h3>
+            <p class="text-emerald-100 text-[11px]">Server: WhatsApp Engine API (BSI/WaCloud Gateway)</p>
+          </div>
+        </div>
+        <button onclick="closeWAModal()" class="text-white/80 hover:text-white">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div>
+            <p class="text-slate-400">Penerima (Wali):</p>
+            <p id="modal-wa-student" class="font-bold text-slate-800">Zahra Annisa Khairunnisa</p>
+          </div>
+          <div>
+            <p class="text-slate-400">Nomor WhatsApp:</p>
+            <p id="modal-wa-phone" class="font-bold font-mono text-emerald-700">+62 857-1940-2391</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Preview Format Pesan Resmi (Otomatis)</label>
+          <div class="bg-slate-900 text-emerald-400 font-mono text-xs p-4 rounded-xl space-y-1.5 leading-relaxed overflow-x-auto">
+            <p class="text-slate-300">Bismillah. Yth. Orang Tua/Wali Calon Siswa SMP Muhammadiyah 5 Kota Tangerang,</p>
+            <p class="text-slate-300">Pembayaran dan verifikasi berkas <span id="modal-wa-preview-name" class="text-yellow-400 font-bold">[Nama Siswa]</span> telah BERHASIL.</p>
+            <div class="p-2 bg-slate-800 rounded border border-slate-700 my-2 text-white">
+              <p>🌐 <strong>Portal Siswa:</strong> https://sims.smpmuh5tng.sch.id</p>
+              <p>👤 <strong>Username:</strong> <span id="modal-wa-username" class="text-emerald-400">zahra.annisa</span></p>
+              <p>🔑 <strong>Password:</strong> <span class="text-emerald-400">SMP5-MuH#2025!</span></p>
+            </div>
+            <p class="text-slate-400 text-[11px]">Silakan login untuk mengecek jadwal ujian seleksi & ruang tes.</p>
+            <p class="text-slate-400 text-[11px]">Panitia PPDB SMP Muhammadiyah 5 Kota Tangerang.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="check-kuitansi" checked class="rounded text-emerald-600 focus:ring-emerald-500">
+          <label for="check-kuitansi" class="text-xs text-slate-700 font-medium">Lampirkan PDF Bukti Pendaftaran Resmi dalam Lampiran Dokumen</label>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+        <button onclick="closeWAModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200 transition">
+          Batal
+        </button>
+        <button onclick="sendWAPayload()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md shadow-emerald-600/20 transition">
+          <span class="material-symbols-outlined text-[18px]">send</span>
+          Kirim Sekarang via Gateway
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-medium translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <span class="material-symbols-outlined text-emerald-400 text-[18px]">check_circle</span>
+    <span id="toast-msg">Operasi berhasil dilakukan.</span>
+  </div>
+
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      const activePanel = document.getElementById(tabId);
+      if (activePanel) activePanel.classList.add('active');
+
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // Toggle Mode Seleksi Offline / Online
+    function toggleTestMode(mode) {
+      const offlineField = document.getElementById('field-offline');
+      const onlineField = document.getElementById('field-online');
+      if (mode === 'offline') {
+        offlineField.classList.remove('hidden');
+        onlineField.classList.add('hidden');
+      } else {
+        offlineField.classList.add('hidden');
+        onlineField.classList.remove('hidden');
+      }
+    }
+
+    // Modal WA Helpers
+    function openWAPayloadModal(reg, name, phone, user, title) {
+      document.getElementById('modal-wa-title').innerText = title || "Kirim Kredensial WhatsApp";
+      document.getElementById('modal-wa-student').innerText = name + ' (' + reg + ')';
+      document.getElementById('modal-wa-phone').innerText = phone;
+      document.getElementById('modal-wa-preview-name').innerText = name;
+      document.getElementById('modal-wa-username').innerText = user;
+      document.getElementById('modal-wa').classList.remove('hidden');
+    }
+
+    function closeWAModal() {
+      document.getElementById('modal-wa').classList.add('hidden');
+    }
+
+    function sendWAPayload() {
+      closeWAModal();
+      showToast('Payload WhatsApp berhasil dikirim ke server gateway!');
+    }
+
+    // Toast
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      toastMsg.innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    // Toggle Simulasi Kelas 7A Penuh (30/30)
+    let isPenuh = false;
+    function toggleSimulasiPenuh() {
+      isPenuh = !isPenuh;
+      const options7A = document.querySelectorAll('.opt-7a');
+      const btnToggle = document.getElementById('btn-toggle-simulasi');
+
+      if (isPenuh) {
+        options7A.forEach(opt => {
+          opt.disabled = true;
+          opt.innerText = "Kelas 7A Penuh (30/30) — [Terkunci]";
+        });
+        btnToggle.innerText = "Buka Kunci Kelas 7A (28/30)";
+        btnToggle.className = "text-xs font-bold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition";
+        showToast('Peringatan: Kelas 7A telah PENUH (30/30). Opsi kelas dinonaktifkan otomatis.');
+      } else {
+        options7A.forEach(opt => {
+          opt.disabled = false;
+          opt.innerText = "Kelas 7A (28/30 - Tersisa 2)";
+        });
+        btnToggle.innerText = "Kunci Kelas 7A (Simulasi 30/30)";
+        btnToggle.className = "text-xs font-bold px-3 py-1.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 transition";
+        showToast('Kelas 7A dibuka kembali (28/30).');
+      }
+    }
+  </script>
+</body>
+</html>

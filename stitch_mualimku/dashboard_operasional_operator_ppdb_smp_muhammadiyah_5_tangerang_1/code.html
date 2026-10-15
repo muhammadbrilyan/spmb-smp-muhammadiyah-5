@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Operator PPDB - SMP Muhammadiyah 5 Kota Tangerang</title>
+<!-- Inter Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-on-surface": "#eaf1ff",
+            "surface-container-low": "#eff4ff",
+            "on-surface": "#0b1c30",
+            "on-secondary-container": "#00714d",
+            "on-primary-container": "#bbd0ff",
+            "on-tertiary-container": "#bcd0ff",
+            "secondary-container": "#6cf8bb",
+            "on-tertiary": "#ffffff",
+            "surface-tint": "#115cb9",
+            "on-primary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "secondary-fixed-dim": "#4edea3",
+            "tertiary-fixed": "#d8e2ff",
+            "tertiary-container": "#0055b8",
+            "on-tertiary-fixed-variant": "#004395",
+            "tertiary": "#003f8b",
+            "outline": "#727784",
+            "primary": "#003f87",
+            "surface-bright": "#f8f9ff",
+            "surface-container-highest": "#d3e4fe",
+            "on-primary-fixed": "#001a40",
+            "on-error": "#ffffff",
+            "surface": "#f8f9ff",
+            "on-error-container": "#93000a",
+            "outline-variant": "#c2c6d4",
+            "on-surface-variant": "#424752",
+            "on-secondary-fixed": "#002113",
+            "on-secondary-fixed-variant": "#005236",
+            "tertiary-fixed-dim": "#adc6ff",
+            "on-background": "#0b1c30",
+            "primary-container": "#0056b3",
+            "surface-variant": "#d3e4fe",
+            "on-primary-fixed-variant": "#004491",
+            "error": "#ba1a1a",
+            "surface-container-high": "#dce9ff",
+            "surface-dim": "#cbdbf5",
+            "inverse-surface": "#213145",
+            "secondary": "#006c49",
+            "primary-fixed": "#d7e2ff",
+            "secondary-fixed": "#6ffbbe",
+            "primary-fixed-dim": "#acc7ff",
+            "inverse-primary": "#acc7ff",
+            "on-secondary": "#ffffff",
+            "background": "#f8f9ff",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed": "#001a42",
+            "surface-container": "#e5eeff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "2rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.5rem",
+            "margin-mobile": "1rem",
+            "gutter": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xl": "2rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Inter"],
+            "headline-xl": ["Inter"],
+            "caption": ["Inter"],
+            "body-md": ["Inter"],
+            "label-md": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-sm": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "headline-lg-mobile": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"]
+          },
+          "fontSize": {
+            "headline-md": ["18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "caption": ["11px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+            "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "700" }],
+            "headline-lg-mobile": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 20px;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #eff4ff;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #c2c6d4;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased selection:bg-surface-variant selection:text-primary min-h-screen">
+<!-- SIDEBAR (Preserved Anchor Specs) -->
+<aside class="fixed inset-y-0 left-0 w-64 h-full flex flex-col bg-surface-container-lowest dark:bg-inverse-surface border-r border-outline-variant dark:border-outline shadow-sm dark:shadow-none z-40 justify-between p-4">
+<!-- Top Brand & Header -->
+<div class="flex flex-col gap-5">
+<div class="flex items-center gap-3 px-2 py-1">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-headline-lg font-bold shadow-sm ring-2 ring-primary/20">
+<span class="material-symbols-outlined text-white text-2xl" data-icon="school">school</span>
+</div>
+<div class="flex flex-col">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-inverse-primary leading-tight">SMP Muhammadiyah 5</span>
+<span class="text-caption font-caption text-on-surface-variant flex items-center gap-1.5 mt-0.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            SIMS &amp; PPDB Portal
+          </span>
+</div>
+</div>
+<!-- Action Button CTA -->
+<button class="w-full py-2.5 px-3 bg-primary-container text-white rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-tertiary-container active:scale-[0.99] transition-all duration-150 shadow-sm">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+        Pendaftaran Baru
+      </button>
+<!-- Navigation Tabs -->
+<nav class="flex flex-col gap-1 mt-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+          Dashboard
+        </a>
+<!-- PPDB & SPMB (Active Screen) -->
+<a class="flex items-center justify-between px-3 py-2.5 rounded-lg bg-surface-container-low dark:bg-surface-container-high text-primary dark:text-inverse-primary font-label-md text-label-md border-l-4 border-primary dark:border-inverse-primary" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary font-semibold" data-icon="how_to_reg">how_to_reg</span>
+            PPDB &amp; SPMB
+          </div>
+<span class="px-2 py-0.5 rounded-full text-caption font-caption bg-secondary/15 text-secondary font-bold">OPERATOR</span>
+</a>
+<!-- Data Siswa -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+          Data Siswa
+        </a>
+<!-- Akademik -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+          Akademik
+        </a>
+<!-- Keuangan & SPP -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+          Keuangan &amp; SPP
+        </a>
+<!-- Pengaturan Sistem -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container dark:hover:bg-surface-container-highest hover:text-on-surface dark:hover:text-inverse-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+          Pengaturan Sistem
+        </a>
+</nav>
+</div>
+<!-- Footer Tabs -->
+<div class="flex flex-col gap-1 border-t border-outline-variant/50 pt-3">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-inverse-on-surface font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+        Bantuan &amp; Panduan
+      </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-error font-label-md text-label-md hover:bg-error-container/40 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-error" data-icon="logout">logout</span>
+        Keluar
+      </a>
+</div>
+</aside>
+<!-- TOP NAVBAR (Preserved Anchor Specs + Operational Integration) -->
+<header class="h-16 flex items-center justify-between px-6 w-[calc(100%-16rem)] ml-64 bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline shadow-sm dark:shadow-none fixed top-0 z-30">
+<!-- Breadcrumb & Academic Term -->
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span>Portal Akademik</span>
+<span class="material-symbols-outlined text-outline text-base" data-icon="chevron_right">chevron_right</span>
+<span>PPDB &amp; SPMB</span>
+<span class="material-symbols-outlined text-outline text-base" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-semibold">Operasional Operator PPDB</span>
+</div>
+<div class="h-4 w-px bg-outline-variant"></div>
+<div class="flex items-center gap-2 px-2.5 py-1 rounded bg-surface-container-low border border-surface-container-highest text-primary text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-base" data-icon="calendar_month">calendar_month</span>
+<span class="font-semibold">T.A. 2025/2026</span>
+<span class="text-on-surface-variant font-normal">Gelombang 1</span>
+</div>
+</div>
+<!-- Actions, WA Gateway Status, & Profile -->
+<div class="flex items-center gap-5">
+<!-- WhatsApp Gateway Live Status -->
+<div class="hidden xl:flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-emerald-50/70 border border-emerald-200">
+<div class="relative flex items-center justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-ping absolute opacity-75"></span>
+</div>
+<div class="flex flex-col">
+<span class="text-caption font-caption text-secondary font-bold leading-none">WA Gateway Online</span>
+<span class="text-caption font-caption text-on-secondary-fixed-variant leading-none mt-0.5">98.4% Terkirim (BSI/WaCloud)</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Notifikasi" class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Notifikasi">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button aria-label="Bantuan" class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Bantuan">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<!-- Operator Profile -->
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-label-md ring-2 ring-primary/20">
+          RP
+        </div>
+<div class="flex flex-col">
+<span class="text-label-md font-label-md font-semibold text-on-surface leading-tight">Ust. M. Rizky Pratama, S.Pd.</span>
+<span class="text-caption font-caption text-on-surface-variant leading-tight">Operator PPDB &amp; SIMS</span>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN WORKSPACE -->
+<main class="ml-64 pt-20 p-8 min-h-screen flex flex-col gap-6 max-w-[1600px]">
+<!-- Header Halaman & Tombol Aksi Cepat -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline-variant/60">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">Dashboard Operasional &amp; Seleksi PPDB</h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">
+          Otomatisasi Kredensial Siswa, Penjadwalan Tes, Penilaian Seleksi, dan Alokasi Rombel 2025/2026.
+        </p>
+</div>
+<div class="flex items-center gap-3">
+<button class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-secondary text-secondary bg-white hover:bg-emerald-50 active:scale-95 transition-all font-label-md text-label-md shadow-sm" id="btn-blast-wa">
+<span class="material-symbols-outlined text-secondary" data-icon="send">send</span>
+          Kirim Blast WA Massal
+        </button>
+<button class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary-container text-white hover:bg-primary active:scale-95 transition-all font-label-md text-label-md shadow-sm">
+<span class="material-symbols-outlined text-white" data-icon="download">download</span>
+          Export Rekap Seleksi
+        </button>
+</div>
+</div>
+<!-- 2. RINGKASAN METRIK CEPAT (4 WIDGET KARTU) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+<!-- Widget 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/70 shadow-sm flex flex-col justify-between hover:border-outline transition-all">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-label-md font-label-md text-on-surface-variant">Akun Siswa Terbit</p>
+<h3 class="text-headline-xl font-headline-xl text-on-surface mt-1">215 <span class="text-label-md font-label-md font-normal text-on-surface-variant">/ 215</span></h3>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="badge">badge</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-container-high/60 flex items-center justify-between text-body-sm font-body-sm">
+<span class="inline-flex items-center gap-1.5 text-secondary font-semibold">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> 100% Siap Terverifikasi
+          </span>
+<span class="text-on-surface-variant">Kredensial Auto-Gen</span>
+</div>
+</div>
+<!-- Widget 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/70 shadow-sm flex flex-col justify-between hover:border-outline transition-all">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-label-md font-label-md text-on-surface-variant">Tes Terjadwal</p>
+<h3 class="text-headline-xl font-headline-xl text-on-surface mt-1">184 <span class="text-label-md font-label-md font-normal text-on-surface-variant">Calon Siswa</span></h3>
+</div>
+<div class="w-10 h-10 rounded-lg bg-blue-50 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="event_available">event_available</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-container-high/60 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span><strong class="text-on-surface font-semibold">142</strong> Offline Kampus</span>
+<span class="h-3 w-px bg-outline-variant"></span>
+<span><strong class="text-on-surface font-semibold">42</strong> Daring VC</span>
+</div>
+</div>
+<!-- Widget 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/70 shadow-sm flex flex-col justify-between hover:border-outline transition-all">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-label-md font-label-md text-on-surface-variant">Seleksi Selesai Dinilai</p>
+<h3 class="text-headline-xl font-headline-xl text-on-surface mt-1">146 <span class="text-label-md font-label-md font-normal text-on-surface-variant">Siswa</span></h3>
+</div>
+<div class="w-10 h-10 rounded-lg bg-emerald-50 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-container-high/60 flex items-center justify-between text-body-sm font-body-sm">
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-emerald-100 text-secondary font-bold">128 LULUS</span>
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-amber-100 text-amber-800 font-bold">18 PROSES</span>
+</div>
+</div>
+<!-- Widget 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/70 shadow-sm flex flex-col justify-between hover:border-outline transition-all">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-label-md font-label-md text-on-surface-variant">Penempatan Rombel</p>
+<h3 class="text-headline-xl font-headline-xl text-on-surface mt-1">43 <span class="text-label-md font-label-md font-normal text-on-surface-variant">/ 90 Kuota</span></h3>
+</div>
+<div class="w-10 h-10 rounded-lg bg-indigo-50 text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="group_add">group_add</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-surface-container-high/60 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span class="font-medium">3 Rombel Target (@30 Kursi)</span>
+<span class="text-secondary font-semibold">47.7% Terisi</span>
+</div>
+</div>
+</section>
+<!-- 3. SISTEM TAB NAVIGASI INTERAKTIF UTAMA (SHADCN PILL STYLE) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/70 p-2 shadow-sm flex flex-col gap-6">
+<div class="flex items-center gap-1 bg-surface-container-low p-1.5 rounded-lg border border-surface-container-highest/60 overflow-x-auto custom-scrollbar">
+<button class="tab-button flex-1 py-2.5 px-4 rounded-md font-label-md text-label-md text-primary font-semibold bg-white shadow-sm transition-all duration-150 flex items-center justify-center gap-2" id="tab-btn-1" onclick="switchTab(1)">
+<span class="material-symbols-outlined text-secondary" data-icon="send_and_archive">send_and_archive</span>
+          1. Manajemen Akun &amp; WA Gateway
+          <span class="w-2 h-2 rounded-full bg-secondary"></span>
+</button>
+<button class="tab-button flex-1 py-2.5 px-4 rounded-md font-label-md text-label-md text-on-surface-variant font-medium hover:text-on-surface hover:bg-white/60 transition-all duration-150 flex items-center justify-center gap-2" id="tab-btn-2" onclick="switchTab(2)">
+<span class="material-symbols-outlined" data-icon="calendar_add_on">calendar_add_on</span>
+          2. Penjadwalan Tes Seleksi
+        </button>
+<button class="tab-button flex-1 py-2.5 px-4 rounded-md font-label-md text-label-md text-on-surface-variant font-medium hover:text-on-surface hover:bg-white/60 transition-all duration-150 flex items-center justify-center gap-2" id="tab-btn-3" onclick="switchTab(3)">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+          3. Input Hasil Tes Seleksi
+        </button>
+<button class="tab-button flex-1 py-2.5 px-4 rounded-md font-label-md text-label-md text-on-surface-variant font-medium hover:text-on-surface hover:bg-white/60 transition-all duration-150 flex items-center justify-center gap-2" id="tab-btn-4" onclick="switchTab(4)">
+<span class="material-symbols-outlined" data-icon="meeting_room">meeting_room</span>
+          4. Penempatan Kelas &amp; Rombel
+        </button>
+</div>
+<!-- TAB PANELS WRAPPER -->
+<div class="p-2">
+<!-- ========================================== -->
+<!-- TAB 1: MANAJEMEN AKUN & WHATSAPP GATEWAY  -->
+<!-- ========================================== -->
+<div class="tab-panel flex flex-col gap-6" id="tab-panel-1">
+<!-- Gateway Status Card & Filter Toolbar -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+<div class="lg:col-span-2 flex items-center justify-between p-4 bg-emerald-50/60 border border-emerald-200 rounded-lg">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" data-icon="cloud_sync">cloud_sync</span>
+</div>
+<div>
+<h4 class="text-label-md font-label-md font-bold text-on-surface">Status Server: WhatsApp Engine Terhubung</h4>
+<p class="text-body-sm font-body-sm text-secondary font-medium">Endpoint: api.wacloud.smpm5tng.sch.id • Token Auth Valid (Latency 48ms)</p>
+</div>
+</div>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-secondary font-label-sm text-label-sm border border-emerald-300 font-semibold">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                Connected BSI/WaCloud API
+              </span>
+</div>
+<!-- Fast Stats -->
+<div class="flex items-center justify-around p-4 bg-surface-container-low rounded-lg border border-surface-container-highest">
+<div class="text-center">
+<p class="text-caption font-caption text-on-surface-variant">Kuotasi Pesan Bulan Ini</p>
+<p class="text-headline-md font-headline-md text-primary font-bold">1.250 / 5.000</p>
+</div>
+<div class="h-8 w-px bg-outline-variant"></div>
+<div class="text-center">
+<p class="text-caption font-caption text-on-surface-variant">Tingkat Pengiriman</p>
+<p class="text-headline-md font-headline-md text-secondary font-bold">99.2% Sukses</p>
+</div>
+</div>
+</div>
+<!-- Controls: Search & Batch Action -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+<div class="relative w-full sm:w-80">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-base" data-icon="search">search</span>
+<input class="w-full h-10 pl-9 pr-3 rounded-lg border border-outline-variant bg-white text-body-md font-body-md placeholder:text-outline focus:border-primary-container focus:ring-2 focus:ring-primary-container/20" placeholder="Cari No. REG, Nama Siswa, Sekolah..." type="text"/>
+</div>
+<div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+<button class="h-10 px-4 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md border border-outline-variant/70 flex items-center gap-2 transition-all" onclick="alert('Memproses pembuatan kredensial SIMS massal untuk seluruh siswa yang terpilih...')">
+<span class="material-symbols-outlined text-base" data-icon="vpn_key">vpn_key</span>
+                Generate Semua Akun
+              </button>
+<button class="h-10 px-4 rounded-lg bg-secondary text-white font-label-md text-label-md flex items-center gap-2 hover:bg-on-secondary-container transition-all shadow-sm" onclick="triggerPayloadPreview('REG-2025-0101', 'Aisyah Nur Salsabila', '+62 812-9943-1102')">
+<span class="material-symbols-outlined text-base" data-icon="send">send</span>
+                Kirim WA Terpilih
+              </button>
+</div>
+</div>
+<!-- Tabel Siswa Terverifikasi -->
+<div class="overflow-x-auto rounded-lg border border-outline-variant/80">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">
+<th class="p-3 w-10 text-center"><input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/></th>
+<th class="p-3">No. Pendaftaran</th>
+<th class="p-3">Nama Calon Siswa &amp; Asal Sekolah</th>
+<th class="p-3">WhatsApp Wali Santri</th>
+<th class="p-3">Status Akun</th>
+<th class="p-3">Status Notifikasi WA</th>
+<th class="p-3 text-right">Aksi Operator</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 text-body-md font-body-md text-on-surface">
+<!-- Baris 1 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 text-center"><input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/></td>
+<td class="p-3 font-semibold text-primary">REG-2025-0101</td>
+<td class="p-3">
+<div class="font-semibold text-on-surface">Aisyah Nur Salsabila</div>
+<div class="text-caption font-caption text-on-surface-variant">SD Muhammadiyah 01 Tangerang • Jalur Tahfidz</div>
+</td>
+<td class="p-3 font-mono text-body-sm">+62 812-9943-1102</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-caption font-caption bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Aktif
+                    </span>
+</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-secondary font-medium">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="done_all">done_all</span> Terkirim (08:30 WIB)
+                    </span>
+</td>
+<td class="p-3 text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 text-secondary border border-emerald-200 hover:bg-emerald-100 font-label-sm text-label-sm transition-all" onclick="triggerPayloadPreview('REG-2025-0101', 'Aisyah Nur Salsabila', '+62 812-9943-1102')" title="Kirim Ulang Kredensial">
+<span class="material-symbols-outlined text-base" data-icon="chat">chat</span> Kirim Kredensial
+                    </button>
+</td>
+</tr>
+<!-- Baris 2 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 text-center"><input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/></td>
+<td class="p-3 font-semibold text-primary">REG-2025-0102</td>
+<td class="p-3">
+<div class="font-semibold text-on-surface">Muhammad Farhan Al-Ghifari</div>
+<div class="text-caption font-caption text-on-surface-variant">MI Negeri 1 Tangerang • Jalur Reguler</div>
+</td>
+<td class="p-3 font-mono text-body-sm">+62 813-8821-4099</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-caption font-caption bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Aktif
+                    </span>
+</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-secondary font-medium">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="done_all">done_all</span> Terkirim (08:35 WIB)
+                    </span>
+</td>
+<td class="p-3 text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 text-secondary border border-emerald-200 hover:bg-emerald-100 font-label-sm text-label-sm transition-all" onclick="triggerPayloadPreview('REG-2025-0102', 'Muhammad Farhan Al-Ghifari', '+62 813-8821-4099')">
+<span class="material-symbols-outlined text-base" data-icon="chat">chat</span> Kirim Kredensial
+                    </button>
+</td>
+</tr>
+<!-- Baris 3 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 text-center"><input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/></td>
+<td class="p-3 font-semibold text-primary">REG-2025-0103</td>
+<td class="p-3">
+<div class="font-semibold text-on-surface">Zahra Annisa Khairunnisa</div>
+<div class="text-caption font-caption text-on-surface-variant">SDIT As-Syifa Karawaci • Jalur Prestasi</div>
+</td>
+<td class="p-3 font-mono text-body-sm">+62 857-1940-2391</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-caption font-caption bg-amber-50 text-amber-800 border border-amber-300 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Belum Dibuat
+                    </span>
+</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-amber-800 font-medium">
+<span class="material-symbols-outlined text-sm text-amber-600" data-icon="schedule">schedule</span> Antrean Antarmuka
+                    </span>
+</td>
+<td class="p-3 text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-white hover:bg-primary-container font-label-sm text-label-sm transition-all" onclick="generateAndSend('REG-2025-0103', 'Zahra Annisa Khairunnisa', '+62 857-1940-2391')">
+<span class="material-symbols-outlined text-base" data-icon="key">key</span> Buat &amp; Kirim WA
+                    </button>
+</td>
+</tr>
+<!-- Baris 4 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 text-center"><input class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/></td>
+<td class="p-3 font-semibold text-primary">REG-2025-0104</td>
+<td class="p-3">
+<div class="font-semibold text-on-surface">Bilal Dwi Kurniawan</div>
+<div class="text-caption font-caption text-on-surface-variant">SD Negeri Cikokol 3 • Jalur Reguler</div>
+</td>
+<td class="p-3 font-mono text-body-sm">+62 821-4478-9012</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-caption font-caption bg-amber-50 text-amber-800 border border-amber-300 font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Belum Dibuat
+                    </span>
+</td>
+<td class="p-3">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-amber-800 font-medium">
+<span class="material-symbols-outlined text-sm text-amber-600" data-icon="schedule">schedule</span> Antrean Antarmuka
+                    </span>
+</td>
+<td class="p-3 text-right">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-white hover:bg-primary-container font-label-sm text-label-sm transition-all" onclick="generateAndSend('REG-2025-0104', 'Bilal Dwi Kurniawan', '+62 821-4478-9012')">
+<span class="material-symbols-outlined text-base" data-icon="key">key</span> Buat &amp; Kirim WA
+                    </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- TAB 2: PENJADWALAN TES SELEKSI              -->
+<!-- ========================================== -->
+<div class="tab-panel hidden flex flex-col gap-6" id="tab-panel-2">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- Card Form Penjadwalan Tes (7 Cols) -->
+<div class="lg:col-span-7 bg-white rounded-xl border border-outline-variant p-6 shadow-sm flex flex-col gap-5">
+<div class="border-b border-outline-variant/60 pb-3">
+<h3 class="text-headline-md font-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="event">event</span>
+                  Formulir Penjadwalan Tes Calon Siswa
+                </h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Atur jadwal tes CBT/BTQ dan otomatis kirimkan kartu tes ke WhatsApp orang tua.</p>
+</div>
+<form class="flex flex-col gap-4" onsubmit="handleScheduleSubmit(event)">
+<!-- Dropdown Pilih Siswa -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface font-semibold mb-1.5">Pilih Calon Siswa (Belum Terjadwal)</label>
+<div class="relative">
+<select class="w-full h-11 px-3 border border-outline-variant rounded-lg bg-white text-body-md font-body-md focus:border-primary-container focus:ring-2 focus:ring-primary-container/20">
+<option value="REG-2025-0105">REG-2025-0105 - Fatih Ahmad Syakir (SDIT Al-Ittihad)</option>
+<option value="REG-2025-0106">REG-2025-0106 - Maryam Salima Azzahra (SD Muhammadiyah 2 Tangerang)</option>
+<option value="REG-2025-0107">REG-2025-0107 - Rayhan Pratama (SD Negeri Tangerang 06)</option>
+<option value="REG-2025-0108">REG-2025-0108 - Nabila Putri Kirana (MI Nurul Falah)</option>
+</select>
+</div>
+</div>
+<!-- Mode Tes (Radio Pill) -->
+<div>
+<label class="block text-label-md font-label-md text-on-surface font-semibold mb-1.5">Mode Pelaksanaan Tes Seleksi</label>
+<div class="grid grid-cols-2 gap-3">
+<label class="flex items-center gap-3 p-3 rounded-lg border-2 border-primary bg-surface-container-low cursor-pointer mode-pill" id="label-mode-offline">
+<input checked="" class="text-primary focus:ring-primary" name="test-mode" onchange="toggleTestMode('offline')" type="radio" value="offline"/>
+<div>
+<div class="font-label-md font-label-md font-bold text-primary">Tatap Muka / Offline</div>
+<div class="text-caption font-caption text-on-surface-variant">Hadir di Kampus SMPM 5 Tangerang</div>
+</div>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg border border-outline-variant bg-white cursor-pointer mode-pill" id="label-mode-online">
+<input class="text-primary focus:ring-primary" name="test-mode" onchange="toggleTestMode('online')" type="radio" value="online"/>
+<div>
+<div class="font-label-md font-label-md font-bold text-on-surface">Video Call / Daring</div>
+<div class="text-caption font-caption text-on-surface-variant">Khusus Calon Siswa Luar Daerah / Sakit</div>
+</div>
+</label>
+</div>
+</div>
+<!-- Tanggal & Jam -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface font-medium mb-1">Tanggal Pelaksanaan</label>
+<input class="w-full h-10 px-3 border border-outline-variant rounded-lg text-body-md font-body-md focus:border-primary-container" type="date" value="2025-05-18"/>
+</div>
+<div>
+<label class="block text-label-sm font-label-sm text-on-surface font-medium mb-1">Waktu Sesi (WIB)</label>
+<select class="w-full h-10 px-3 border border-outline-variant rounded-lg bg-white text-body-md font-body-md focus:border-primary-container">
+<option>Sesi 1: 08:00 - 09:30 WIB</option>
+<option>Sesi 2: 09:45 - 11:15 WIB</option>
+<option>Sesi 3: 13:00 - 14:30 WIB</option>
+<option>Sesi 4: 15:00 - 16:30 WIB</option>
+</select>
+</div>
+</div>
+<!-- Kondisional Field: Ruang Offline -->
+<div id="field-offline-container">
+<label class="block text-label-sm font-label-sm text-on-surface font-medium mb-1">Alokasi Ruang Tes Kampus</label>
+<select class="w-full h-10 px-3 border border-outline-variant rounded-lg bg-white text-body-md font-body-md focus:border-primary-container">
+<option>Lab Komputer CBT 1 (Kapasitas Sisa: 12 Kursi)</option>
+<option>Lab Komputer CBT 2 (Kapasitas Sisa: 8 Kursi)</option>
+<option>Ruang Wawancara BTQ - Gedung KH. Ahmad Dahlan Lt. 2</option>
+<option>Ruang Multi-Audio 203</option>
+</select>
+</div>
+<!-- Kondisional Field: Tautan Online (Hidden by default) -->
+<div class="hidden" id="field-online-container">
+<label class="block text-label-sm font-label-sm text-on-surface font-medium mb-1">Tautan Video Call (Google Meet / Zoom)</label>
+<input class="w-full h-10 px-3 border border-outline-variant rounded-lg text-body-md font-body-md font-mono focus:border-primary-container" type="url" value="https://meet.google.com/qpx-tmuw-mhy"/>
+<p class="text-caption font-caption text-secondary mt-1">Tautan ini otomatis dipasang pada payload pesan WA undangan.</p>
+</div>
+<!-- Submit Button -->
+<div class="pt-2">
+<button class="w-full h-11 bg-primary text-white rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 hover:bg-primary-container transition-all shadow-sm" type="submit">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+                    Simpan Jadwal &amp; Kirim Undangan WA
+                  </button>
+</div>
+</form>
+</div>
+<!-- Mini Jadwal Terdekat (5 Cols) -->
+<div class="lg:col-span-5 bg-surface-container-lowest rounded-xl border border-outline-variant p-5 shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+<h4 class="text-label-md font-label-md font-bold text-on-surface">Jadwal Sesi Terdekat Hari Ini</h4>
+<span class="text-caption font-caption text-secondary font-bold px-2 py-0.5 rounded bg-secondary/15">Sesi Berlangsung</span>
+</div>
+<!-- List Cards -->
+<div class="flex flex-col gap-3">
+<div class="p-3 rounded-lg border border-outline-variant/70 bg-surface-bright flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary-fixed text-primary flex items-center justify-center font-bold text-body-sm">
+                      08:00
+                    </div>
+<div>
+<h5 class="text-label-sm font-label-sm font-bold text-on-surface">Ahmad Zaky Mubarak</h5>
+<p class="text-caption font-caption text-on-surface-variant">Lab CBT 1 • CBT &amp; Tes BTQ</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-emerald-100 text-secondary font-semibold">Hadir</span>
+</div>
+<div class="p-3 rounded-lg border border-outline-variant/70 bg-surface-bright flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary-fixed text-primary flex items-center justify-center font-bold text-body-sm">
+                      09:45
+                    </div>
+<div>
+<h5 class="text-label-sm font-label-sm font-bold text-on-surface">Syifa Maulida Rahma</h5>
+<p class="text-caption font-caption text-on-surface-variant">Online VC (Google Meet)</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-blue-100 text-primary font-semibold">Terkonfirmasi</span>
+</div>
+<div class="p-3 rounded-lg border border-outline-variant/70 bg-surface-bright flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container text-on-surface-variant flex items-center justify-center font-bold text-body-sm">
+                      13:00
+                    </div>
+<div>
+<h5 class="text-label-sm font-label-sm font-bold text-on-surface">Rizky Maulana Ihsan</h5>
+<p class="text-caption font-caption text-on-surface-variant">Lab CBT 2 • Tes Akademik</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-amber-100 text-amber-800 font-semibold">Menunggu</span>
+</div>
+</div>
+<!-- Quick note -->
+<div class="p-3 rounded-lg bg-surface-container-low border border-surface-container-highest text-body-sm font-body-sm text-on-surface-variant flex items-start gap-2 mt-2">
+<span class="material-symbols-outlined text-primary text-base mt-0.5" data-icon="info">info</span>
+<span>Calon siswa menerima QR Code kartu tes langsung via WA saat jadwal disimpan.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- TAB 3: INPUT HASIL TES SELEKSI              -->
+<!-- ========================================== -->
+<div class="tab-panel hidden flex flex-col gap-6" id="tab-panel-3">
+<div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface">Tabel Penilaian Seleksi Masuk</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Input nilai Baca-Tulis, BTQ (Al-Qur'an), dan Tahfidz. Nilai akhir dihitung otomatis secara realtime.</p>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Standar Kelulusan (KKM): <strong class="text-on-surface">75.00</strong></span>
+<button class="h-10 px-4 rounded-lg bg-secondary text-white font-label-md text-label-md flex items-center gap-2 hover:bg-on-secondary-container transition-all shadow-sm" onclick="saveAndPublishResults()">
+<span class="material-symbols-outlined text-base" data-icon="cloud_upload">cloud_upload</span>
+                Simpan Nilai &amp; Publikasikan Hasil
+              </button>
+</div>
+</div>
+<!-- Tabel Penilaian -->
+<div class="overflow-x-auto rounded-lg border border-outline-variant/80">
+<table class="w-full text-left border-collapse" id="grading-table">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">
+<th class="p-3 w-44">No. Reg &amp; Nama Siswa</th>
+<th class="p-3 w-32">Baca-Tulis (0-100)</th>
+<th class="p-3 w-32">BTQ Qur'an (0-100)</th>
+<th class="p-3 w-32">Hafalan / Tahfidz</th>
+<th class="p-3 w-28 text-center">Nilai Rata-rata</th>
+<th class="p-3 w-36">Status Keputusan</th>
+<th class="p-3 text-right">Catatan Penguji</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 text-body-md font-body-md">
+<!-- Row 1 -->
+<tr class="grade-row hover:bg-surface-bright transition-colors" data-id="1">
+<td class="p-3">
+<span class="text-label-sm font-label-sm text-primary font-bold">REG-2025-0101</span>
+<div class="font-semibold text-on-surface">Aisyah Nur Salsabila</div>
+</td>
+<td class="p-3">
+<input class="input-bt w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(1)" type="number" value="92"/>
+</td>
+<td class="p-3">
+<input class="input-btq w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(1)" type="number" value="96"/>
+</td>
+<td class="p-3">
+<input class="input-tahfidz w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(1)" type="number" value="94"/>
+</td>
+<td class="p-3 text-center">
+<span class="row-avg text-label-md font-label-md font-bold text-secondary">94.00</span>
+</td>
+<td class="p-3">
+<select class="status-select w-full h-9 px-2 border border-outline-variant rounded font-label-sm text-label-sm text-emerald-800 bg-emerald-50 font-bold focus:border-primary-container">
+<option selected="" value="LULUS">LULUS</option>
+<option value="PROSES">PROSES</option>
+<option value="TIDAK LULUS">TIDAK LULUS</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<input class="w-full text-right bg-transparent border-0 text-caption font-caption text-on-surface-variant focus:ring-0" type="text" value="Tajwid makhraj fasih, hafal Juz 30 mutqin"/>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="grade-row hover:bg-surface-bright transition-colors" data-id="2">
+<td class="p-3">
+<span class="text-label-sm font-label-sm text-primary font-bold">REG-2025-0102</span>
+<div class="font-semibold text-on-surface">Muhammad Farhan Al-Ghifari</div>
+</td>
+<td class="p-3">
+<input class="input-bt w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(2)" type="number" value="88"/>
+</td>
+<td class="p-3">
+<input class="input-btq w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(2)" type="number" value="85"/>
+</td>
+<td class="p-3">
+<input class="input-tahfidz w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(2)" type="number" value="82"/>
+</td>
+<td class="p-3 text-center">
+<span class="row-avg text-label-md font-label-md font-bold text-secondary">85.00</span>
+</td>
+<td class="p-3">
+<select class="status-select w-full h-9 px-2 border border-outline-variant rounded font-label-sm text-label-sm text-emerald-800 bg-emerald-50 font-bold focus:border-primary-container">
+<option selected="" value="LULUS">LULUS</option>
+<option value="PROSES">PROSES</option>
+<option value="TIDAK LULUS">TIDAK LULUS</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<input class="w-full text-right bg-transparent border-0 text-caption font-caption text-on-surface-variant focus:ring-0" type="text" value="Potensi akademik sangat baik di logika umum"/>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="grade-row hover:bg-surface-bright transition-colors" data-id="3">
+<td class="p-3">
+<span class="text-label-sm font-label-sm text-primary font-bold">REG-2025-0103</span>
+<div class="font-semibold text-on-surface">Zahra Annisa Khairunnisa</div>
+</td>
+<td class="p-3">
+<input class="input-bt w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(3)" type="number" value="78"/>
+</td>
+<td class="p-3">
+<input class="input-btq w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(3)" type="number" value="74"/>
+</td>
+<td class="p-3">
+<input class="input-tahfidz w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(3)" type="number" value="70"/>
+</td>
+<td class="p-3 text-center">
+<span class="row-avg text-label-md font-label-md font-bold text-amber-600">74.00</span>
+</td>
+<td class="p-3">
+<select class="status-select w-full h-9 px-2 border border-outline-variant rounded font-label-sm text-label-sm text-amber-800 bg-amber-50 font-bold focus:border-primary-container">
+<option value="LULUS">LULUS</option>
+<option selected="" value="PROSES">PROSES</option>
+<option value="TIDAK LULUS">TIDAK LULUS</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<input class="w-full text-right bg-transparent border-0 text-caption font-caption text-on-surface-variant focus:ring-0" type="text" value="Perlu matrikulasi tartil surat pendek"/>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="grade-row hover:bg-surface-bright transition-colors" data-id="4">
+<td class="p-3">
+<span class="text-label-sm font-label-sm text-primary font-bold">REG-2025-0104</span>
+<div class="font-semibold text-on-surface">Bilal Dwi Kurniawan</div>
+</td>
+<td class="p-3">
+<input class="input-bt w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(4)" type="number" value="62"/>
+</td>
+<td class="p-3">
+<input class="input-btq w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(4)" type="number" value="60"/>
+</td>
+<td class="p-3">
+<input class="input-tahfidz w-24 h-9 px-2 text-center border border-outline-variant rounded font-semibold text-on-surface focus:border-primary-container" max="100" min="0" oninput="calculateRow(4)" type="number" value="58"/>
+</td>
+<td class="p-3 text-center">
+<span class="row-avg text-label-md font-label-md font-bold text-error">60.00</span>
+</td>
+<td class="p-3">
+<select class="status-select w-full h-9 px-2 border border-outline-variant rounded font-label-sm text-label-sm text-error bg-error-container/40 font-bold focus:border-primary-container">
+<option value="LULUS">LULUS</option>
+<option value="PROSES">PROSES</option>
+<option selected="" value="TIDAK LULUS">TIDAK LULUS</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<input class="w-full text-right bg-transparent border-0 text-caption font-caption text-on-surface-variant focus:ring-0" type="text" value="Di bawah ambang batas minimal kemampuan membaca"/>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- ========================================== -->
+<!-- TAB 4: PENEMPATAN KELAS & ROMBEL            -->
+<!-- ========================================== -->
+<div class="tab-panel hidden flex flex-col gap-6" id="tab-panel-4">
+<!-- Ringkasan Rombel Kapasitas Aktif (Target 90 Siswa) -->
+<div>
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface">Distribusi Kapasitas Rombel Kelas 7 (T.A. 2025/2026)</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Kapasitas maksimal 30 peserta didik per rombel sesuai standar sarana Muhammadiyah.</p>
+</div>
+<span class="text-label-sm font-label-sm px-3 py-1 rounded-full bg-surface-container text-primary font-bold">
+                Total Kursi Terisi: 43 / 90
+              </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<!-- Card Kelas 7A (Hampir Penuh: 28/30) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-5 shadow-sm relative overflow-hidden">
+<div class="flex items-start justify-between">
+<div>
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-amber-100 text-amber-800 font-bold uppercase">Hampir Penuh</span>
+<h4 class="text-headline-lg font-headline-lg font-bold text-on-surface mt-1">Kelas 7A</h4>
+<p class="text-caption font-caption text-on-surface-variant">Wali Kelas: Dra. Hj. Nurjanah</p>
+</div>
+<div class="text-right">
+<span class="text-headline-md font-headline-md font-bold text-amber-700">28</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">/ 30 Siswa</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="mt-4">
+<div class="w-full h-2.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-amber-500 h-full rounded-full transition-all duration-300" style="width: 93.3%;"></div>
+</div>
+<div class="flex justify-between text-caption font-caption text-on-surface-variant mt-1.5 font-medium">
+<span>93.3% Kapasitas</span>
+<span class="text-amber-700 font-bold">Sisa 2 Kursi</span>
+</div>
+</div>
+</div>
+<!-- Card Kelas 7B (15/30) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-5 shadow-sm">
+<div class="flex items-start justify-between">
+<div>
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-blue-100 text-primary font-bold uppercase">Tersedia</span>
+<h4 class="text-headline-lg font-headline-lg font-bold text-on-surface mt-1">Kelas 7B</h4>
+<p class="text-caption font-caption text-on-surface-variant">Wali Kelas: Ahmad Fauzan, M.Pd.</p>
+</div>
+<div class="text-right">
+<span class="text-headline-md font-headline-md font-bold text-primary">15</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">/ 30 Siswa</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="w-full h-2.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 50%;"></div>
+</div>
+<div class="flex justify-between text-caption font-caption text-on-surface-variant mt-1.5 font-medium">
+<span>50.0% Kapasitas</span>
+<span class="text-primary font-bold">Tersedia 15 Kursi</span>
+</div>
+</div>
+</div>
+<!-- Card Kelas 7C (0/30) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-5 shadow-sm">
+<div class="flex items-start justify-between">
+<div>
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-emerald-100 text-secondary font-bold uppercase">Kosong Siap Pakai</span>
+<h4 class="text-headline-lg font-headline-lg font-bold text-on-surface mt-1">Kelas 7C</h4>
+<p class="text-caption font-caption text-on-surface-variant">Wali Kelas: Siti Musdalifah, S.Ag.</p>
+</div>
+<div class="text-right">
+<span class="text-headline-md font-headline-md font-bold text-secondary">0</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">/ 30 Siswa</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="w-full h-2.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 0%;"></div>
+</div>
+<div class="flex justify-between text-caption font-caption text-on-surface-variant mt-1.5 font-medium">
+<span>0.0% Terisi</span>
+<span class="text-secondary font-bold">Tersedia 30 Kursi</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Peringatan Kapasitas Ambang Penuh -->
+<div class="mt-4 p-3.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 flex items-center justify-between" id="capacity-warning-banner">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-amber-600 text-xl" data-icon="warning">warning</span>
+<span class="text-body-sm font-body-sm">
+<strong>Peringatan Alokasi Rombel:</strong> Kelas 7A saat ini terisi 28/30. Sistem otomatis mengunci pilihan kelas 7A jika kapasitas mencapai 30/30 dan mengalihkan alokasi otomatis ke Kelas 7B atau Kelas 7C.
+                </span>
+</div>
+<button aria-label="Tutup Peringatan" class="text-amber-700 hover:text-amber-900" onclick="document.getElementById('capacity-warning-banner').style.display='none'">
+<span class="material-symbols-outlined text-base" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Student Assignment Table (Siswa Berstatus LULUS) -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h4 class="text-headline-md font-headline-md text-on-surface">Penempatan Siswa LULUS ke Rombel</h4>
+<div class="flex items-center gap-2">
+<span class="text-caption font-caption text-on-surface-variant">Tampilkan:</span>
+<span class="px-2 py-1 rounded bg-surface-container text-caption font-caption font-bold text-primary">Jalur Tahfidz &amp; Prestasi Diberi Prioritas</span>
+</div>
+</div>
+<div class="overflow-x-auto rounded-lg border border-outline-variant/80">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">
+<th class="p-3">No. Pendaftaran</th>
+<th class="p-3">Nama Calon Siswa Lulus</th>
+<th class="p-3 text-center">Nilai Akhir Seleksi</th>
+<th class="p-3">Jalur Masuk</th>
+<th class="p-3 w-64">Alokasi Penempatan Kelas</th>
+<th class="p-3 text-right">Status Konfirmasi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 text-body-md font-body-md">
+<!-- Siswa 1 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 font-semibold text-primary">REG-2025-0101</td>
+<td class="p-3">
+<div class="font-bold text-on-surface">Aisyah Nur Salsabila</div>
+<div class="text-caption font-caption text-on-surface-variant">NISN: 0118942001 • SD Muhammadiyah 01 Tangerang</div>
+</td>
+<td class="p-3 text-center">
+<span class="px-2.5 py-1 rounded font-bold text-secondary bg-emerald-50 border border-emerald-200">94.00</span>
+</td>
+<td class="p-3">
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-purple-100 text-purple-900 font-bold">Tahfidz Unggulan</span>
+</td>
+<td class="p-3">
+<select class="w-full h-10 px-3 border border-outline-variant rounded-lg bg-white text-label-sm font-label-sm font-medium focus:border-primary-container">
+<option selected="" value="7A">Kelas 7A (Sisa 2 Kursi)</option>
+<option value="7B">Kelas 7B (Sisa 15 Kursi)</option>
+<option value="7C">Kelas 7C (Sisa 30 Kursi)</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-secondary font-bold">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span> Terplot di 7A
+                      </span>
+</td>
+</tr>
+<!-- Siswa 2 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 font-semibold text-primary">REG-2025-0102</td>
+<td class="p-3">
+<div class="font-bold text-on-surface">Muhammad Farhan Al-Ghifari</div>
+<div class="text-caption font-caption text-on-surface-variant">NISN: 0117823902 • MI Negeri 1 Tangerang</div>
+</td>
+<td class="p-3 text-center">
+<span class="px-2.5 py-1 rounded font-bold text-secondary bg-emerald-50 border border-emerald-200">85.00</span>
+</td>
+<td class="p-3">
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-blue-100 text-primary font-bold">Reguler</span>
+</td>
+<td class="p-3">
+<select class="w-full h-10 px-3 border border-outline-variant rounded-lg bg-white text-label-sm font-label-sm font-medium focus:border-primary-container">
+<option value="7A">Kelas 7A (Sisa 2 Kursi)</option>
+<option selected="" value="7B">Kelas 7B (Sisa 15 Kursi)</option>
+<option value="7C">Kelas 7C (Sisa 30 Kursi)</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-secondary font-bold">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span> Terplot di 7B
+                      </span>
+</td>
+</tr>
+<!-- Siswa 3 (Simulasi Kelas Penuh Terkunci) -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 font-semibold text-primary">REG-2025-0109</td>
+<td class="p-3">
+<div class="font-bold text-on-surface">Danendra Arya Bimasena</div>
+<div class="text-caption font-caption text-on-surface-variant">NISN: 0116639110 • SD Negeri Sukasari 4</div>
+</td>
+<td class="p-3 text-center">
+<span class="px-2.5 py-1 rounded font-bold text-secondary bg-emerald-50 border border-emerald-200">82.50</span>
+</td>
+<td class="p-3">
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-amber-100 text-amber-900 font-bold">Prestasi Olahraga</span>
+</td>
+<td class="p-3">
+<select class="w-full h-10 px-3 border border-outline-variant rounded-lg bg-white text-label-sm font-label-sm font-medium focus:border-primary-container">
+<option class="text-outline bg-gray-100" disabled="" value="">Kelas 7A - Penuh (Terkunci)</option>
+<option selected="" value="7B">Kelas 7B (Sisa 15 Kursi)</option>
+<option value="7C">Kelas 7C (Sisa 30 Kursi)</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<button class="px-3 py-1 rounded bg-primary text-white text-label-sm font-label-sm hover:bg-primary-container transition-all" onclick="alert('Plot rombel untuk Danendra Arya disimpan ke Kelas 7B')">
+                        Simpan Rombel
+                      </button>
+</td>
+</tr>
+<!-- Siswa 4 -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="p-3 font-semibold text-primary">REG-2025-0112</td>
+<td class="p-3">
+<div class="font-bold text-on-surface">Khadijah Al-Kubro</div>
+<div class="text-caption font-caption text-on-surface-variant">NISN: 0119932014 • SD Muhammadiyah 01 Tangerang</div>
+</td>
+<td class="p-3 text-center">
+<span class="px-2.5 py-1 rounded font-bold text-secondary bg-emerald-50 border border-emerald-200">89.00</span>
+</td>
+<td class="p-3">
+<span class="px-2 py-0.5 rounded text-caption font-caption bg-purple-100 text-purple-900 font-bold">Tahfidz Unggulan</span>
+</td>
+<td class="p-3">
+<select class="w-full h-10 px-3 border border-outline-variant rounded-lg bg-white text-label-sm font-label-sm font-medium focus:border-primary-container">
+<option selected="" value="">-- Pilih Alokasi Rombel --</option>
+<option value="7B">Kelas 7B (Sisa 15 Kursi)</option>
+<option value="7C">Kelas 7C (Sisa 30 Kursi)</option>
+</select>
+</td>
+<td class="p-3 text-right">
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="hourglass_empty">hourglass_empty</span> Belum Diplot
+                      </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="text-caption font-caption text-on-surface-variant">
+                *Siswa yang telah diplot ke rombel otomatis sinkron dengan modul Keuangan &amp; SPP untuk penerbitan tagihan awal.
+              </span>
+<button class="h-10 px-5 rounded-lg bg-primary-container text-white font-label-md text-label-md flex items-center gap-2 hover:bg-primary transition-all shadow-sm" onclick="alert('Seluruh perubahan data Rombel kelas 7 berhasil disinkronkan ke SIMS!')">
+<span class="material-symbols-outlined text-base" data-icon="save">save</span>
+                Finalisasi Semua Rombel
+              </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- MODAL / DIALOG PREVIEW PAYLOAD WHATSAPP KREDENSIAL -->
+<div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="wa-modal">
+<div class="bg-surface-container-lowest rounded-xl max-w-lg w-full border border-outline-variant shadow-xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-150">
+<!-- Modal Header -->
+<div class="px-6 py-4 bg-surface-container-low border-b border-outline-variant flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-lg" data-icon="chat">chat</span>
+</div>
+<div>
+<h3 class="text-label-md font-label-md font-bold text-on-surface">Preview Notifikasi WhatsApp Gateway</h3>
+<p class="text-caption font-caption text-on-surface-variant">Template: SIMS_CREDENTIALS_AUTH_V2</p>
+</div>
+</div>
+<button aria-label="Tutup Dialog" class="text-outline hover:text-on-surface" onclick="closeWaModal()">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Modal Body (WhatsApp Chat Preview Style) -->
+<div class="p-6 flex flex-col gap-4 bg-slate-50">
+<div class="text-body-sm font-body-sm text-on-surface-variant flex items-center justify-between">
+<span>Tujuan: <strong class="font-mono text-on-surface" id="modal-target-phone">+62 812-xxxx-xxxx</strong></span>
+<span class="text-caption font-caption px-2 py-0.5 rounded bg-emerald-100 text-secondary font-bold">Terverifikasi</span>
+</div>
+<!-- Chat Bubble -->
+<div class="p-4 rounded-xl bg-white border border-emerald-200/80 shadow-sm text-body-sm font-body-sm text-on-surface leading-relaxed flex flex-col gap-2 relative">
+<div class="font-bold text-primary flex items-center gap-1.5 border-b border-outline-variant/30 pb-2">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="verified">verified</span>
+            PANITIA PPDB SMP MUHAMMADIYAH 5 KOTA TANGERANG
+          </div>
+<p>Assalamu’alaikum Warahmatullahi Wabarakatuh,</p>
+<p>Yth. Orang Tua / Wali dari Calon Siswa: <strong id="modal-student-name">Nama Siswa</strong>.</p>
+<p>Akun resmi portal SIMS PPDB SMP Muhammadiyah 5 Kota Tangerang T.A. 2025/2026 Anda telah aktif dengan rincian login:</p>
+<div class="bg-surface-container-low p-3 rounded-lg border border-surface-container-highest font-mono text-label-sm space-y-1 text-on-surface">
+<div>Username : <span class="font-bold text-primary" id="modal-username">REG-2025-0101</span></div>
+<div>Password : <span class="font-bold text-secondary">Muha5#2025!k</span></div>
+<div>Portal Link : <span class="text-primary underline">https://sims.smpm5tng.sch.id/auth</span></div>
+</div>
+<p class="text-caption font-caption text-on-surface-variant italic">
+            Harap simpan kredensial ini untuk mengecek jadwal ujian seleksi CBT &amp; alokasi kelas. Jazakumullahu Khairan.
+          </p>
+<span class="text-caption font-caption text-outline self-end mt-1">11:04 WIB • Terenkripsi End-to-End</span>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-6 py-3.5 bg-white border-t border-outline-variant flex items-center justify-between">
+<button class="px-4 py-2 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container font-label-md text-label-md transition-all" onclick="closeWaModal()">
+          Batal
+        </button>
+<button class="px-5 py-2 rounded-lg bg-secondary text-white hover:bg-on-secondary-container font-label-md text-label-md flex items-center gap-2 transition-all shadow-sm" onclick="sendWaFromModal()">
+<span class="material-symbols-outlined text-base" data-icon="send">send</span>
+          Kirim Sekarang via Gateway
+        </button>
+</div>
+</div>
+</div>
+<!-- INLINE JAVASCRIPT LOGIC & TAB CONTROLLER -->
+<script>
+    // Tab Switching Controller
+    function switchTab(tabIndex) {
+      // Hide all panels
+      for (let i = 1; i <= 4; i++) {
+        const panel = document.getElementById('tab-panel-' + i);
+        const btn = document.getElementById('tab-btn-' + i);
+        if (panel) panel.classList.add('hidden');
+        if (btn) {
+          btn.classList.remove('bg-white', 'text-primary', 'font-semibold', 'shadow-sm');
+          btn.classList.add('text-on-surface-variant', 'font-medium');
+        }
+      }
+
+      // Activate selected panel & button
+      const activePanel = document.getElementById('tab-panel-' + tabIndex);
+      const activeBtn = document.getElementById('tab-btn-' + tabIndex);
+      if (activePanel) activePanel.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.add('bg-white', 'text-primary', 'font-semibold', 'shadow-sm');
+        activeBtn.classList.remove('text-on-surface-variant', 'font-medium');
+      }
+    }
+
+    // Toggle Offline vs Online Test Mode
+    function toggleTestMode(mode) {
+      const offlineField = document.getElementById('field-offline-container');
+      const onlineField = document.getElementById('field-online-container');
+      const labelOffline = document.getElementById('label-mode-offline');
+      const labelOnline = document.getElementById('label-mode-online');
+
+      if (mode === 'offline') {
+        offlineField.classList.remove('hidden');
+        onlineField.classList.add('hidden');
+        labelOffline.classList.add('border-primary', 'bg-surface-container-low');
+        labelOffline.classList.remove('border-outline-variant', 'bg-white');
+        labelOnline.classList.remove('border-primary', 'bg-surface-container-low');
+        labelOnline.classList.add('border-outline-variant', 'bg-white');
+      } else {
+        offlineField.classList.add('hidden');
+        onlineField.classList.remove('hidden');
+        labelOnline.classList.add('border-primary', 'bg-surface-container-low');
+        labelOnline.classList.remove('border-outline-variant', 'bg-white');
+        labelOffline.classList.remove('border-primary', 'bg-surface-container-low');
+        labelOffline.classList.add('border-outline-variant', 'bg-white');
+      }
+    }
+
+    // Dynamic Average & Status Calculation for Grading Table
+    function calculateRow(rowId) {
+      const row = document.querySelector(`.grade-row[data-id="${rowId}"]`);
+      if (!row) return;
+
+      const bt = parseFloat(row.querySelector('.input-bt').value) || 0;
+      const btq = parseFloat(row.querySelector('.input-btq').value) || 0;
+      const tahfidz = parseFloat(row.querySelector('.input-tahfidz').value) || 0;
+
+      const avg = ((bt + btq + tahfidz) / 3).toFixed(2);
+      const avgSpan = row.querySelector('.row-avg');
+      const select = row.querySelector('.status-select');
+
+      avgSpan.innerText = avg;
+
+      if (avg >= 75) {
+        avgSpan.className = 'row-avg text-label-md font-label-md font-bold text-secondary';
+        select.value = 'LULUS';
+        select.className = 'status-select w-full h-9 px-2 border border-outline-variant rounded font-label-sm text-label-sm text-emerald-800 bg-emerald-50 font-bold focus:border-primary-container';
+      } else if (avg >= 65) {
+        avgSpan.className = 'row-avg text-label-md font-label-md font-bold text-amber-600';
+        select.value = 'PROSES';
+        select.className = 'status-select w-full h-9 px-2 border border-outline-variant rounded font-label-sm text-label-sm text-amber-800 bg-amber-50 font-bold focus:border-primary-container';
+      } else {
+        avgSpan.className = 'row-avg text-label-md font-label-md font-bold text-error';
+        select.value = 'TIDAK LULUS';
+        select.className = 'status-select w-full h-9 px-2 border border-outline-variant rounded font-label-sm text-label-sm text-error bg-error-container/40 font-bold focus:border-primary-container';
+      }
+    }
+
+    // Modal WhatsApp Payload Controller
+    function triggerPayloadPreview(reg, name, phone) {
+      document.getElementById('modal-username').innerText = reg;
+      document.getElementById('modal-student-name').innerText = name;
+      document.getElementById('modal-target-phone').innerText = phone;
+      document.getElementById('wa-modal').classList.remove('hidden');
+    }
+
+    function closeWaModal() {
+      document.getElementById('wa-modal').classList.add('hidden');
+    }
+
+    function sendWaFromModal() {
+      alert('Pesan berhasil ditempatkan dalam antrean instan WhatsApp Gateway dan diteruskan ke nomor wali santri!');
+      closeWaModal();
+    }
+
+    function generateAndSend(reg, name, phone) {
+      triggerPayloadPreview(reg, name, phone);
+    }
+
+    function handleScheduleSubmit(e) {
+      e.preventDefault();
+      alert('Jadwal tes berhasil didaftarkan! Kartu tes dan jadwal sesi telah dikirimkan secara otomatis via WhatsApp Gateway.');
+    }
+
+    function saveAndPublishResults() {
+      alert('Seluruh nilai dan status keputusan berhasil disimpan! Data siswa yang berstatus LULUS otomatis ditransfer ke Tab 4: Penempatan Kelas & Rombel.');
+      switchTab(4);
+    }
+
+    // Quick Blast Trigger
+    document.getElementById('btn-blast-wa')?.addEventListener('click', () => {
+      alert('Memulai proses broadcast pesan pengingat jadwal ujian ke 184 kontak calon santri terdaftar...');
+    });
+  </script>
+</body></html>

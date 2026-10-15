@@ -1,0 +1,11 @@
+# Folder upload — dilarang mengeksekusi skrip apa pun (keamanan).
+Options -Indexes
+
+<FilesMatch "\.(php|phtml|phar|php\d|pl|py|cgi|jsp|asp|aspx|sh)$">
+  Require all denied
+</FilesMatch>
+
+<IfModule mod_mime.c>
+  RemoveHandler .php .phtml .phar .php3 .php4 .php5 .php7 .phps
+  RemoveType .php .phtml .phar
+</IfModule>
