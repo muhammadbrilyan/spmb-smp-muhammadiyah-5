@@ -243,12 +243,14 @@ CREATE TABLE pendaftar (
   setuju_sk_at DATETIME,                                -- [TAMBAHAN] bukti persetujuan S&K
   setuju_sk_versi INT,                                  -- [TAMBAHAN] versi S&K yang disetujui
   setuju_sk_ip VARCHAR(45),                             -- [TAMBAHAN] IP saat menyetujui
-  pay_token VARCHAR(64),                                -- [TAMBAHAN] token tautan bayar publik
+  pay_token VARCHAR(64),                                -- [Fase 11 A6] token polos TIDAK disimpan lagi (dikosongkan); lihat pay_token_hash
+  pay_token_hash CHAR(64) NULL,                         -- [Fase 11 A6] SHA-256 hex dari token tautan bayar publik
   registration_token VARCHAR(64),                       -- [TAMBAHAN] idempotency key registrasi publik
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_pendaftar_regtoken (registration_token),
   UNIQUE KEY uq_pendaftar_pay_token (pay_token),
+  UNIQUE KEY uq_pendaftar_pay_token_hash (pay_token_hash),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (kelas_id) REFERENCES kelas(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;

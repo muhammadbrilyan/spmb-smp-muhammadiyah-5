@@ -374,7 +374,7 @@ function verifikasi_bayar_setujui($pembayaranId, $verifierId = null)
         $cek = $db->prepare(
             'SELECT b.id, b.status, b.nominal, b.jenis_pembayaran,
                     p.id AS pendaftar_id, p.no_pendaftaran, p.nama_siswa, p.tahap,
-                    o.no_whatsapp, p.pay_token
+                    o.no_whatsapp
                FROM pembayaran b
                JOIN pendaftar p ON p.id = b.pendaftar_id
           LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
@@ -395,7 +395,7 @@ function verifikasi_bayar_setujui($pembayaranId, $verifierId = null)
                 'pesan' => 'Pembayaran sudah terverifikasi sebelumnya.',
                 'pendaftar_id' => $baris['pendaftar_id'],
                 'reg' => $baris['no_pendaftaran'], 'nama' => $baris['nama_siswa'],
-                'wa' => $baris['no_whatsapp'] ?? '', 'pay_token' => $baris['pay_token'],
+                'wa' => $baris['no_whatsapp'] ?? '',
             ];
         }
 
@@ -416,7 +416,7 @@ function verifikasi_bayar_setujui($pembayaranId, $verifierId = null)
             'ok' => true, 'sudah' => false,
             'pendaftar_id' => $baris['pendaftar_id'],
             'reg' => $baris['no_pendaftaran'], 'nama' => $baris['nama_siswa'],
-            'wa' => $baris['no_whatsapp'] ?? '', 'pay_token' => $baris['pay_token'],
+            'wa' => $baris['no_whatsapp'] ?? '',
             'nominal' => (float) $baris['nominal'],
         ];
     } catch (Throwable $e) {
@@ -447,7 +447,7 @@ function verifikasi_bayar_tolak($pembayaranId, $alasan, $verifierId = null)
         $db->beginTransaction();
         $cek = $db->prepare(
             'SELECT b.id, b.status, b.nominal,
-                    p.id AS pendaftar_id, p.no_pendaftaran, p.nama_siswa, p.tahap, p.pay_token,
+                    p.id AS pendaftar_id, p.no_pendaftaran, p.nama_siswa, p.tahap,
                     o.no_whatsapp, o.nama_orang_tua
                FROM pembayaran b
                JOIN pendaftar p ON p.id = b.pendaftar_id
@@ -487,13 +487,13 @@ function verifikasi_bayar_tolak($pembayaranId, $alasan, $verifierId = null)
         return ['ok' => false, 'pesan' => 'Gagal menyimpan penolakan pembayaran.'];
     }
 
-    /* WA ke orang tua — setelah commit, kegagalan tidak membatalkan penolakan. */
+    /* WA ke orang tua — setelah commit, kegagalan tidak membatalkan penolakan.
+     * Fase 11 A6: token bayar polos tidak disimpan di DB — tautan unggah-ulang
+     * memakai halaman cek-status (punya tombol "Pulihkan Tautan"). */
     $waOk = false;
     $waPesan = '';
     if (!empty($baris['no_whatsapp'])) {
-        $tautan = $baris['pay_token'] !== null && $baris['pay_token'] !== ''
-            ? url('app/spmb/bayar.php?t=' . $baris['pay_token'])
-            : url('app/spmb/cek-status.php');
+        $tautan = url('app/spmb/cek-status.php');
         $waPesan = "Assalamu'alaikum.\n\n"
             . "Mohon maaf, pembayaran biaya formulir SPMB atas nama:\n"
             . "Nama : {$baris['nama_siswa']}\n"
@@ -562,6 +562,10 @@ function verifikasi_kirim_akun($pembayaranId, $verifierId = null)
         ];
     }
 
+    /* Fase 11 A6: nonaktifkan token bayar — pembayaran formulir sudah
+     * terverifikasi & akun dibuat; unggah ulang berikutnya via portal siswa. */
+    q_exec('UPDATE pendaftar SET pay_token_hash = NULL WHERE id = ?', [$pendId]);
+
     /* Tahap sementara: akun sudah ada, kredensial belum tentu terkirim. */
     q_exec(
         "UPDATE pendaftar SET tahap = 'AKUN_TERKIRIM'
@@ -622,6 +626,8 @@ function kirim_akun_gateway_otomatis($pendaftarId)
         if (!$baru['ok']) {
             return ['ok' => false, 'pesan' => $baru['pesan']];
         }
+        /* Fase 11 A6: nonaktifkan token bayar setelah akun dibuat. */
+        q_exec('UPDATE pendaftar SET pay_token_hash = NULL WHERE id = ?', [$pendaftarId]);
         q_exec(
             "UPDATE pendaftar SET tahap = 'AKUN_TERKIRIM'
               WHERE id = ? AND tahap IN ('BAYAR_TERVERIFIKASI', 'AKUN_TERKIRIM')",

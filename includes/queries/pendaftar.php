@@ -141,12 +141,16 @@ function registrasi_baru($nama, $wa, $jalur, $asal_sekolah, $regToken = null, $s
             $cekTok->execute([$regToken]);
             $lama = $cekTok->fetch();
             if ($lama) {
+                /* Fase 11 A6: token polos tidak lagi disimpan — saat kunci
+                 * idempoten diputar ulang, rotasi token & tampilkan yang BARU
+                 * (token lama otomatis tidak berlaku). */
+                $tokenBaru = pendaftar_rotasi_pay_token($lama['id']);
                 $db->query("SELECT RELEASE_LOCK(" . $db->quote($lockName) . ")")->fetchColumn();
                 return [
                     'ok' => true, 'reused' => true,
                     'no' => $lama['no_pendaftaran'], 'id' => $lama['id'],
                     'wa' => $waNorm, 'nama' => $lama['nama_siswa'], 'jalur' => $lama['jalur'],
-                    'pay_token' => pendaftar_pay_token($lama['id']),
+                    'pay_token' => $tokenBaru,
                 ];
             }
         }
@@ -182,10 +186,10 @@ function registrasi_baru($nama, $wa, $jalur, $asal_sekolah, $regToken = null, $s
             $db->prepare(
                 'INSERT INTO pendaftar (id, no_pendaftaran, nama_siswa, asal_sekolah, jalur,
                         status_verifikasi, status_seleksi, status_akun, tahap,
-                        setuju_sk_at, setuju_sk_versi, setuju_sk_ip, pay_token, registration_token)
+                        setuju_sk_at, setuju_sk_versi, setuju_sk_ip, pay_token_hash, registration_token)
                  VALUES (?, ?, ?, ?, ?, "MENUNGGU_VERIFIKASI", "PROSES", "BELUM_DIBUAT", "MENUNGGU_PEMBAYARAN",
                         NOW(), ?, ?, ?, ?)'
-            )->execute([$idPend, $no, $nama, $asal, $jalur, $syaratVersi, $ip, $payToken, $regToken]);
+            )->execute([$idPend, $no, $nama, $asal, $jalur, $syaratVersi, $ip, hash('sha256', $payToken), $regToken]);
             $db->prepare(
                 'INSERT INTO orang_tua (id, pendaftar_id, nama_orang_tua, no_whatsapp) VALUES (?, ?, ?, ?)'
             )->execute([$idOrt, $idPend, 'Orang Tua ' . $nama, $waNorm]);
@@ -214,24 +218,23 @@ function registrasi_baru($nama, $wa, $jalur, $asal_sekolah, $regToken = null, $s
     }
 }
 
-function pendaftar_pay_token($pendaftar_id)
+/**
+ * Fase 11 A6: buat pay_token BARU (hanya SHA-256 yang disimpan di DB).
+ * Token polos hanya dikembalikan sekali — tidak pernah dibaca dari DB.
+ */
+function pendaftar_rotasi_pay_token($pendaftar_id)
 {
     $db = db();
     if ($db === null) {
         return null;
     }
-    $stmt = $db->prepare('SELECT pay_token FROM pendaftar WHERE id = ?');
-    $stmt->execute([$pendaftar_id]);
-    $token = $stmt->fetchColumn();
-    if ($token) {
-        return $token;
-    }
     $token = bin2hex(random_bytes(32));
-    $db->prepare('UPDATE pendaftar SET pay_token = ? WHERE id = ?')->execute([$token, $pendaftar_id]);
+    $db->prepare('UPDATE pendaftar SET pay_token_hash = ? WHERE id = ?')
+        ->execute([hash('sha256', $token), $pendaftar_id]);
     return $token;
 }
 
-/** Cari pendaftar by pay_token (untuk halaman bayar publik). */
+/** Cari pendaftar by pay_token (untuk halaman bayar publik) — via hash. */
 function pendaftar_by_pay_token($payToken)
 {
     $db = db();
@@ -239,11 +242,11 @@ function pendaftar_by_pay_token($payToken)
         return null;
     }
     $stmt = $db->prepare(
-        'SELECT p.id, p.no_pendaftaran, p.nama_siswa, p.tahap, p.pay_token,
+        'SELECT p.id, p.no_pendaftaran, p.nama_siswa, p.tahap,
                 b.id AS bayar_id, b.nominal, b.status AS bayar_status
            FROM pendaftar p
       LEFT JOIN pembayaran b ON b.pendaftar_id = p.id AND b.jenis_pembayaran = "FORMULIR"
-          WHERE p.pay_token = ?
+          WHERE p.pay_token_hash = SHA2(?, 256)
        LIMIT 1'
     );
     $stmt->execute([$payToken]);

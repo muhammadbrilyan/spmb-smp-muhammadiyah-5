@@ -80,7 +80,7 @@ function pulihkan_pay_token($no_pendaftaran, $wa4)
     }
 
     $hasilQ = q_all(
-        'SELECT p.id, p.tahap, p.pay_token, o.no_whatsapp
+        'SELECT p.id, p.tahap, o.no_whatsapp
            FROM pendaftar p
            JOIN orang_tua o ON o.pendaftar_id = p.id
           WHERE p.no_pendaftaran = ?
@@ -102,7 +102,8 @@ function pulihkan_pay_token($no_pendaftaran, $wa4)
     }
 
     $tokenBaru = bin2hex(random_bytes(32));
-    if (!q_exec('UPDATE pendaftar SET pay_token = ? WHERE id = ?', [$tokenBaru, $baris['id']])) {
+    /* Fase 11 A6: hanya SHA-256 yang disimpan; token polos tampil sekali di sini. */
+    if (!q_exec('UPDATE pendaftar SET pay_token_hash = ? WHERE id = ?', [hash('sha256', $tokenBaru), $baris['id']])) {
         return ['ok' => false, 'pesan' => 'Gagal memulihkan tautan. Coba lagi nanti.'];
     }
 
