@@ -43,6 +43,16 @@ Server uji: `php -S localhost:8099 -t <root proyek>` — ganti host/port sesuai 
 | C3 | "Pulihkan tautan bayar" 3× (IP beda, nomor sama) | Percobaan ke-4 diblokir (3/jam per nomor) |
 | C4 | Unggah bukti 11× (IP sama) | Batas 10/menit tercapai (tiap percobaan dicatat, bukan hanya yang lolos) |
 
+**Catatan trade-off (Fase 11 A5):** kunci rate per-nomor (`cek_status_no` /
+`pulihkan_bayar_no`) berlaku **lintas IP** — orang lain yang mengetahui nomor
+pendaftaran seseorang bisa mengunci pengecekan nomor itu selama 15 menit (3
+menit pemulihan: 1 jam) dengan sengaja mengulanginya. Ini disengaja sebagai
+perlindungan anti brute-force 4 digit WA; batas pemulihan jendela lebih panjang
+dipilih relatif terhadap nilai token bayar. Kunci per-nomor hanya dicatat untuk
+format `REG-YYYY-NNNN` valid, dan pencarian sukses tidak menambah hitungan
+sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
+`rate_limit` (baris >2 hari) berjalan acak ±1% request (LIMIT 1000).
+
 ## D. Pengumuman, WA & Gate Dokumen
 
 | # | Langkah | Diharapkan |

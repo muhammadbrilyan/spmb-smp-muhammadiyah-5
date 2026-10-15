@@ -104,3 +104,6 @@ require_once __DIR__ . '/fonnte.php';
 require_once __DIR__ . '/notifikasi.php';
 require_once __DIR__ . '/midtrans.php';
 require_once __DIR__ . '/auth.php';
+
+/* Fase 11 A5: pembersihan acak ±1% request (tanpa menggagalkan request). */
+rate_limit_bersihkan();

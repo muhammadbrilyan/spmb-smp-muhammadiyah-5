@@ -261,6 +261,27 @@ function rate_limit_catat($aksi, $kunci = null)
 }
 
 /**
+ * Fase 11 A5: bersihkan baris rate_limit lebih tua dari 2 hari.
+ * Dipanggil secara acak ±1% request (sama pola dengan pembersihan
+ * login_attempts) — LIMIT 1000 agar hemat, tidak pernah menggagalkan request.
+ */
+function rate_limit_bersihkan()
+{
+    try {
+        if (random_int(1, 100) !== 1) {
+            return; /* hanya ±1% request */
+        }
+        $db = db();
+        if ($db === null) {
+            return;
+        }
+        $db->exec('DELETE FROM rate_limit WHERE created_at < (NOW() - INTERVAL 2 DAY) LIMIT 1000');
+    } catch (Throwable $e) {
+        /* abaikan — pembersihan tidak boleh menggagalkan request */
+    }
+}
+
+/**
  * Urutan resmi tahap pendaftar (model status — Fase 0..8).
  * Index lebih besar = lebih maju dalam alur SPMB.
  */

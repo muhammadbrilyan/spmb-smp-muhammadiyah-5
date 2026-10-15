@@ -18,12 +18,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* ============================================================
          * Pemulihan tautan pembayaran: no_pendaftaran + 4 digit WA.
          * Rate limit: maks 3 percobaan per jam per IP.
+         * Fase 11 A5: kunci per-nomor hanya untuk format REG-YYYY-NNNN
+         * (huruf besar) agar tabel rate_limit tidak dibanjiri kunci sembarang.
          * ============================================================ */
         $noRek = trim((string) ($_POST['no_recovery'] ?? ''));
         $wa4   = trim((string) ($_POST['wa4'] ?? ''));
+        $noRekValid = preg_match('/^REG-\d{4}-\d{4}$/', $noRek) === 1;
+        $pesanSeragam = 'Nomor pendaftaran atau 4 digit WhatsApp tidak cocok. Periksa kembali data Anda.';
 
         if (!rate_limit_cek('pulihkan_bayar', 3, 60)) {
             $galat[] = 'Terlalu banyak percobaan pemulihan tautan. Coba lagi dalam beberapa menit.';
+        } elseif (!$noRekValid) {
+            /* Format tidak valid → pesan seragam; JANGAN catat kunci per-nomor. */
+            rate_limit_catat('pulihkan_bayar');
+            $galat[] = $pesanSeragam;
         } elseif (!rate_limit_cek('pulihkan_bayar_no', 3, 60, $noRek)) {
             /* Fase 10: batas lintas IP per no_pendaftaran — brute-force 4 digit
              * tidak bisa dilakukan dengan mengganti IP. */
@@ -52,37 +60,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $f['wa'] = trim((string) ($_POST['wa'] ?? ''));
         $wa4    = preg_replace('/\D+/', '', $f['wa']);
 
+        /* Fase 11 A5: format nomor wajib REG-YYYY-NNNN (huruf besar). */
+        $noValid = preg_match('/^REG-\d{4}-\d{4}$/', $f['no']) === 1;
+        /* Pesan seragam: "tidak ada" dan "4 digit salah" sengaja sama
+         * agar penyerang tidak bisa membedakan nomor valid/tidak (anti-enumerasi). */
+        $pesanSeragam = 'Nomor pendaftaran atau 4 digit WhatsApp tidak cocok. Periksa kembali data Anda.';
+
         if ($f['no'] === '' || strlen($wa4) !== 4) {
             $galat[] = 'Isi nomor pendaftaran DAN 4 digit terakhir WhatsApp orang tua.';
         } elseif (!rate_limit_cek('cek_status', 10, 15)) {
             $galat[] = 'Terlalu banyak percobaan pencarian. Coba lagi beberapa saat lagi.';
-        } elseif (!rate_limit_cek('cek_status_no', 5, 15, $f['no'])) {
-            /* Fase 10: batas lintas IP per no_pendaftaran. */
-            $galat[] = 'Terlalu banyak percobaan pencarian. Coba lagi beberapa saat lagi.';
         } else {
+            /* Pembatasan per IP tetap menghitung semua percobaan. */
             rate_limit_catat('cek_status');
-            rate_limit_catat('cek_status_no', $f['no']);
-            /* Pesan seragam: "tidak ada" dan "4 digit salah" sengaja sama
-             * agar penyerang tidak bisa membedakan nomor valid/tidak (anti-enumerasi). */
-            $pesanSeragam = 'Nomor pendaftaran atau 4 digit WhatsApp tidak cocok. Periksa kembali data Anda.';
-            $kandidat = cek_status_cari($f['no'], '', '');
-            if (!$kandidat) {
+            if (!$noValid) {
+                /* Format tidak valid → pesan seragam; JANGAN catat kunci per-nomor
+                 * (mencegah tabel rate_limit dibanjiri kunci sembarang). */
                 $galat[] = $pesanSeragam;
+            } elseif (!rate_limit_cek('cek_status_no', 5, 15, $f['no'])) {
+                /* Fase 10: batas lintas IP per no_pendaftaran. */
+                $galat[] = 'Terlalu banyak percobaan pencarian. Coba lagi beberapa saat lagi.';
             } else {
-                /* Cocokkan 4 digit terakhir WA — wajib lolos. */
-                $cocok = null;
-                foreach ($kandidat as $k) {
-                    $waAsli = preg_replace('/\D+/', '', (string) $k['no_whatsapp']);
-                    if ($waAsli !== '' && substr($waAsli, -4) === $wa4) {
-                        $cocok = $k;
-                        break;
-                    }
-                }
-                if (!$cocok) {
+                $kandidat = cek_status_cari($f['no'], '', '');
+                if (!$kandidat) {
+                    /* Fase 11 A5: kunci per-nomor hanya dicatat saat GAGAL —
+                     * orang tua sah tidak terkunci karena sering memeriksa. */
+                    rate_limit_catat('cek_status_no', $f['no']);
                     $galat[] = $pesanSeragam;
                 } else {
-                    $hasil = $cocok;
-                    $hasil['ringkas'] = cek_status_ringkas($hasil['id']);
+                    /* Cocokkan 4 digit terakhir WA — wajib lolos. */
+                    $cocok = null;
+                    foreach ($kandidat as $k) {
+                        $waAsli = preg_replace('/\D+/', '', (string) $k['no_whatsapp']);
+                        if ($waAsli !== '' && substr($waAsli, -4) === $wa4) {
+                            $cocok = $k;
+                            break;
+                        }
+                    }
+                    if (!$cocok) {
+                        rate_limit_catat('cek_status_no', $f['no']);
+                        $galat[] = $pesanSeragam;
+                    } else {
+                        $hasil = $cocok;
+                        $hasil['ringkas'] = cek_status_ringkas($hasil['id']);
+                    }
                 }
             }
         }
