@@ -10,6 +10,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_cek($_POST['_csrf'] ?? '')) {
         $galat[] = 'Formulir kedaluwarsa. Silakan muat ulang halaman lalu coba lagi.';
     } else {
+    /* Fase 11 A2: rate limit 5 percobaan / 15 menit — per IP dan per user. */
+    if (!rate_limit_cek('ganti_password', 5, 15)
+        || !rate_limit_cek('ganti_password_user', 5, 15, (string) $user['id'])) {
+        $galat[] = 'Terlalu banyak percobaan ganti password. Coba lagi beberapa menit lagi.';
+    } else {
+    rate_limit_catat('ganti_password');
+    rate_limit_catat('ganti_password_user', (string) $user['id']);
+
     $lama   = $_POST['password_lama'] ?? '';
     $baru   = $_POST['password_baru'] ?? '';
     $ulangi = $_POST['password_ulangi'] ?? '';
@@ -17,15 +25,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($lama === '') {
         $galat[] = 'Password lama wajib diisi.';
     }
-    if (strlen($baru) < 8) {
-        $galat[] = 'Password baru minimal 8 karakter.';
+    if (strlen($baru) < 10) {
+        $galat[] = 'Password baru minimal 10 karakter.';
+    }
+    if ($baru !== '' && $baru === (string) ($user['username'] ?? '')) {
+        $galat[] = 'Password baru tidak boleh sama dengan username.';
     }
     if ($baru !== $ulangi) {
         $galat[] = 'Konfirmasi password baru tidak sama.';
     }
 
     if (!$galat) {
-        $akun = q_all('SELECT id, password_hash FROM users WHERE id = ?', [$user['id']]);
+        $akun = q_all('SELECT id, username, password_hash FROM users WHERE id = ?', [$user['id']]);
         $akun = $akun[0] ?? null;
         if (!$akun || !password_verify($lama, $akun['password_hash'])) {
             $galat[] = 'Password lama salah.';
@@ -35,12 +46,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ok = q_exec('UPDATE users SET password_hash = ?, wajib_ganti_password = 0 WHERE id = ?',
                 [password_hash($baru, PASSWORD_DEFAULT), $akun['id']]);
             if ($ok) {
+                /* Fase 11 A2: regenerasi ID sesi setelah hak berubah. */
+                session_regenerate_id(true);
                 flash('sukses', 'Password berhasil diganti.');
                 header('Location: ganti-password.php');
                 exit;
             }
             $galat[] = 'Gagal menyimpan password baru.';
         }
+    }
     }
     }
     if ($galat) {
@@ -76,14 +90,14 @@ $flash = flash();
 
     <div>
       <label class="block text-sm font-medium mb-1">Password Baru</label>
-      <input type="password" name="password_baru" required minlength="8"
+      <input type="password" name="password_baru" required minlength="10"
              class="w-full border rounded-lg px-3 py-2 dark:bg-slate-900 dark:border-slate-700">
-      <p class="text-xs text-slate-500 mt-1">Minimal 8 karakter.</p>
+      <p class="text-xs text-slate-500 mt-1">Minimal 10 karakter, tidak boleh sama dengan username.</p>
     </div>
 
     <div>
       <label class="block text-sm font-medium mb-1">Ulangi Password Baru</label>
-      <input type="password" name="password_ulangi" required minlength="8"
+      <input type="password" name="password_ulangi" required minlength="10"
              class="w-full border rounded-lg px-3 py-2 dark:bg-slate-900 dark:border-slate-700">
     </div>
 
