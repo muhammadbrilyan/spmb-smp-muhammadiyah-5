@@ -259,3 +259,34 @@ function rate_limit_catat($aksi, $kunci = null)
         error_log('rate_limit_catat gagal: ' . $e->getMessage());
     }
 }
+
+/**
+ * Urutan resmi tahap pendaftar (model status — Fase 0..8).
+ * Index lebih besar = lebih maju dalam alur SPMB.
+ */
+function tahap_urutan()
+{
+    return [
+        'MENUNGGU_PEMBAYARAN', 'MENUNGGU_VERIFIKASI_BAYAR', 'BAYAR_TERVERIFIKASI',
+        'AKUN_TERKIRIM', 'MELENGKAPI_BERKAS', 'BERKAS_DISUBMIT', 'BERKAS_REVISI',
+        'BERKAS_TERVERIFIKASI', 'JADWAL_DITETAPKAN', 'NILAI_TERINPUT', 'DIUMUMKAN',
+    ];
+}
+
+/** Index tahap dalam urutan resmi; -1 bila tidak dikenal. */
+function tahap_index($tahap)
+{
+    $i = array_search((string) $tahap, tahap_urutan(), true);
+    return $i === false ? -1 : (int) $i;
+}
+
+/** true bila $tahap sudah minimal $minimal (mengikuti urutan resmi). */
+function tahap_minimal($tahap, $minimal)
+{
+    $a = tahap_index($tahap);
+    $b = tahap_index($minimal);
+    if ($a < 0 || $b < 0) {
+        return false;
+    }
+    return $a >= $b;
+}

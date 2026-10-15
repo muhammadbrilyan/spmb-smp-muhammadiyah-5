@@ -25,8 +25,9 @@ if (!csrf_cek($_POST['_csrf'] ?? '')) {
     exit;
 }
 
-$jenis   = ($_POST['jenis'] ?? '') === 'UANG_MASUK' ? 'UANG_MASUK' : 'FORMULIR';
-$idemKey = idem_key_valid($_POST['idem_key'] ?? '');
+$jenisRaw = ($_POST['jenis'] ?? '') === 'UANG_MASUK' ? 'UANG_MASUK' : 'FORMULIR';
+$idemKey  = idem_key_valid($_POST['idem_key'] ?? '');
+$payToken = trim((string) ($_POST['pay_token'] ?? ''));
 
 if ($idemKey === null) {
     echo json_encode(['ok' => false, 'pesan' => 'Idempotency key tidak valid. Muat ulang halaman.']);
@@ -45,9 +46,9 @@ if (!rate_limit_cek('snap_token', 20, 60)) {
  *   1. pay_token (publik, dari halaman bayar.php)
  *   2. sesi login siswa + pendaftar_id
  * ----------------------------------------------------------- */
-$payToken = trim((string) ($_POST['pay_token'] ?? ''));
-$profil   = null;
+$profil      = null;
 $pendaftarId = '';
+$jenis       = $jenisRaw;
 
 if ($payToken !== '') {
     /* Jalur publik — validasi pay_token. */
@@ -64,6 +65,9 @@ if ($payToken !== '') {
         echo json_encode(['ok' => false, 'pesan' => 'Tautan pembayaran tidak ditemukan.']);
         exit;
     }
+    /* Fase 11 A1: jalur publik hanya untuk biaya FORMULIR —
+     * UANG_MASUK (uang masuk) hanya lewat portal siswa terverifikasi. */
+    $jenis = 'FORMULIR';
     $pendaftarId = $baris['id'];
     $profil = [
         'id'             => $baris['id'],
@@ -86,6 +90,25 @@ if ($payToken !== '') {
         exit;
     }
     rate_limit_catat('snap_token');
+
+    /* Fase 11 A1: UANG_MASUK hanya bila tahap minimal BERKAS_TERVERIFIKASI
+     * (urutan tahap resmi — tahap_minimal()) dan belum pernah VERIFIED/LUNAS. */
+    if ($jenis === 'UANG_MASUK') {
+        if (!tahap_minimal($profil['tahap'] ?? '', 'BERKAS_TERVERIFIKASI')) {
+            echo json_encode(['ok' => false, 'pesan' => 'Uang masuk dapat dibayar setelah berkas terverifikasi panitia.']);
+            exit;
+        }
+        $sudahUm = (int) (q_col(
+            "SELECT COUNT(*) FROM pembayaran
+              WHERE pendaftar_id = ? AND jenis_pembayaran = 'UANG_MASUK'
+                AND status IN ('VERIFIED','LUNAS')",
+            [$pendaftarId]
+        ) ?? 0);
+        if ($sudahUm > 0) {
+            echo json_encode(['ok' => false, 'pesan' => 'Uang masuk untuk pendaftar ini sudah terverifikasi/lunas.']);
+            exit;
+        }
+    }
 }
 
 /* Cek apakah gateway tersedia (terkonfigurasi DAN diaktifkan di CMS). */
