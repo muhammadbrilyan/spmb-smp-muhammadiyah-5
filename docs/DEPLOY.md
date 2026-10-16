@@ -54,8 +54,14 @@ Migrasi SQL tambahan per fase: jalankan berurutan file di
 4. Impor SQL & migrasi (lihat bagian 1), lalu `set-password.php` semua staf.
 5. Login sebagai operator → **Pengaturan**: ubah S&K, daftar berkas
    persyaratan, rekening bank, gambar QRIS, nomor WA notifikasi.
-6. `php.ini` produksi:
-   `upload_max_filesize = 3M`, `post_max_size = 8M`, `display_errors = Off`.
+6. Pengaturan PHP produksi — `display_errors=Off`, `log_errors=On`,
+   `upload_max_filesize=3M`, `post_max_size=8M`:
+   - **PHP-FPM/CGI (lazim di cPanel)**: file `.user.ini` di root proyek sudah
+     berisi nilai di atas (berlaku otomatis); alternatif: ubah lewat menu
+     **MultiPHP INI Editor** di cPanel.
+   - **mod_php**: lewat `.htaccess` (sudah ada di dalam `<IfModule mod_php.c>`
+     — direktif `php_flag`/`php_value` TIDAK boleh berdiri di luar IfModule
+     karena memicu error 500 di PHP-FPM).
 7. Izin folder: `storage/dokumen`, `storage/backup` dapat ditulis web server.
 8. Setelah HTTPS jalan: aktifkan HSTS di konfigurasi web server.
 9. Jadwalkan cadangan harian (lihat bagian 3).
