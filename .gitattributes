@@ -1,0 +1,42 @@
+# ============================================================
+# GITATTRIBUTES — normalisasi EOL & binary (Fase 11 B5)
+# ============================================================
+
+# Semua teks: diforkan sebagai LF di index (renormalisasi via
+# `git add --renormalize .` — lihat docs/DEPLOY.md bagian rilis).
+* text=auto eol=lf
+
+*.php   text eol=lf
+*.sql   text eol=lf
+*.md    text eol=lf
+*.js    text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.json  text eol=lf
+*.txt   text eol=lf
+*.log   text eol=lf
+.env        text eol=lf
+.env.example text eol=lf
+.gitignore  text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# Batch harus CRLF agar bisa dieksekusi di cmd.exe
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Binari — jangan pernah diubah/didiforkan
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.zip   binary
+*.gz    binary
+*.sql.gz binary
