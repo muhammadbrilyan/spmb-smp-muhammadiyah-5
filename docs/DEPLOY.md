@@ -3,6 +3,10 @@
 Panduan pemasangan & rilis aplikasi SPMB/CMS SMP Muhammadiyah 5 Kota Tangerang.
 Bagian **Daftar Periksa Produksi** (lengkap) ada di bagian bawah.
 
+**Syarat minimum: PHP 8.1 atau lebih baru** (Fase 12 C5) dengan ekstensi
+`pdo_mysql`, `mbstring`, `curl`, `fileinfo`, `gd`, `zip`, `json`, `session`
+(cek lengkap: `php tools/cek-proyek.php`).
+
 ---
 
 ## 1. Impor Database & Akun Staf

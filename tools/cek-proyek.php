@@ -44,10 +44,10 @@ function catat($status, $judul, $detail = '')
 /* ---------------------------------------------------------------
  * 1. Versi PHP
  * ------------------------------------------------------------- */
-if (version_compare(PHP_VERSION, '8.0.0', '>=')) {
+if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
     catat('PASS', 'Versi PHP', PHP_VERSION);
 } else {
-    catat('GAGAL', 'Versi PHP', PHP_VERSION . ' — aplikasi membutuhkan PHP >= 8.0');
+    catat('GAGAL', 'Versi PHP', PHP_VERSION . ' — aplikasi membutuhkan PHP >= 8.1');
 }
 
 /* ---------------------------------------------------------------
