@@ -481,7 +481,7 @@ CREATE TABLE login_attempts (
   username VARCHAR(100),
   attempted_at DATETIME NOT NULL,
   INDEX idx_ip_time (ip_address, attempted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
 -- 12. rate_limit - proteksi brute-force generik (registrasi, dsb)
@@ -495,4 +495,4 @@ CREATE TABLE rate_limit (
   aksi VARCHAR(30) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_ip_aksi_time (ip_address, aksi, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;

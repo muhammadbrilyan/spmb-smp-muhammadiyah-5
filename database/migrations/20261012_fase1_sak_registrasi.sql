@@ -1,44 +1,87 @@
 -- ============================================================
 -- 20261012_fase1_sak_registrasi.sql
 -- Fase 1: kolom S&K di pengaturan_sekolah, kolom S&K+pay_token+tahap di pendaftar
--- Jalankan sebagai root:
+-- Jalankan sebagai root / lewat phpMyAdmin Import (tanpa DELIMITER):
 --   mysql -u root < database/migrations/20261012_fase1_sak_registrasi.sql
+-- Idempoten & PORTABEL (MySQL 5.7/8 & MariaDB 10.x): memakai
+-- information_schema + PREPARE/EXECUTE (bukan ADD COLUMN IF NOT EXISTS).
 -- ============================================================
 
 USE db_spmb_mualimku;
 
 -- Kolom S&K di pengaturan_sekolah (teks bisa diedit operator)
-ALTER TABLE pengaturan_sekolah
-  ADD COLUMN IF NOT EXISTS syarat_ketentuan LONGTEXT NULL,
-  ADD COLUMN IF NOT EXISTS syarat_versi INT NOT NULL DEFAULT 1;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pengaturan_sekolah'
+               AND COLUMN_NAME = 'syarat_ketentuan') = 0,
+            'ALTER TABLE pengaturan_sekolah ADD COLUMN syarat_ketentuan LONGTEXT NULL',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pengaturan_sekolah'
+               AND COLUMN_NAME = 'syarat_versi') = 0,
+            'ALTER TABLE pengaturan_sekolah ADD COLUMN syarat_versi INT NOT NULL DEFAULT 1',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
 
 -- Kolom bukti persetujuan S&K di pendaftar
-ALTER TABLE pendaftar
-  ADD COLUMN IF NOT EXISTS setuju_sk_at DATETIME NULL,
-  ADD COLUMN IF NOT EXISTS setuju_sk_versi INT NULL,
-  ADD COLUMN IF NOT EXISTS setuju_sk_ip VARCHAR(45) NULL,
-  ADD COLUMN IF NOT EXISTS tahap ENUM(
-    'MENUNGGU_PEMBAYARAN',
-    'MENUNGGU_VERIFIKASI_BAYAR',
-    'BAYAR_TERVERIFIKASI',
-    'MELENGKAPI_BERKAS',
-    'BERKAS_DISUBMIT',
-    'BERKAS_REVISI',
-    'BERKAS_TERVERIFIKASI',
-    'JADWAL_DITETAPKAN',
-    'NILAI_TERINPUT',
-    'DIUMUMKAN'
-  ) NULL AFTER status_akun;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pendaftar'
+               AND COLUMN_NAME = 'setuju_sk_at') = 0,
+            'ALTER TABLE pendaftar ADD COLUMN setuju_sk_at DATETIME NULL',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pendaftar'
+               AND COLUMN_NAME = 'setuju_sk_versi') = 0,
+            'ALTER TABLE pendaftar ADD COLUMN setuju_sk_versi INT NULL',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pendaftar'
+               AND COLUMN_NAME = 'setuju_sk_ip') = 0,
+            'ALTER TABLE pendaftar ADD COLUMN setuju_sk_ip VARCHAR(45) NULL',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pendaftar'
+               AND COLUMN_NAME = 'tahap') = 0,
+            'ALTER TABLE pendaftar ADD COLUMN tahap ENUM(''MENUNGGU_PEMBAYARAN'',''MENUNGGU_VERIFIKASI_BAYAR'',''BAYAR_TERVERIFIKASI'',''MELENGKAPI_BERKAS'',''BERKAS_DISUBMIT'',''BERKAS_REVISI'',''BERKAS_TERVERIFIKASI'',''JADWAL_DITETAPKAN'',''NILAI_TERINPUT'',''DIUMUMKAN'') NULL AFTER status_akun',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
 
 -- Token pembayaran publik (tautan bayar tanpa login)
-ALTER TABLE pendaftar
-  ADD COLUMN IF NOT EXISTS pay_token VARCHAR(64) NULL,
-  ADD UNIQUE KEY uq_pendaftar_pay_token (pay_token);
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pendaftar'
+               AND COLUMN_NAME = 'pay_token') = 0,
+            'ALTER TABLE pendaftar ADD COLUMN pay_token VARCHAR(64) NULL',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @s = IF((SELECT COUNT(*) FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pendaftar'
+               AND INDEX_NAME = 'uq_pendaftar_pay_token') = 0,
+            'ALTER TABLE pendaftar ADD UNIQUE KEY uq_pendaftar_pay_token (pay_token)',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
 
 -- Kolom metode & catatan di pembayaran (dipakai Fase 2)
-ALTER TABLE pembayaran
-  ADD COLUMN IF NOT EXISTS metode ENUM('GATEWAY','TRANSFER','QRIS') NULL AFTER payment_method,
-  ADD COLUMN IF NOT EXISTS catatan TEXT NULL AFTER keterangan;
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pembayaran'
+               AND COLUMN_NAME = 'metode') = 0,
+            'ALTER TABLE pembayaran ADD COLUMN metode ENUM(''GATEWAY'',''TRANSFER'',''QRIS'') NULL AFTER payment_method',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
+
+SET @s = IF((SELECT COUNT(*) FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'pembayaran'
+               AND COLUMN_NAME = 'catatan') = 0,
+            'ALTER TABLE pembayaran ADD COLUMN catatan TEXT NULL AFTER keterangan',
+            'DO 0');
+PREPARE st FROM @s; EXECUTE st; DEALLOCATE PREPARE st;
 
 -- Backfill tahap dari kolom status lama (hanya untuk data lama)
 UPDATE pendaftar
