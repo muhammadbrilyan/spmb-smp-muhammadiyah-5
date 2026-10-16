@@ -1,4 +1,4 @@
-# Folder upload — dilarang mengeksekusi skrip apa pun (keamanan).
+# Folder upload - dilarang mengeksekusi skrip apa pun (keamanan).
 Options -Indexes
 
 <FilesMatch "\.(php|phtml|phar|php\d|pl|py|cgi|jsp|asp|aspx|sh)$">

@@ -1,4 +1,4 @@
-﻿module.exports = {
+module.exports = {
   content: [
     "./app/**/*.php",
     "./includes/**/*.php",
