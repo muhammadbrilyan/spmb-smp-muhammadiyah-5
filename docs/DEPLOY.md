@@ -1,183 +1,236 @@
 # Panduan Deploy — SPMB MUALIMKU
 
-Panduan pemasangan & rilis aplikasi SPMB/CMS SMP Muhammadiyah 5 Kota Tangerang.
-Bagian **Daftar Periksa Produksi** (lengkap) ada di bagian bawah.
+Panduan pemasangan & rilis aplikasi SPMB/CMS SMP Muhammadiyah 5 Kota Tangerang
+— disusun untuk **hosting bersama cPanel (mis. Domainesia) TANPA akses SSH**.
+Varian lokal XAMPP/Linux ikut disinggung di catatan.
 
 **Syarat minimum: PHP 8.1 atau lebih baru** (Fase 12 C5) dengan ekstensi
 `pdo_mysql`, `mbstring`, `curl`, `fileinfo`, `gd`, `zip`, `json`, `session`
-(cek lengkap: `php tools/cek-proyek.php`).
+(cek lengkap: `php tools/cek-proyek.php`) + MySQL 5.7/8 atau MariaDB 10.x.
+Tanpa Composer/npm — Tailwind sudah di-build statis.
 
 ---
 
-## 1. Impor Database & Akun Staf
+## 1. Pemasangan di cPanel (Langkah demi Langkah)
 
-```bat
-:: Impor skema + seed utama (tanpa data demo)
-mysql -u root db_spmb_mualimku < database/db_spmb_mualimku.sql
+### 1.1 Database & user (MySQL Database Wizard)
 
-:: OPSIONAL — data demo/UAT (hanya untuk pengembangan, JANGAN di produksi)
-mysql -u root db_spmb_mualimku < database/seed_demo.sql
-```
+1. Buka **MySQL® Database Wizard** di cPanel.
+2. Buat database baru, mis. `spmb` — cPanel menambahkan awalan akun, hasilnya
+   jadi `USERNAME_spmb`. **Catat nama lengkapnya.**
+3. Buat user khusus + password kuat. **Catat password** (hanya sekali).
+4. Saat diminta hak akses: beri **ALL PRIVILEGES** dulu (impor & migrasi
+   butuh CREATE). Setelah aplikasi jalan (langkah 1.8), kembalikan ke
+   **SELECT, INSERT, UPDATE, DELETE** saja melalui wizard yang sama
+   (ubah grant user).
+
+### 1.2 Impor skema database (phpMyAdmin)
+
+1. Buka **phpMyAdmin** → pilih database `USERNAME_spmb` → tab **Import**.
+2. Pilih `database/db_spmb_mualimku.sql` (±100 KB — jauh di bawah batas
+   unggah hosting) → **Go**.
+3. Verifikasi: tabel `pengaturan_sekolah`, `pendaftar`, `users`, dst. muncul.
+4. Migrasi tambahan per fase (idempoten, aman dijalankan ulang): buka tiap
+   file di `database/migrations/` secara berurutan (nama file = urut waktu)
+   di phpMyAdmin → tab SQL → Run.
 
 **PENTING (Fase 11):** seed utama sengaja **tidak memuat password login yang
-bisa dipakai**:
+bisa dipakai** — akun staf (`operator`, `bendahara`, `kepsek`) di-seed dgn
+hash `'!LOCKED'` dan harus diatur sendiri (langkah 1.6).
 
-- Akun **staf** (`operator`, `bendahara`, `kepsek`) di-seed dengan hash
-  `'!LOCKED'` — **tidak bisa login** sampai Anda mengaturnya sendiri.
-- Akun **siswa demo** (username `siswa`) hanya ada di `database/seed_demo.sql`
-  dan juga terkunci.
+### 1.3 Upload aplikasi (File Manager)
 
-Setelah impor, jalankan **untuk setiap akun staf**:
+1. **File Manager** → buka `public_html` ( atau folder website utama).
+2. **Upload** paket rilis `dist/mualimku-<versi>.zip`
+   (dibuat dengan `php tools/buat-paket.php <versi>` — TIDAK PERNAH
+   meng-zip folder kerja langsung; paket sudah bebas `.env`, `.git/`,
+   cadangan, dokumen pribadi).
+3. Kembali ke File Manager → klik kanan zip → **Extract**.
+4. Bila aplikasi dipakai di subfolder, ekstrak ke `public_html/mualimku/`.
 
-```bat
-php tools/set-password.php operator
-php tools/set-password.php bendahara
-php tools/set-password.php kepsek
-:: (bila memakai seed_demo)
-php tools/set-password.php siswa
-```
+### 1.4 Konfigurasi `.env`
 
-Masukkan password baru (min 10 karakter, konfirmasi 2×). Akun akan ditandai
-**wajib ganti password** — pengguna dipaksa mengganti password saat login
-pertama. Tool ini hanya bisa dijalankan lewat CLI (bukan lewat browser).
+Salin `.env.example` menjadi `.env` (File Manager → Show Hidden Files ON →
+Edit) lalu isi:
 
-Migrasi SQL tambahan per fase: jalankan berurutan file di
-`database/migrations/` (idempoten — aman dijalankan ulang).
+| Kunci | Nilai |
+|-------|-------|
+| `DB_HOST` | `localhost` (lazim di cPanel) |
+| `DB_PORT` | `3306` |
+| `DB_NAME` / `DB_USER` / `DB_PASS` | nama & user lengkap (dgn awalan) + password |
+| `APP_URL` | `https://domain-anda` (wajib HTTPS — dipakai tautan WhatsApp) |
+| `FONNTE_TOKEN` | token Fonnte (bila pakai WA gateway) |
+| `MIDTRANS_*` | hanya bila sekolah punya akun Midtrans |
+| `TRUSTED_PROXIES` | isi CIDR Cloudflare **hanya bila** lewat Cloudflare — salin daftar dari halaman resmi Cloudflare (https://www.cloudflare.com/ips/); kosong = abaikan semua header proxy |
+| `TRUSTED_PROXY_HEADER` | `CF-Connecting-IP` bila memakai Cloudflare, selain itu biarkan kosong |
+| `STORAGE_DIR` | lihat langkah 1.5 (path absolut folder storage di luar web) |
+
+Jangan commit `.env` ke mana pun; `.env` sudah masuk `.gitignore` dan
+dikecualikan dari paket rilis.
+
+### 1.5 Pindahkan `.env` & `storage/` ke luar web root (disarankan)
+
+1. Di home account (satu tingkat di atas `public_html`), buat folder
+   `spmb-data/` lalu pindahkan folder `storage/` ke sana (File Manager:
+   Move, atau Download+Upload bila antar-root tidak bisa).
+2. Set permissions `spmb-data/storage` & subfoldernya (`dokumen`, `backup`)
+   ke **755** (atau 775 bila user hosting menuntut demikian) agar bisa
+   ditulis web server.
+3. Di `.env` isi `STORAGE_DIR=/home/USERNAME/spmb-data/storage`.
+4. Salin `.env` ke `/home/USERNAME/spmb-data/.env` — aplikasi otomatis
+   mencari `.env` satu tingkat di atas root proyek LEBIH DAHULU sebelum
+   `.env` di root proyek (Fase 12 C6). Anda boleh menghapus `.env` di
+   `public_html` setelah itu.
+5. Halaman **Kesiapan Rilis** (operator) menampilkan status lokasi storage —
+   harus berstatus baik (di luar web root).
+
+### 1.6 Set password staf — TANPA SSH
+
+Seed mengunci semua akun staf. Lewat browser:
+
+1. File Manager → buat file kosong bernama `.izinkan-set-password` di
+   dalam folder `storage/` (nama persis, tanpa ekstensi).
+2. Buka `https://domain-anda/tools/set-password-web.php`.
+3. Pilih akun (`operator`, `bendahara`, `kepsek`) → isi password baru
+   (min 10 karakter, konfirmasi 2×) → Simpan.
+4. Ulangi untuk tiap akun staf. (Setiap sukses, penanda otomatis terhapus —
+   buat lagi bila masih ada akun terkunci.)
+5. **Langkah wajib:** hapus `tools/set-password-web.php` dari server dan
+   pastikan penanda `.izinkan-set-password` sudah tidak ada.
+6. Login tiap staf — sistem memaksa **ganti password** saat login pertama.
+
+Alternatif bila ada akses SSH/terminal cPanel:
+`php tools/set-password.php <username>` (CLI-only).
+
+### 1.7 PHP & HTTPS
+
+1. **MultiPHP INI Editor** → pilih domain → PHP **8.1 atau lebih baru**.
+   File `.user.ini` di root proyek sudah menyetel `display_errors=Off`,
+   `log_errors=On`, `upload_max_filesize=3M`, `post_max_size=8M`
+   (berlaku untuk PHP-FPM/CGI).
+2. **SSL/TLS Status** → pilih domain → **Run AutoSSL** (Let's Encrypt).
+   Setelah sertifikat aktif, pastikan `APP_URL` memakai `https://`.
+3. Bila memakai mod_php, pengaturan `php_flag` hanya ada di dalam
+   `<IfModule mod_php.c>` (sudah benar di `.htaccess` — jangan mengeluarkannya,
+   bisa error 500 di PHP-FPM).
+
+### 1.8 Pemeriksaan akhir
+
+1. Login operator → **Kesiapan Rilis**: semua item minimal *Perhatian*,
+   tidak ada *Gagal* — termasuk item retensi, proxy, & lokasi storage.
+2. **Pengaturan Sistem**: lengkapi profil sekolah, rekening/QRIS, nomor WA,
+   daftar berkas persyaratan, S&K (Pasal 8 Privasi — tinjau sekolah/hukum,
+   draf: `docs/KEBIJAKAN-DATA.md`).
+3. Uji manual mengikuti `docs/UJI-MANUAL.md` (registrasi, unggah, bayar,
+   verifikasi, pengumuman, cek-status, tools CLI bila ada).
+4. Bila ada akses CLI/terminal: jalankan `php tools/cek-proyek.php` dan
+   `php tools/cek-statis.php` — keduanya **tanpa GAGAL**.
 
 ---
 
 ## 2. Daftar Periksa Produksi (ringkas)
 
-1. Hosting dengan **HTTPS** aktif (sertifikat Let's Encrypt / sejenisnya).
-2. Salin `.env.example` → `.env`, lalu isi:
-   - `APP_URL=https://domain-anda` (dipakai tautan WhatsApp).
-   - Kredensial DB (`DB_*`) — buat user MySQL khusus terbatas.
-   - `FONNTE_TOKEN` (token Fonnte untuk WhatsApp).
-   - Kunci Midtrans **hanya bila** sekolah sudah punya akun gateway.
-3. Buat user MySQL & hak akses: `mysql -u root < database/fix-grants.sql`.
-4. Impor SQL & migrasi (lihat bagian 1), lalu `set-password.php` semua staf.
-5. Login sebagai operator → **Pengaturan**: ubah S&K, daftar berkas
-   persyaratan, rekening bank, gambar QRIS, nomor WA notifikasi.
-5b. **(C6) Pindahkan `.env` & `storage/` ke luar web root** — di cPanel:
-   buat folder di home account (mis. `/home/USERNAME/spmb-data/`), pindahkan
-   `storage/` ke sana, lalu di `.env` isi
-   `STORAGE_DIR=/home/USERNAME/spmb-data/storage` dan salin `.env` ke
-   `/home/USERNAME/spmb-data/.env` (diakus oleh aplikasi otomatis sebelum
-   mencari `.env` di root proyek). Pastikan folder bisa ditulis user cPanel
-   (File Manager → Permissions 755/775).
-6. Pengaturan PHP produksi — `display_errors=Off`, `log_errors=On`,
-   `upload_max_filesize=3M`, `post_max_size=8M`:
-   - **PHP-FPM/CGI (lazim di cPanel)**: file `.user.ini` di root proyek sudah
-     berisi nilai di atas (berlaku otomatis); alternatif: ubah lewat menu
-     **MultiPHP INI Editor** di cPanel.
-   - **mod_php**: lewat `.htaccess` (sudah ada di dalam `<IfModule mod_php.c>`
-     — direktif `php_flag`/`php_value` TIDAK boleh berdiri di luar IfModule
-     karena memicu error 500 di PHP-FPM).
-7. Izin folder: `storage/dokumen`, `storage/backup` dapat ditulis web server.
-8. Setelah HTTPS jalan: aktifkan HSTS di konfigurasi web server.
-9. Jadwalkan cadangan harian (lihat bagian 3).
-10. Verifikasi akhir: `php tools/cek-proyek.php` harus **tanpa GAGAL**,
-    lalu `php tools/cek-statis.php` (12 pemeriksaan statis kode) juga
-    **tanpa GAGAL**, dan uji manual mengikuti `docs/UJI-MANUAL.md`.
-
-**LARANGAN:** jangan membagikan file zip rilis yang memuat `.env` atau folder
-`.git` — gunakan `php tools/buat-paket.php` (Fase 11 B1) yang sudah mengecualikan
-keduanya.
+1. HTTPS aktif (AutoSSL/Let's Encrypt).
+2. `.env` terisi (DB_*, APP_URL, FONNTE/MIDTRANS bila dipakai) —
+   disimpan di luar `public_html` bila memungkinkan.
+3. Database & user dibuat via wizard; setelah impor, grant dikurangi ke
+   SELECT/INSERT/UPDATE/DELETE.
+4. Impor SQL utama + migrasi berurutan; semua staf punya password sendiri
+   (`!LOCKED` sudah tidak ada).
+5. `storage/` di luar web root (`STORAGE_DIR` disetel) & bisa ditulis.
+6. `.user.ini` / MultiPHP: PHP ≥ 8.1, display_errors Off.
+7. HSTS aktif setelah HTTPS (opsional: uncomment di `.htaccess`).
+8. Cron harian backup (bagian 3) + cron bulanan retensi (opsional, bagian 3b).
+9. Kesiapan Rilis tanpa *Gagal*; uji manual lulus.
+10. **LARANGAN:** jangan bagikan zip rilis yang memuat `.env`/`.git`/cadangan/
+    dokumen pribadi — selalu pakai `php tools/buat-paket.php`.
 
 ---
 
 ## 3. Cadangan Database & Berkas
 
-Dua tool CLI (Fase 11 B3) menulis ke `storage/backup/` — folder ini
-**diblokir dari web** oleh `storage/.htaccess`.
+Dua tool CLI menulis ke `storage/backup/` (diblokir dari web oleh
+`storage/.htaccess`):
 
 ```bat
-:: Cadangan database -> storage/backup/db/spmb-<waktu>.sql.gz
-php tools/backup-db.php
-
-:: Cadangan dokumen pendaftar (KK, akta, bukti transfer)
-php tools/backup-berkas.php
+php tools/backup-db.php        :: -> storage/backup/db/spmb-<waktu>.sql.gz
+php tools/backup-berkas.php    :: zip dokumen pendaftar
 ```
 
-- Retensi otomatis **14 hari** (file lebih tua dihapus setiap kali tool dijalankan).
-- Password database tidak pernah muncul di argumen proses (`MYSQL_PWD` via env)
-  dan tidak pernah dicetak.
-- Keduanya CLI-only; file hasil adalah data sensitif — **jangan dibagikan**,
-  simpan juga salinan ke lokasi terpisah (disk eksternal / penyimpanan awan
-  berenkripsi) minimal mingguan.
+- Retensi otomatis **14 hari**; password DB tidak pernah dicetak
+  (`MYSQL_PWD` via env; bila `proc_open`/`mysqldump` tak tersedia, tool
+  otomatis memakai **dump PDO murni** — aman di shared hosting).
+- File hasil memuat data sensitif — jangan dibagikan; simpan salinan luar
+  server (cloud terenkripsi / disk eksternal) minimal mingguan.
 
-**Jadwal harian — Windows (Task Scheduler):**
+**Cron Jobs cPanel (tanpa SSH):**
 
-```bat
-schtasks /create /tn "SPMB Cadangan DB" /tr "C:\xampp\php\php.exe C:\xampp\htdocs\mualimku\tools\backup-db.php" /sc daily /st 23:00
-schtasks /create /tn "SPMB Cadangan Berkas" /tr "C:\xampp\php\php.exe C:\xampp\htdocs\mualimku\tools\backup-berkas.php" /sc daily /st 23:10
+1. Menu **Cron Jobs** → pilih *Daily* / *Monthly* → **Add**.
+2. **PHP CLI ≠ PHP web** — path PHP CLI sering berbeda (mis.
+   `/usr/local/bin/ea-php81` atau `/usr/local/bin/php`). Bila menu
+   **Terminal** tersedia: `which php`. Bila tidak, tanyakan support hosting.
+3. Contoh baris cron (sesuaikan username, path PHP, dan versi):
+
+```
+0 23 * * *  /usr/local/bin/ea-php81 /home/USERNAME/public_html/tools/backup-db.php
+10 23 * * * /usr/local/bin/ea-php81 /home/USERNAME/public_html/tools/backup-berkas.php
+0 1 1 * *   /usr/local/bin/ea-php81 /home/USERNAME/public_html/tools/retensi.php --jalankan
 ```
 
-**Jadwal harian — Linux (cron):**
+4. Pastikan `storage/backup/` & `storage/dokumen/` bisa ditulis user.
 
-```cron
-0 23 * * * /usr/bin/php /var/www/html/tools/backup-db.php >> /var/log/spmb-backup.log 2>&1
-10 23 * * * /usr/bin/php /var/www/html/tools/backup-berkas.php >> /var/log/spmb-backup.log 2>&1
-```
+**Cadangan manual (cadangan terakhir bila cron bermasalah):**
 
-**Hosting bersama cPanel (mis. Domainesia) — dua jalur:**
+- **phpMyAdmin → Export** (SQL, metode quick) → unduh ke komputer.
+- **cPanel → Backup → Full Backup** → unduh cadangan penuh akun; simpan
+  terenkripsi di luar server.
 
-1. **Cron Jobs cPanel** (menu "Cron Jobs") menjalankan `tools/backup-db.php`.
-   - Tool **tidak bergantung** pada `mysqldump`/`proc_open`: bila keduanya
-     dinonaktifkan hosting, otomatis memakai **dump PDO murni** (jalur shared
-     hosting) — hasilnya tetap `.sql.gz` yang bisa diimpor phpMyAdmin.
-   - **PHP CLI ≠ PHP web.** Path PHP CLI sering berbeda (mis.
-     `/usr/local/bin/ea-php81`, `/usr/local/bin/php`, dsb — **jangan anggap
-     pasti**). Cara memeriksanya: bila menu **Terminal** tersedia di cPanel,
-     jalankan `which php` atau `command -v php`; alternatif lain, tanyakan
-     support hosting. Contoh format cron (sesuaikan path hasil pemeriksaan):
-     ```
-     0 23 * * * /usr/local/bin/ea-php81 /home/USER/public_html/tools/backup-db.php
-     ```
-   - Pastikan `storage/backup/db/` bisa ditulis user hosting.
-2. **Cadangan manual tanpa tool** (cadangan terakhir bila cron bermasalah):
-   - **phpMyAdmin → Export** (format SQL, metode "quick") — unduh file
-     `.sql` ke komputer Anda; perhatikan **batas ukuran unggah/unduh** hosting.
-   - **cPanel → Backup / Full Backup** — unduh cadangan penuh akun (termasuk
-     database & file) ke lokal; simpan terenkripsi di luar server.
+### 3b. Retensi berkas pribadi (opsional, Fase 12 E)
+
+- Aktifkan & atur batas bulan di halaman operator **Retensi Data**
+  (konfirmasi ganda sebelum eksekusi; jejak di `retensi_log`).
+- Cron di atas menjalankan `tools/retensi.php --jalankan` bulanan —
+  tanpa argumen `--jalankan` tool hanya simulasi (dry-run).
+- Draf kebijakan utk tinjauan sekolah/hukum: `docs/KEBIJAKAN-DATA.md`.
 
 ---
 
 ## 4. Rilis & Pembaruan
 
-1. **Uji dulu isi paket** — buat pohon umpan sementara, pastikan tidak ada file
-   terlarang yang bocor (exit ≠ 0 bila bocor):
-   ```bat
-   php tools/buat-paket.php --uji
-   ```
-2. Buat paket dari mesin pengembangan — **bukan** dengan meng-zip folder kerja:
-   ```bat
-   php tools/buat-paket.php v1.2
-   ```
-   hasilnya `dist/mualimku-v1.2.zip` yang sudah diverifikasi bebas
-   `.env`, `.git/`, `storage/backup/`, `node_modules/`, seed demo, dan dokumen pribadi.
-3. Di server: ekstrak di atas instalasi lama (timpa file kode), **jangan**
-   timpa `.env`.
-4. Jalankan migrasi baru yang belum pernah jalan
-   (urut nama file di `database/migrations/` — idempoten).
-5. Verifikasi: `php tools/cek-proyek.php` harus tanpa GAGAL.
-6. Uji cepat: halaman publik `index.php`, `app/spmb/cek-status.php`, login staf.
+1. Uji isi paket di mesin pengembangan (exit ≠ 0 bila ada file terlarang):
+   `php tools/buat-paket.php --uji`
+2. Buat paket: `php tools/buat-paket.php v1.2` → `dist/mualimku-v1.2.zip`.
+3. Di server: ekstrak di atas instalasi lama (timpa file kode) —
+   **jangan** timpa `.env`.
+4. Jalankan migrasi baru (phpMyAdmin, urut nama file — idempoten).
+5. Verifikasi: `php tools/cek-proyek.php` + `php tools/cek-statis.php`
+   tanpa GAGAL (bila ada CLI); uji cepat: landing page,
+   `app/spmb/cek-status.php`, login staf.
+6. Bila tahun ajaran berganti: ubah tahun ajaran & tanggal PPDB di
+   **Pengaturan Sistem** (nilai bawaan seed sudah 2027/2028, Fase 12 F.1).
 
 ---
 
 ## 5. Pemulihan dari Cadangan
 
+**Via phpMyAdmin (tanpa SSH):**
+
+1. phpMyAdmin → pilih database → tab **Import** → pilih file `.sql`
+   hasil dekompresi cadangan → Go. (Bila perlu, ekstrak `.sql.gz` dulu di
+   komputer Anda — phpMyAdmin tidak selalu menerima `.gz`.)
+2. File Manager → ekstrak `berkas-<waktu>.zip` ke folder `storage/dokumen`.
+
+**Via CLI (bila tersedia):**
+
 ```bat
-:: 1) Restore database (contoh file per 16 Okt 2026 jam 23:00)
 gzip -d storage\backup\db\spmb-20261016-230000.sql.gz
 mysql -u root db_spmb_mualimku < storage\backup\db\spmb-20261016-230000.sql
-
-:: 2) Restore dokumen pendaftar: ekstrak isi
-::    storage/backup/berkas-<waktu>.zip ke storage/dokumen/
 ```
 
-Setelah pemulihan: jalankan `php tools/cek-proyek.php` dan uji login staf.
+Setelah pemulihan: `php tools/cek-proyek.php` (bila ada CLI) dan uji login
+staf + cek-status pendaftar.
 
 ---
 
-*Dokumen ini dilengkapi pada Bagian B4 Fase 11.*
+*Panduan ini disesuaikan Fase 12 (cPanel/Domainesia tanpa SSH, retensi data,
+set-password-web, storage di luar web root).*

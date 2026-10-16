@@ -108,6 +108,9 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | F10 | `mysql -u root db_spmb_mualimku < database/seed_demo.sql` **dua kali** | Idempoten — run ke-2 tanpa duplikat; total **11/11 tahap** (`tahap_unik=11`), siswa demo `'!LOCKED'` |
 | F11 | `mysql -u root db_spmb_mualimku < database/seed_demo_hapus.sql` lalu F10 ulang | Bersih total lalu seed kembali sukses |
 | F12 | `php tools/cek-statis.php` (Fase 12 D) | 12 pemeriksaan statis (syntax, BOM, CRLF, gitignore, git index, rahasia hardcode, eval, eksekusi, CSRF, mime, .htaccess/.user.ini); exit **1** bila ada GAGAL |
+| F13 | Buat penanda `storage/.izinkan-set-password` → buka `/tools/set-password-web.php` (Fase 12 F.2) | Tanpa penanda: **404**; dgn penanda: form daftar akun `!LOCKED`; POST sukses → password tersimpan, **penanda terhapus otomatis**, akses berikutnya 404 |
+| F14 | Menu **Retensi Data** + `php tools/retensi.php` (Fase 12 E) | Pratinjau kategori & pengaturan tersimpan; hapus berkas butuh **ketik no. pendaftaran** (konfirmasi salah ditolak); CLI default **dry-run**, `--jalankan` tolak bila retensi nonaktif, eksekusi tercatat di `retensi_log` |
+| F15 | `php tools/uji-klien-ip.php` (Fase 12 C3) | 12 kasus `klien_ip()` (tanpa proxy, XFF sah, pemalsuan, rantai, IPv6, header sampah); exit **1** bila ada GAGAL |
 
 ## G. Fase 11 — Halaman Kesiapan (C)
 
@@ -133,7 +136,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | X6 | Tebak/cari token bayar di DB & sumber web | Kolom `pay_token` selalu NULL; pencarian via hash SHA-256 UNIQUE; token polos hanya 3 titik tampil-terbatas |
 | X7 | Panggil snap-token uang masuk utk pendaftar belum lolos berkas | Ditolak — tahap < BERKAS_TERVERIFIKASI |
 | X8 | Serang ganti-password (6× cepat, 1 IP / 1 akun) | Diblokir 5 / 15 menit per IP **dan** per user |
-| X9 | Buka `/tools/*.php` via browser | **404** — semua tools (buat-paket, backup, cek-proyek, set-password) CLI-only |
+| X9 | Buka `/tools/*.php` via browser | **404** — tool CLI (buat-paket, backup, cek-proyek, cek-statis, retensi, set-password, uji-*); `set-password-web.php` juga **404** selama penanda `storage/.izinkan-set-password` tidak ada |
 | X10 | Cari rahasia di paket rilis / repo | `.env` absen dari zip & repo; `hak akses.txt` tiada; password hanya hash bcrypt/`!LOCKED` |
 | X11 | Edit `pay_token_hash` jadi duplikat | Ditolak DB (constraint UNIQUE) |
 | X12 | Pembatasan teks penolakan verifikasi diklik korban | Mendarat di cek-status (pemulihan aman), bukan halaman bayar |
