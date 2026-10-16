@@ -1102,7 +1102,10 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <label class="label" for="syarat_ketentuan">Teks Syarat &amp; Ketentuan (S&amp;K)</label>
           <p class="hint -mt-1 mb-2">Percabangan versi otomatis naik bila teks diubah. Calon pendaftar harus menggulir &amp; mencentang persetujuan sebelum formulir dapat dikirim.</p>
           <textarea id="syarat_ketentuan" name="syarat_ketentuan" rows="12" class="input font-mono text-[13px]" placeholder="Tulis syarat & ketentuan pendaftaran…"><?= e($f['syarat_ketentuan']) ?></textarea>
-          <p class="hint mt-1">Versi saat ini: <strong class="text-ink-900"><?= (int) $f['syarat_versi'] ?></strong></p>
+          <p class="hint mt-1">Versi saat ini: <strong class="text-ink-900"><?= (int) $f['syarat_versi'] ?></strong>
+            — setiap perubahan teks otomatis menaikkan versi; pendaftar lama tetap terikat versi yang mereka setujui saat mendaftar.</p>
+          <p class="hint mt-1">Pasal Privasi &amp; Retensi Data (Pasal 8) wajib ditinjau sekolah/bagian hukum sebelum disetujui
+            (draf lengkap: <a class="text-primary underline" href="docs/KEBIJAKAN-DATA.md" target="_blank" rel="noopener">docs/KEBIJAKAN-DATA.md</a>).</p>
         </div>
       </section>
 
