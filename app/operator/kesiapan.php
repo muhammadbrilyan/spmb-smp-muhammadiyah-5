@@ -243,6 +243,31 @@ $items[] = [
         : 'Belum aktif — isi nomor WA operator & aktifkan di Pengaturan Sistem (opsional).',
 ];
 
+/* Retensi berkas pribadi (Fase 12 E7). */
+$retensiAktif = (int) ($P['retensi_aktif'] ?? 0) === 1;
+$pendTuaBerkas = 0;
+try {
+    $pendTuaBerkas = (int) (q_col(
+        "SELECT COUNT(DISTINCT p.id)
+           FROM pendaftar p
+           JOIN dokumen d ON d.pendaftar_id = p.id
+                        AND d.file_url IS NOT NULL AND d.file_url <> ''
+          WHERE p.created_at <= (NOW() - INTERVAL 12 MONTH)"
+    ) ?? 0);
+} catch (Throwable $e) {
+    $pendTuaBerkas = -1;
+}
+$retensiPerlu = !$retensiAktif && $pendTuaBerkas > 0;
+$items[] = [
+    'grup' => 'Sistem', 'status' => $retensiPerlu ? 'hati' : 'ok',
+    'judul' => 'Retensi berkas pribadi',
+    'ket'   => $retensiPerlu
+        ? 'Retensi nonaktif tetapi ada ' . $pendTuaBerkas . ' pendaftar >12 bulan yang berkas pribadinya masih tersimpan — tetapkan & aktifkan kebijakan retensi di menu Retensi Data (lihat docs/KEBIJAKAN-DATA.md).'
+        : ($retensiAktif
+            ? 'Retensi aktif — eksekusi berkala lewat tools/retensi.php (jadwalkan cron bulanan).'
+            : 'Retensi nonaktif dan belum ada pendaftar >12 bulan menyimpan berkas — belum mendesak.'),
+];
+
 /* Skor. */
 $totalItem  = count($items);
 $jumlahOk   = count(array_filter($items, function ($i) {
