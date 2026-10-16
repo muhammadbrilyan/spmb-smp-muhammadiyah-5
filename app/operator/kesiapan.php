@@ -154,6 +154,20 @@ $items[] = [
         : 'Kolom pay_token_hash tidak ditemukan — jalankan berurutan file di database/migrations/.',
 ];
 
+/* Proxy (Fase 12 C3): header terbawa tapi tidak ada proxy tepercaya = semua
+ * pengunjung terkunci rate-limit pada satu IP. */
+$adaHeaderProxy = isset($_SERVER['HTTP_X_FORWARDED_FOR']) || isset($_SERVER['HTTP_CF_CONNECTING_IP']);
+$adaTrusted = trim((string) env_val('TRUSTED_PROXIES')) !== '';
+$items[] = [
+    'grup' => 'Keamanan', 'status' => ($adaHeaderProxy && !$adaTrusted) ? 'hati' : 'ok',
+    'judul' => 'Proxy tepercaya (TRUSTED_PROXIES)',
+    'ket'   => ($adaHeaderProxy && !$adaTrusted)
+        ? 'Request membawa X-Forwarded-For / CF-Connecting-IP tetapi TRUSTED_PROXIES kosong di .env — semua pengunjung di belakang proxy terlihat satu IP dan saling mengunci rate limit. Isi daftar CIDR proxy di .env (Cloudflare: salin dari halaman resmi Cloudflare).'
+        : ($adaTrusted
+            ? 'Daftar proxy tepercaya terisi — header hanya dipercaya dari anggotanya.'
+            : 'Tidak ada header proxy terbawa & TRUSTED_PROXIES kosong — perilaku aman default.'),
+];
+
 $metode = [];
 if (!empty($P['bayar_transfer_aktif'])) { $metode[] = 'Transfer bank'; }
 if (!empty($P['bayar_gateway_aktif']))  { $metode[] = 'Gateway online'; }

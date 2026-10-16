@@ -233,7 +233,115 @@ function rate_limit_identitas($kunci = null)
             return 'k:' . substr($kunci, 0, 42);
         }
     }
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    return klien_ip();
+}
+
+/**
+ * IP klien SEJATI di belakang proxy tepercaya (Fase 12 C3).
+ *
+ * .env:
+ *   TRUSTED_PROXIES      = daftar CIDR/IP dipisah kanga (kosong = TIDAK ADA
+ *                          proxy tepercaya -> semua header DIABAIKAN).
+ *   TRUSTED_PROXY_HEADER = 'X-Forwarded-For' atau 'CF-Connecting-IP'
+ *                          (kosong = 'X-Forwarded-For').
+ *
+ * Daftar CIDR Cloudflare: salin dari HALAMAN RESMI Cloudflare ke .env —
+ * sengaja TIDAK di-hardcode di sini agar tidak basi.
+ *
+ * Algoritma: bila REMOTE_ADDR bukan anggota TRUSTED_PROXIES -> kembalikan
+ * REMOTE_ADDR dan abaikan semua header. Bila anggota: X-Forwarded-For
+ * ditelusuri kanan->kiri (lewati alamat yang termasuk proxy tepercaya,
+ * ambil yang pertama bukan proxy); CF-Connecting-IP dipakai nilainya.
+ * Hasil divalidasi FILTER_VALIDATE_IP; tidak valid -> REMOTE_ADDR.
+ * Parameter opsional dipakai tools/uji-klien-ip.php.
+ */
+function klien_ip(array $server = null, $proxiesCsv = null, $headerName = null)
+{
+    $server = $server ?? $_SERVER;
+    $remote = trim((string) ($server['REMOTE_ADDR'] ?? ''));
+    if ($remote === '' || filter_var($remote, FILTER_VALIDATE_IP) === false) {
+        return '0.0.0.0';
+    }
+
+    $csv = $proxiesCsv !== null ? (string) $proxiesCsv : (string) env_val('TRUSTED_PROXIES');
+    $daftar = array_values(array_filter(array_map('trim', explode(',', $csv))));
+    if ($daftar === [] || !klien_ip_dalam_daftar($remote, $daftar)) {
+        return $remote; /* bukan proxy tepercaya -> abaikan semua header */
+    }
+
+    $header = strtoupper($headerName !== null ? (string) $headerName
+        : (string) (env_val('TRUSTED_PROXY_HEADER') ?: 'X-Forwarded-For'));
+
+    if ($header === 'CF-CONNECTING-IP') {
+        $v = trim((string) ($server['HTTP_CF_CONNECTING_IP'] ?? ''));
+        return filter_var($v, FILTER_VALIDATE_IP) !== false ? $v : $remote;
+    }
+
+    /* X-Forwarded-For: telusuri kanan -> kiri. */
+    $xff = array_map('trim', explode(',', (string) ($server['HTTP_X_FORWARDED_FOR'] ?? '')));
+    for ($i = count($xff) - 1; $i >= 0; $i--) {
+        $k = $xff[$i];
+        if (filter_var($k, FILTER_VALIDATE_IP) === false) {
+            continue; /* nilai sampah -> lewati */
+        }
+        if (!klien_ip_dalam_daftar($k, $daftar)) {
+            return $k;
+        }
+    }
+    return $remote;
+}
+
+/** Apakah $ip cocok dengan salah satu entri CIDR/IP (IPv4 & IPv6)? */
+function klien_ip_dalam_daftar($ip, array $daftar)
+{
+    $ipBin = @inet_pton($ip);
+    if ($ipBin === false) {
+        return false;
+    }
+    foreach ($daftar as $c) {
+        if (strpos($c, '/') === false) {
+            if ($ip === $c) {
+                return true;
+            }
+            continue;
+        }
+        $bagian = explode('/', $c, 2);
+        if (count($bagian) !== 2) {
+            continue;
+        }
+        list($subnet, $bits) = $bagian;
+        $bits = (int) $bits;
+        $subnetBin = @inet_pton($subnet);
+        if ($subnetBin === false || strlen($ipBin) !== strlen($subnetBin)) {
+            continue; /* v4 vs v6 / CIDR rusak */
+        }
+        $maks = strlen($ipBin) * 8;
+        if ($bits < 0 || $bits > $maks) {
+            continue;
+        }
+        if ($bits === 0) {
+            return true;
+        }
+        $bytePenuh = intdiv($bits, 8);
+        $sisa = $bits % 8;
+        $ok = true;
+        for ($j = 0; $j < $bytePenuh; $j++) {
+            if ($ipBin[$j] !== $subnetBin[$j]) {
+                $ok = false;
+                break;
+            }
+        }
+        if ($ok && $sisa > 0) {
+            $mask = chr((0xFF << (8 - $sisa)) & 0xFF);
+            if (($ipBin[$bytePenuh] & $mask) !== ($subnetBin[$bytePenuh] & $mask)) {
+                $ok = false;
+            }
+        }
+        if ($ok) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**

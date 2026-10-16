@@ -84,7 +84,7 @@ function attempt_login($username, $password)
     /* --- Rate limiting: max 5 percobaan gagal per 15 menit per IP ---
      * Disimpan di tabel login_attempts (bukan session) agar tidak bisa
      * dilewati penyerang dengan membuang cookie. */
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $ip = klien_ip();
     $db = db();
 
     $sisaDetik = 0;
