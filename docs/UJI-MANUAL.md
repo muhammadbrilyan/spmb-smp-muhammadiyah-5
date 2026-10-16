@@ -1,11 +1,14 @@
-# Uji Manual — Fase 10 (Gateway Opsional + Hardening)
+# Uji Manual — Fase 10 & 11 (Gateway, Hardening, Kesiapan Produksi)
 
 Checklist uji manual SPMB Muhammadiyah 5. Jalankan berurutan; centang bila **PASS**.
 Server uji: `php -S localhost:8099 -t <root proyek>` — ganti host/port sesuai kebutuhan.
 
 > **Sebelum mulai**: migrasi Fase 10 harus sudah dieksekusi
 > (`database/migrations/20261015_fase10_gateway_opsional.sql` +
-> `20261015_fase10_keamanan.sql`), dan seed diimpor ulang bila DB masih mentah.
+> `20261015_fase10_keamanan.sql`) **dan migrasi Fase 11**
+> (`database/migrations/20261016_fase11_pay_token_hash.sql`), serta seed diimpor
+> ulang bila DB masih mentah. Data demo opsional (11 tahap, berkas, ujian):
+> `mysql -u root db_spmb_mualimku < database/seed_demo.sql`.
 
 ---
 
@@ -67,23 +70,100 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 
 ---
 
-## Lint & grep bukti (sekali jalan)
+## E. Fase 11 — WA, Token Bayar & Cek-Status (A1–A6)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| E1 | `app/api/snap-token.php` dari **publik** (belum login) utk uang masuk | Ditolak — hanya produk **FORMULIR** yang bisa diminta publik |
+| E2 | Portal siswa tahap `< BERKAS_TERVERIFIKASI` minta snap-token uang masuk | Ditolak — uang masuk hanya setelah berkas terverifikasi |
+| E3 | Siswa BERKAS_TERVERIFIKASI + pembayaran belum VERIFIED → snap-token | Diterima (jalur portal terautentikasi) |
+| E4 | Ganti Password: password baru < 10 / = username / = lama | Ditolak bertahap, masing-masing dengan pesannya |
+| E5 | Ganti Password 6× (gagal/sukses campur) dari IP & user sama | Percobaan ke-6 diblokir (5 / 15 menit, per IP **dan** per user) |
+| E6 | Setelah ganti password sukses | `session_regenerate_id(true)` — ID sesi berubah, sesi tetap login |
+| E7 | Pesan WA instruksi bayar (registrasi) saat transfer aktif & gateway mati | Hanya langkah transfer (+QRIS bila aktif); akhir pesan persis: "Setelah pembayaran terverifikasi, akun dan password dikirim lewat WhatsApp." |
+| E8 | Kartu sukses registrasi | Langkah **identik** dengan pesan WA (satu sumber `wa_pesan_instruksi`) |
+| E9 | Registrasi sukses → kirim WA ke nomor sama 3× / 24 jam (token baru tiap kali) | Percobaan ke-4 ditolak (rate `registrasi_wa` per nomor) |
+| E10 | Cek-status dgn format nomor tak valid (mis. `ABC`) | Pesan **seragam**; kunci per-nomor **tidak dicatat** (hanya `REG-YYYY-NNNN` valid) |
+| E11 | Cek-status **berhasil** (kombinasi benar) diulang 6× | Percobaan tetap dihitung normal — pencarian sukses tidak menambah hitungan; rate lama 10/15mnt/IP tetap berlaku |
+| E12 | Setelah `php tools/cek-proyek.php` / biarkan >2 hari | Baris `rate_limit` usang terbersih otomatis (±1% request, hapus >2 hari, maks 1000) |
+| E13 | Registrasi **kedua** dengan data sama saat sebelumnya sukses | Regristrasi idempoten: reuse reg_token → **pay_token dirotasi**, tautan bayar lama **404** |
+| E14 | Cek `SELECT pay_token, pay_token_hash FROM pendaftar` | `pay_token` **NULL** untuk semua baris; pencarian hanya lewat `SHA2(?,256)` pada `pay_token_hash` (UNIQUE) |
+| E15 | Halaman tautan bayar lama (`bayar.php?t=<token lama>`) | 404 / tidak mengarah ke pembayaran valid |
+| E16 | Pesan WA penolakan verifikasi dokumen | Tautan menuju **cek-status** (`app/spmb/cek-status.php`), bukan halaman bayar — ada tombol "Pulihkan Tautan" |
+| E17 | Telusuri sumber tampilan token bayar | Token polos hanya muncul di 3 tempat: sukses registrasi, pesan WA registrasi, hasil pemulihan cek-status |
+
+## F. Fase 11 — Instrumen Rilis (B1–B6)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| F1 | `php tools/buat-paket.php` (atau akses via web `/tools/buat-paket.php`) | CLI: zip dibuat di `dist/` + daftar isi; **web: 404** |
+| F2 | Periksa isi zip hasil F1 | `.env`, `.git/`, `dist/`, `hak akses.txt`, isi `storage/dokumen` (non-demo), `storage/backup` **tidak ada**; `.env.example` ikut |
+| F3 | `php tools/cek-proyek.php` | 8 pemeriksaan; exit **1** bila ada GAGAL, **0** bila hanya PASS/WARN |
+| F4 | Ganti sementara satu `password_hash` jadi hash md5 → jalankan F3 | **GAGAL** (akun hash lemah) + exit 1 — kembalikan setelahnya |
+| F5 | `php tools/backup-db.php` | File `storage/backup/db/spmb-<ts>.sql.gz` valid (`CREATE TABLE`/`INSERT` ada saat dibuka) |
+| F6 | `php tools/backup-berkas.php` | Zip `storage/backup/berkas-<ts>.zip` berisi `storage/dokumen` |
+| F7 | Buat 2 backup lama berbeda tanggal → jalankan F5/F6 lagi | File >14 hari otomatis terhapus (rotasi retensi 14 hari) |
+| F8 | Jalankan F5 tanpa kredensial DB valid | Gagal **jelas** tanpa mencetak password ke layar/log (password lewat env `MYSQL_PWD`) |
+| F9 | `git check-attr text eol -- file` + `.editorconfig` | `text=auto`/`eol=lf` aktif; CRLF hanya `*.bat` |
+| F10 | `mysql -u root db_spmb_mualimku < database/seed_demo.sql` **dua kali** | Idempoten — run ke-2 tanpa duplikat; total **11/11 tahap** (`tahap_unik=11`), siswa demo `'!LOCKED'` |
+| F11 | `mysql -u root db_spmb_mualimku < database/seed_demo_hapus.sql` lalu F10 ulang | Bersih total lalu seed kembali sukses |
+
+## G. Fase 11 — Halaman Kesiapan (C)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| G1 | Operator → sidebar **Kesiapan Rilis** → buka halaman | 200; skor %, status (SIAP/SIAP DENGAN CATATAN/BELUM SIAP), 13 item checklist, kartu antrean |
+| G2 | Tanpa login → `app/operator/kesiapan.php` | 302 ke login (berikut `next=`) |
+| G3 | Role selain operator/admin (mis. kepsek) → halaman sama | 403 / dialihkan (require_role) |
+| G4 | Amati item terkait demo: nomor WA panitia | Badge **Perhatian** bila masih nomor contoh (`628123456789`) — status ikut data, bukan hiasan |
+| G5 | Jadikan kolom `fonnte_token` kosong sementara → reload | Item Fonnte jadi Perhatian; tanpa token kirim WA mati |
+| G6 | Periksa angka antrean vs SQL | Kartu antrean = jumlah `COUNT(*)` per tahap (BERKAS_DISUBMIT, BERKAS_REVISI, MENUNGGU_VERIFIKASI_BAYAR, BAYAR_TERVERIFIKASI) |
+| G7 | Halaman ini | **Read-only** — tidak ada POST/tombol yang mengubah data |
+
+## Skenario Penyalahgunaan (wajib lolos)
+
+| # | Serangan yang disimulasikan | Diharapkan |
+|---|----------------------------|-----------|
+| X1 | Brute-force 4 digit WA via cek-status (6× cepat, IP beda-gonta-ganti) | Percobaan ke-6 per nomor **tetap diblokir** (kunci lintas IP, Fase 11 A5) |
+| X2 | Enumerasi format nomor (`ABC`, `123`, `REG-26-1`) | Pesan seragam + kunci per-nomor **tidak dicatat** (tidak jadi alat DoS sendiri) |
+| X3 | Kunci massal nomor orang lain via cek-status | Hanya format `REG-YYYY-NNNN` valid yang menghitung; pencarian **sukses tidak dihitung** — orang tua sah tak terkunci |
+| X4 | Registrasi WA flood ke 1 nomor korban (4× dgn token beda) | Percobaan ke-4 ditolak (3 / 24 jam per nomor) |
+| X5 | Pakai ulang tautan bayar lama setelah registrasi idempoten ulang | Token lama **mati** (rotasi) → 404; token baru hanya di 3 tempat tampil |
+| X6 | Tebak/cari token bayar di DB & sumber web | Kolom `pay_token` selalu NULL; pencarian via hash SHA-256 UNIQUE; token polos hanya 3 titik tampil-terbatas |
+| X7 | Panggil snap-token uang masuk utk pendaftar belum lolos berkas | Ditolak — tahap < BERKAS_TERVERIFIKASI |
+| X8 | Serang ganti-password (6× cepat, 1 IP / 1 akun) | Diblokir 5 / 15 menit per IP **dan** per user |
+| X9 | Buka `/tools/*.php` via browser | **404** — semua tools (buat-paket, backup, cek-proyek, set-password) CLI-only |
+| X10 | Cari rahasia di paket rilis / repo | `.env` absen dari zip & repo; `hak akses.txt` tiada; password hanya hash bcrypt/`!LOCKED` |
+| X11 | Edit `pay_token_hash` jadi duplikat | Ditolak DB (constraint UNIQUE) |
+| X12 | Pembatasan teks penolakan verifikasi diklik korban | Mendarat di cek-status (pemulihan aman), bukan halaman bayar |
+
+---
+
+## Lint & cek proyek (sekali jalan)
 
 ```bat
 :: lint seluruh proyek (harus 0 gagal)
 for /r %f in (*.php) do php -l "%f" | findstr /i "error" || echo OK
+
+:: cek kesiapan 8 pemeriksaan (exit 1 bila GAGAL)
+php tools/cek-proyek.php
 ```
 
 - [ ] `csrf_cek()` dipakai & **hasilnya dipakai** di semua API POST baru
 - [ ] Prepared statement (`prepare(`) di query baru — tanpa interpolasi input
-- [ ] Tidak ada rahasia di repo: `hak akses.txt` tiada, `password` hanya hash
+- [ ] Tidak ada rahasia di repo: `hak akses.txt` tiada, `password` hanya hash, `.env` tak ter-commit
 - [ ] Tautan WhatsApp/API memakai `url_abs()` (bukan `url()`)
 
 ---
 
 ## Reset data uji
 
-- Hapus file uji di `storage/dokumen/` (sisakan `.gitkeep`).
+- Hapus file uji di `storage/dokumen/` (sisakan `.gitkeep`; file demo `dok-demo-*`/`bukti-demo-*` boleh
+  disisakan — memang ikut repo).
 - Pendaftar uji: kembalikan `tahap`/`bukti_transfer_url` sesuai seed, atau re-import
   `database/db_spmb_mualimku.sql`.
-- Bersihkan tabel `rate_limit` + `login_attempts` bila penuh percobaan uji.
+- Data demo lengkap: hapus dulu `mysql -u root db_spmb_mualimku < database/seed_demo_hapus.sql`,
+  lalu seed ulang dengan `seed_demo.sql`.
+- Bersihkan tabel `rate_limit` + `login_attempts` bila penuh percobaan uji:
+  `DELETE FROM rate_limit; DELETE FROM login_attempts;`.
+- Token bayar uji yang sudah dirotasi tidak bisa dipulihkan — buat pendaftar baru bila perlu alur bayar utuh.

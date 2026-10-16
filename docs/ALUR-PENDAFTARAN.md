@@ -1,6 +1,6 @@
 # Alur Pendaftaran SPMB — SMP Muhammadiyah 5 Kota Tangerang
 
-Dokumen ini merangkum alur end-to-end SPMB (Fase 0–9), model status `pendaftar.tahap`, tabel/kolom yang ditambahkan per fase, dan titik integrasi eksternal.
+Dokumen ini merangkum alur end-to-end SPMB (Fase 0–11), model status `pendaftar.tahap`, tabel/kolom yang ditambahkan per fase, dan titik integrasi eksternal.
 
 ## Alur Utama (Mermaid)
 
@@ -108,6 +108,46 @@ flowchart TD
 - **Bagian D**: `url_abs()` + env `APP_URL` untuk tautan WhatsApp; **kepsek tidak lagi**
   boleh mengunduh berkas pribadi di `app/api/dokumen.php`.
 
+### Fase 11 — Tutup Sisa Fase 10 + Kesiapan Produksi
+
+- **Bagian A (WA, akun, token)**:
+  - `pendaftar.pay_token_hash CHAR(64) UNIQUE` — kolom `pay_token` polos tidak lagi
+    disimpan/disimpan ulang di DB (hanya SHA-256); registrasi idempoten **merotasi**
+    pay_token sehingga tautan bayar lama mati. Helper tahap:
+    `tahap_urutan()/tahap_index()/tahap_minimal()` (`includes/functions.php`).
+  - `app/api/snap-token.php`: publik hanya produk **FORMULIR**; uang masuk hanya
+    dari portal siswa dengan tahap ≥ `BERKAS_TERVERIFIKASI` (dan belum VERIFIED/LUNAS).
+  - `app/staf/ganti-password.php`: min 10 karakter, tolak = username / = lama,
+    rate 5 percobaan / 15 menit (per IP + per user), `session_regenerate_id(true)` sukses.
+  - `wa_pesan_instruksi()` (`includes/fonnte.php`): instruksi WA hanya memuat metode
+    yang **aktif** di pengaturan, langkah akhir diseragamkan ("Setelah pembayaran
+    terverifikasi, akun dan password dikirim lewat WhatsApp.") — kartu sukses registrasi
+    memakai sumber yang sama.
+  - Rate registrasi WA `registrasi_wa` 3 kali / nomor / 24 jam.
+  - Cek-status: kunci rate per-nomor hanya untuk format `REG-YYYY-NNNN` valid,
+    hanya dicatat saat **gagal**; pembersih `rate_limit_bersihkan()` (baris >2 hari,
+    ±1% request acak, LIMIT 1000) dipanggil dari `includes/config.php`.
+  - WA penolakan verifikasi dokumen menautkan ke cek-status (bukan halaman bayar).
+  - Seed utama: akun staf `'!LOCKED'` (reset via CLI).
+- **Bagian B (instrumen rilis)**:
+  - `tools/buat-paket.php` — zip rilis CLI-only, mengecualikan `.env`, `.git`, `dist`,
+    isi `storage/dokumen` (non-demo), `storage/backup`, dan file rahasia; verifikasi
+    pasca-build otomatis.
+  - `tools/cek-proyek.php` — 8 pemeriksaan (versi PHP, ekstensi, `.env`, koneksi+skema,
+    izin storage, php.ini, akun `!LOCKED`/hash lemah); exit 1 bila GAGAL.
+  - `tools/backup-db.php` (mysqldump + gzip, password lewat env `MYSQL_PWD`,
+    rotasi 14 hari) & `tools/backup-berkas.php` (zip `storage/dokumen`, rotasi 14 hari).
+  - `docs/DEPLOY.md`: cadangan terjadwal, rilis/pembaruan, pemulihan bencana.
+  - `.gitattributes` (LF) + `.editorconfig` (UTF-8 tanpa BOM, indent 4).
+  - `database/seed_demo.sql` — 9 pendaftar demo (11/11 tahap tercakup), users siswa
+    demo `'!LOCKED'`, orang tua, pembayaran, 26 dokumen, 3 peserta ujian, 2 seleksi;
+    idempoten; pasangan `seed_demo_hapus.sql`.
+- **Bagian C (kesiapan)**: `app/operator/kesiapan.php` — checklist kesiapan 13 item
+  (read-only): APP_URL, placeholder rekening/WA panitia, jadwal+S&K, akun `!LOCKED`,
+  hash lemah, skema `pay_token_hash`, metode bayar, kunci Midtrans, token Fonnte,
+  izin storage, umur cadangan DB, notif WA operator; skor % + kartu antrean operasional
+  per tahap; menu sidebar **Kesiapan Rilis** (operator/admin).
+
 ## Alur Lengkap (Fase per Fase)
 
 ### Fase 0 — Prasyarat
@@ -147,6 +187,20 @@ bayar publik: CSRF + `pay_token` + metode/tahap aktif. Cek-status: pesan seragam
 rate per no_pendaftaran. Tautan WA absolut (`url_abs`/`APP_URL`). Kepsek keluar dari
 gate unduh berkas pribadi.
 
+### Fase 11 — Tutup Sisa Fase 10 + Kesiapan Produksi
+Token bayar disimpan sebagai **hash UNIQUE** (`pay_token_hash`) — registrasi idempoten
+merotasi token sehingga tautan lama mati; token polos hanya tampil di 3 titik terbatas
+(sukses registrasi, pesan WA, hasil pemulihan cek-status). Snap-token uang masuk hanya
+lewat portal siswa ≥ BERKAS_TERVERIFIKASI (publik hanya FORMULIR). Ganti password
+diperketat (min 10, tolak=username/lama, rate 5/15 menit IP+user, regenerasi sesi).
+Instruksi WA hanya memuat metode aktif + kalimat penutup seragam; registrasi WA
+dibatasi 3/nomor/24 jam. Cek-status: kunci per-nomor hanya utk format valid & hanya
+saat gagal + pembersih rate_limit otomatis. Tools rilis CLI-only: `buat-paket`,
+`cek-proyek` (8 pemeriksaan), `backup-db`, `backup-berkas` (rotasi 14 hari);
+paket rilis bebas `.env`/rahasia. Seed demo lengkap 11/11 tahap + `seed_demo_hapus.sql`.
+Halaman **Kesiapan Rilis** (`app/operator/kesiapan.php`): checklist kesiapan, skor %,
+kartu antrean operasional — read-only.
+
 ## Integritas & Keamanan
 
 - **CSRF**: semua form POST dilindungi `csrf_cek()` / `csrf_field()`.
@@ -161,9 +215,23 @@ gate unduh berkas pribadi.
 - **Unggah bukti bayar**: CSRF wajib, `pay_token` regex `^[a-f0-9]{64}$`, metode/tahap dicek server-side,
   file lama dihapus hanya bila path di `storage/dokumen/` & nama sesuai pola.
 - **Pengumuman**: `pengumuman_status()` hanya membaca (finalisasi tahap dijalankan eksplisit oleh operator).
-- **Pesan anti-enumerasi**: cek-status memakai satu pesan sama untuk "tidak ditemukan" & "4 digit salah".
-- **Idempotensi**: kirim akun (klik ulang tidak dobel), pengumuman (finalisasi tahap idempoten).
+- **Pesan anti-enumerasi**: cek-status memakai satu pesan sama untuk "tidak ditemukan" & "4 digit salah";
+  kunci rate per-nomor hanya dicatat untuk format `REG-YYYY-NNNN` valid dan hanya saat percobaan **gagal**
+  (pencarian sukses tidak menambah hitungan).
+- **Idempotensi**: kirim akun (klik ulang tidak dobel), pengumuman (finalisasi tahap idempoten),
+  registrasi ulang (reuse reg_token **+ rotasi pay_token** — tautan bayar lama mati).
 - **Transaksi DB**: penempatan otomatis, atur peserta otomatis, impor CSV, unggah bukti bayar (gagal → tanpa perubahan).
+- **Token bayar**: hanya `pay_token_hash` (SHA-256, UNIQUE) tersimpan di DB; `pay_token` polos selalu NULL.
+  Titik tampil token polos dibatasi 3: halaman sukses registrasi, pesan WA registrasi, hasil pemulihan cek-status.
+- **Rate limit Fase 11**: ganti-password 5/15 menit (per IP + per user), registrasi-WA 3/nomor/24 jam;
+  `rate_limit_bersihkan()` menghapus baris >2 hari (±1% request acak, maks 1000 baris).
+- **Gate API**: `app/api/snap-token.php` — publik hanya produk FORMULIR; uang masuk hanya dari portal
+  siswa tahap ≥ BERKAS_TERVERIFIKASI dan pembayaran belum VERIFIED/LUNAS.
+- **Alat rilis**: `tools/buat-paket.php`, `tools/cek-proyek.php`, `tools/backup-db.php`,
+  `tools/backup-berkas.php` — semuanya **CLI-only** (akses web 404); zip rilis diverifikasi bebas
+  `.env`/rahasia; cadangan DB & berkas otomatis rotasi 14 hari.
+- **Kesiapan produksi**: `app/operator/kesiapan.php` (operator/admin) — checklist read-only 13 item
+  + skor + antrean operasional; pemeriksaan teknis lanjutan via `php tools/cek-proyek.php`.
 
 ## Kredensial Default (GANTI SEBELUM GO-LIVE!)
 
@@ -200,10 +268,11 @@ Lihat `.env.example`. Variabel: `DB_*`, `FONNTE_TOKEN`, `MIDTRANS_SERVER_KEY`, `
 | 8 | `database/migrations/20261013_fase8_pengumuman.sql` |
 | 10 | `database/migrations/20261015_fase10_gateway_opsional.sql` |
 | 10 | `database/migrations/20261015_fase10_keamanan.sql` |
+| 11 | `database/migrations/20261016_fase11_pay_token_hash.sql` |
 
 Seed lengkap: `database/db_spmb_mualimku.sql` (gabungan semua fase).
 Dokumentasi uji: `docs/UJI-MANUAL.md`.
 
 ---
 
-*Dokumen ini diperbarui saat setiap fase diselesaikan (terakhir: Fase 10 — Gateway Opsional + Hardening).*
+*Dokumen ini diperbarui saat setiap fase diselesaikan (terakhir: Fase 11 — Tutup Sisa Fase 10 + Kesiapan Produksi).*
