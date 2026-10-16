@@ -102,6 +102,27 @@ schtasks /create /tn "SPMB Cadangan Berkas" /tr "C:\xampp\php\php.exe C:\xampp\h
 10 23 * * * /usr/bin/php /var/www/html/tools/backup-berkas.php >> /var/log/spmb-backup.log 2>&1
 ```
 
+**Hosting bersama cPanel (mis. Domainesia) — dua jalur:**
+
+1. **Cron Jobs cPanel** (menu "Cron Jobs") menjalankan `tools/backup-db.php`.
+   - Tool **tidak bergantung** pada `mysqldump`/`proc_open`: bila keduanya
+     dinonaktifkan hosting, otomatis memakai **dump PDO murni** (jalur shared
+     hosting) — hasilnya tetap `.sql.gz` yang bisa diimpor phpMyAdmin.
+   - **PHP CLI ≠ PHP web.** Path PHP CLI sering berbeda (mis.
+     `/usr/local/bin/ea-php81`, `/usr/local/bin/php`, dsb — **jangan anggap
+     pasti**). Cara memeriksanya: bila menu **Terminal** tersedia di cPanel,
+     jalankan `which php` atau `command -v php`; alternatif lain, tanyakan
+     support hosting. Contoh format cron (sesuaikan path hasil pemeriksaan):
+     ```
+     0 23 * * * /usr/local/bin/ea-php81 /home/USER/public_html/tools/backup-db.php
+     ```
+   - Pastikan `storage/backup/db/` bisa ditulis user hosting.
+2. **Cadangan manual tanpa tool** (cadangan terakhir bila cron bermasalah):
+   - **phpMyAdmin → Export** (format SQL, metode "quick") — unduh file
+     `.sql` ke komputer Anda; perhatikan **batas ukuran unggah/unduh** hosting.
+   - **cPanel → Backup / Full Backup** — unduh cadangan penuh akun (termasuk
+     database & file) ke lokal; simpan terenkripsi di luar server.
+
 ---
 
 ## 4. Rilis & Pembaruan
