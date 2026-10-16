@@ -9,6 +9,9 @@ hak akses.txt
 # Unggahan pribadi (KK, akta, bukti transfer) — data sensitif
 storage/dokumen/*
 !storage/dokumen/.gitkeep
+# Berkas contoh seed demo (PNG 4px netral, Fase 11 B6)
+!storage/dokumen/dok-demo-*.png
+!storage/dokumen/bukti-demo-*.png
 
 # Hasil cadangan (Fase 11 B3) — data sensitif
 storage/backup/*
