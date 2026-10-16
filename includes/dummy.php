@@ -22,6 +22,10 @@ $PENGATURAN = [
     'tahun_ajaran'          => '2025/2026',
     'gelombang'             => 'Gelombang 1',
     'kuota_total'           => 90,
+    'retensi_aktif'         => 0,
+    'retensi_bulan_tidak_lulus' => null,
+    'retensi_bulan_batal'   => null,
+    'retensi_bulan_lulus_arsip' => null,
     'ticker'                => 'Pendaftaran SPMB Gelombang 1 Dibuka: 1 Oktober – 30 November · Kuota Terbatas 90 Siswa (3 Rombel) · Hubungi Layanan SPMB: 0812-9876-5501',
 ];
 

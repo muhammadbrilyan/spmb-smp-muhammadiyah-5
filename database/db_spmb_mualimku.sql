@@ -87,6 +87,10 @@ CREATE TABLE pengaturan_sekolah (
   notif_wa_aktif TINYINT(1) NOT NULL DEFAULT 0,       -- [Fase 3] toggle kirim WA notifikasi operator
   notif_email VARCHAR(255),                           -- [Fase 3] TITIK SAMBUNGAN — belum diimplementasikan
   hasil_diumumkan_pada DATETIME DEFAULT NULL,         -- [Fase 8] waktu pengumuman hasil seleksi
+  retensi_aktif TINYINT(1) NOT NULL DEFAULT 0,        -- [Fase 12 E] toggle retensi berkas pribadi
+  retensi_bulan_tidak_lulus SMALLINT UNSIGNED DEFAULT NULL, -- [Fase 12 E] bulan stlh pendaftaran (tdk lulus) -> hapus berkas
+  retensi_bulan_batal SMALLINT UNSIGNED DEFAULT NULL,       -- [Fase 12 E] bulan stlh pendaftaran (dibatalkan) -> hapus berkas
+  retensi_bulan_lulus_arsip SMALLINT UNSIGNED DEFAULT NULL, -- [Fase 12 E] bulan stlh lulus -> arsipkan berkas
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -495,4 +499,23 @@ CREATE TABLE rate_limit (
   aksi VARCHAR(30) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_ip_aksi_time (ip_address, aksi, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- 13. retensi_log - jejak eksekusi retensi berkas pribadi [Fase 12 E]
+--     Dicatat setiap kali berkas pribadi pendaftar dihapus lewat
+--     retensi (operator/web maupun tool CLI). Baris pendaftar TIDAK
+--     dihapus — hanya berkas fisik di storage/dokumen.
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS retensi_log;
+
+CREATE TABLE retensi_log (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  pendaftar_id VARCHAR(36) NOT NULL,
+  no_pendaftaran VARCHAR(30) DEFAULT NULL,
+  alasan VARCHAR(40) NOT NULL,
+  jumlah_berkas INT UNSIGNED NOT NULL DEFAULT 0,
+  operator_id VARCHAR(36) DEFAULT NULL,
+  dibuat_pada DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_retensi_pendaftar (pendaftar_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
