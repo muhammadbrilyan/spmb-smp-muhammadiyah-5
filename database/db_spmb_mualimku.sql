@@ -64,7 +64,7 @@ CREATE TABLE pengaturan_sekolah (
   profil_singkat TEXT,                                -- [TAMBAHAN] hero overview
   deskripsi_sekolah TEXT,                             -- [TAMBAHAN] deskripsi sekolah untuk landing
   tagline VARCHAR(255) DEFAULT 'Berakhlak & Berprestasi', -- [TAMBAHAN] tagline di bawah nama sekolah
-  tahun_ajaran VARCHAR(20) DEFAULT '2025/2026',       -- [TAMBAHAN]
+  tahun_ajaran VARCHAR(20) DEFAULT '2027/2028',       -- [TAMBAHAN]
   gelombang VARCHAR(50) DEFAULT 'Gelombang 1',        -- [TAMBAHAN]
   tanggal_buka_ppdb DATE,                             -- [TAMBAHAN]
   tanggal_tutup_ppdb DATE,                            -- [TAMBAHAN]
@@ -122,11 +122,11 @@ VALUES
    'SMP Muhammadiyah 5 Kota Tangerang binaan Muhammadiyah dengan pembinaan tahfidz hingga 10 juz, sertifikasi BTQ, dan prestasi akademik.',
    'Membentuk generasi muda yang unggul dalam ilmu pengetahuan, berkarakter Islam, dan berdaya saing global di wilayah Kota Tangerang.',
    'Berakhlak & Berprestasi',
-   '2025/2026',
+   '2027/2028',
    'Gelombang 1',
-   '2025-10-01',
-   '2025-11-30',
-   '2025-12-05',
+   '2026-10-01',
+   '2026-11-30',
+   '2026-12-05',
    'Pendaftaran daring dibuka 1 Oktober - 30 November. Seleksi meliputi CBT, wawancara BTQ, dan wawancara orang tua.',
    '["Reguler","Tahfidz","Prestasi","Afirmasi"]',
    'SYARAT & KETENTUAN PENDAFTARAN\nSMP MUHAMMADIYAH 5 KOTA TANGERANG\n\n1. Pendaftar adalah siswa kelas 6 SD/MI yang akan melanjutkan ke SMP kelas 7 pada tahun ajaran berikutnya.\n\n2. Data yang diisi pada formulir pendaftaran harus benar sesuai dokumen resmi (akta kelahiran, Kartu Keluarga, Ijazah SD/MI).\n\n3. Biaya formulir pendaftaran sebesar yang tertera di halaman ini tidak dapat dikembalikan dalam keadaan apa pun.\n\n4. Pendaftar wajib mengunggah seluruh berkas persyaratan sesuai daftar yang ditentukan panitia.\n\n5. Panitia berhak menolak pendaftar yang memberikan data tidak benar atau berkas tidak lengkap.\n\n6. Jadwal ujian, pengumuman hasil, dan pembagian kelas akan diinformasikan melalui website resmi dan/atau WhatsApp orang tua.\n\n7. Keputusan panitia bersifat final.\n\n8. PRIVASI & RETENSI DATA. Data pribadi siswa dan orang tua (nama, NISN, alamat, nomor WhatsApp, serta berkas Kartu Keluarga/akta/bukti pembayaran) hanya digunakan untuk keperluan seleksi dan administrasi pendaftaran. Berkas pribadi disimpan terbatas dan dapat dihapus melalui kebijakan retensi yang ditetapkan sekolah; catatan pendaftaran ringkas tetap diarsipkan untuk keperluan akademik. Sekolah tidak membagikan data kepada pihak ketiga tanpa dasar hukum atau persetujuan orang tua/wali.\n\nDengan menyetujui syarat & ketentuan ini, saya menyatakan bahwa seluruh data yang saya isi adalah benar dan saya memahami seluruh ketentuan pendaftaran di atas.',

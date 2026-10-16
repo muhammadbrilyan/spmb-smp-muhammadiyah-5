@@ -40,7 +40,7 @@ ini_set('log_errors', '1');
 define('APP_NAME', 'SMP Muhammadiyah 5 Kota Tangerang');
 define('APP_SHORT', 'SMP Muhammadiyah 5');
 define('APP_TAGLINE', 'SIMS & SPMB Portal');
-define('APP_TAHUN', 'T.A. 2025/2026');
+define('APP_TAHUN', 'T.A. 2027/2028');
 
 /** Deteksi base URL otomatis agar aman dipanggil di sub-folder XAMPP (http://localhost/mualimku). */
 $__root = str_replace('\\', '/', dirname(__DIR__));
