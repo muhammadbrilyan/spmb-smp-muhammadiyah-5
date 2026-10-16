@@ -23,6 +23,7 @@ storage/backup/*
 *.swp
 *~
 tmp-*
+*.log
 
 # Output paket rilis (Fase 11 B1)
 dist/

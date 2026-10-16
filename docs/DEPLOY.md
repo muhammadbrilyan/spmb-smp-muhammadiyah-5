@@ -77,7 +77,8 @@ Migrasi SQL tambahan per fase: jalankan berurutan file di
 8. Setelah HTTPS jalan: aktifkan HSTS di konfigurasi web server.
 9. Jadwalkan cadangan harian (lihat bagian 3).
 10. Verifikasi akhir: `php tools/cek-proyek.php` harus **tanpa GAGAL**,
-    lalu uji manual mengikuti `docs/UJI-MANUAL.md`.
+    lalu `php tools/cek-statis.php` (12 pemeriksaan statis kode) juga
+    **tanpa GAGAL**, dan uji manual mengikuti `docs/UJI-MANUAL.md`.
 
 **LARANGAN:** jangan membagikan file zip rilis yang memuat `.env` atau folder
 `.git` — gunakan `php tools/buat-paket.php` (Fase 11 B1) yang sudah mengecualikan

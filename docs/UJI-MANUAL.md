@@ -107,6 +107,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | F9 | `git check-attr text eol -- file` + `.editorconfig` | `text=auto`/`eol=lf` aktif; CRLF hanya `*.bat` |
 | F10 | `mysql -u root db_spmb_mualimku < database/seed_demo.sql` **dua kali** | Idempoten — run ke-2 tanpa duplikat; total **11/11 tahap** (`tahap_unik=11`), siswa demo `'!LOCKED'` |
 | F11 | `mysql -u root db_spmb_mualimku < database/seed_demo_hapus.sql` lalu F10 ulang | Bersih total lalu seed kembali sukses |
+| F12 | `php tools/cek-statis.php` (Fase 12 D) | 12 pemeriksaan statis (syntax, BOM, CRLF, gitignore, git index, rahasia hardcode, eval, eksekusi, CSRF, mime, .htaccess/.user.ini); exit **1** bila ada GAGAL |
 
 ## G. Fase 11 — Halaman Kesiapan (C)
 
