@@ -42,6 +42,7 @@ $menu = [
     ['key' => 'keuangan',   'icon' => 'account_balance_wallet', 'label' => 'Keuangan & SPP', 'href' => $boleh_keuangan ? url('app/bendahara/index.php') : '#', 'badge' => $role === 'bendahara' ? 'BENDAHARA' : ''],
     ['key' => 'pengaturan', 'icon' => 'settings',         'label' => 'Pengaturan Sistem',  'href' => $boleh_pengaturan ? url('app/operator/pengaturan.php') : '#', 'badge' => $boleh_pengaturan ? 'CMS' : ''],
     ['key' => 'panduan',    'icon' => 'support_agent',    'label' => 'Panduan & SOP',      'href' => url('app/operator/panduan.php'), 'badge' => 'SOP'],
+    ['key' => 'kesiapan',   'icon' => 'task_alt',         'label' => 'Kesiapan Rilis',     'href' => $boleh_ppdb ? url('app/operator/kesiapan.php') : '#', 'badge' => $boleh_ppdb ? 'CEK' : ''],
     ['key' => 'ganti-pass', 'icon' => 'lock',             'label' => 'Ganti Password',     'href' => $boleh_staf ? url('app/staf/ganti-password.php') : '#', 'badge' => ''],
 ];
 ?>
