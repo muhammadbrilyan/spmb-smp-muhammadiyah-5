@@ -59,7 +59,8 @@ Migrasi SQL tambahan per fase: jalankan berurutan file di
 7. Izin folder: `storage/dokumen`, `storage/backup` dapat ditulis web server.
 8. Setelah HTTPS jalan: aktifkan HSTS di konfigurasi web server.
 9. Jadwalkan cadangan harian (lihat bagian 3).
-10. Uji akhir mengikuti `docs/UJI-MANUAL.md`.
+10. Verifikasi akhir: `php tools/cek-proyek.php` harus **tanpa GAGAL**,
+    lalu uji manual mengikuti `docs/UJI-MANUAL.md`.
 
 **LARANGAN:** jangan membagikan file zip rilis yang memuat `.env` atau folder
 `.git` — gunakan `php tools/buat-paket.php` (Fase 11 B1) yang sudah mengecualikan
@@ -69,7 +70,69 @@ keduanya.
 
 ## 3. Cadangan Database & Berkas
 
-(Lihat bagian lengkap — Fase 11 B3.)
+Dua tool CLI (Fase 11 B3) menulis ke `storage/backup/` — folder ini
+**diblokir dari web** oleh `storage/.htaccess`.
+
+```bat
+:: Cadangan database -> storage/backup/db/spmb-<waktu>.sql.gz
+php tools/backup-db.php
+
+:: Cadangan dokumen pendaftar (KK, akta, bukti transfer)
+php tools/backup-berkas.php
+```
+
+- Retensi otomatis **14 hari** (file lebih tua dihapus setiap kali tool dijalankan).
+- Password database tidak pernah muncul di argumen proses (`MYSQL_PWD` via env)
+  dan tidak pernah dicetak.
+- Keduanya CLI-only; file hasil adalah data sensitif — **jangan dibagikan**,
+  simpan juga salinan ke lokasi terpisah (disk eksternal / penyimpanan awan
+  berenkripsi) minimal mingguan.
+
+**Jadwal harian — Windows (Task Scheduler):**
+
+```bat
+schtasks /create /tn "SPMB Cadangan DB" /tr "C:\xampp\php\php.exe C:\xampp\htdocs\mualimku\tools\backup-db.php" /sc daily /st 23:00
+schtasks /create /tn "SPMB Cadangan Berkas" /tr "C:\xampp\php\php.exe C:\xampp\htdocs\mualimku\tools\backup-berkas.php" /sc daily /st 23:10
+```
+
+**Jadwal harian — Linux (cron):**
+
+```cron
+0 23 * * * /usr/bin/php /var/www/html/tools/backup-db.php >> /var/log/spmb-backup.log 2>&1
+10 23 * * * /usr/bin/php /var/www/html/tools/backup-berkas.php >> /var/log/spmb-backup.log 2>&1
+```
+
+---
+
+## 4. Rilis & Pembaruan
+
+1. Buat paket dari mesin pengembangan — **bukan** dengan meng-zip folder kerja:
+   ```bat
+   php tools/buat-paket.php v1.2
+   ```
+   hasilnya `dist/mualimku-v1.2.zip` yang sudah diverifikasi bebas
+   `.env`, `.git/`, dan dokumen pribadi.
+2. Di server: ekstrak di atas instalasi lama (timpa file kode), **jangan**
+   timpa `.env`.
+3. Jalankan migrasi baru yang belum pernah jalan
+   (urut nama file di `database/migrations/` — idempoten).
+4. Verifikasi: `php tools/cek-proyek.php` harus tanpa GAGAL.
+5. Uji cepat: halaman publik `index.php`, `app/spmb/cek-status.php`, login staf.
+
+---
+
+## 5. Pemulihan dari Cadangan
+
+```bat
+:: 1) Restore database (contoh file per 16 Okt 2026 jam 23:00)
+gzip -d storage\backup\db\spmb-20261016-230000.sql.gz
+mysql -u root db_spmb_mualimku < storage\backup\db\spmb-20261016-230000.sql
+
+:: 2) Restore dokumen pendaftar: ekstrak isi
+::    storage/backup/berkas-<waktu>.zip ke storage/dokumen/
+```
+
+Setelah pemulihan: jalankan `php tools/cek-proyek.php` dan uji login staf.
 
 ---
 
