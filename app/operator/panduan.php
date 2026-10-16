@@ -113,6 +113,7 @@ $panduan = [
             'Submit hanya bisa bila semua berkas <em>wajib</em> lengkap → pendaftar masuk BERKAS_DISUBMIT + notifikasi operator.',
             'Buka <strong>Verifikasi Berkas</strong> — antrean BERKAS_DISUBMIT / BERKAS_REVISI.',
             'Putuskan per berkas: Setujui / Tolak (alasan wajib). Semua lolos → BERKAS_TERVERIFIKASI; ada ditolak → BERKAS_REVISI + WA ke orang tua (hanya berkas ditolak yang dibuka kembali).',
+            'WA penolakan menautkan penerima ke halaman <strong>Cek Status Pendaftaran</strong> (bukan halaman bayar) — di sana ada tombol <em>Pulihkan Tautan</em> bila perlu tautan bayar baru.',
         ],
     ],
     [
@@ -203,7 +204,34 @@ $panduan = [
         ],
     ],
     [
+        'icon' => 'task_alt', 'badge' => 'F11',
+        'judul' => 'Kesiapan Rilis & Kesiapan Operasional (Fase 11)',
+        'role'  => ['operator', 'admin'],
+        'langkah' => [
+            'Buka menu <strong>Kesiapan Rilis</strong> di sidebar (hanya operator/admin) — halaman baca-saja, tidak mengubah apa pun.',
+            'Skor kesiapan menampilkan persentase item siap; status: <em>SIAP</em> / <em>SIAP DENGAN CATATAN</em> / <em>BELUM SIAP</em> (ada item gagal).',
+            '13 item checklist: URL publik (APP_URL), rekening & WA panitia (deteksi nomor contoh), jadwal+S&amp;K, akun staf terkunci, hash password lemah, skema terbaru, metode bayar, kunci Midtrans, token Fonnte, izin folder, umur cadangan DB, notif WA operator.',
+            'Kartu <strong>Antrean Operasional</strong>: berkas disubmit, revisi siswa, bukti bayar menunggu, siap kirim akun — angka mengikuti data per tahap.',
+            'Pemeriksaan teknis lanjutan (versi PHP, ekstensi, php.ini, koneksi) tetap lewat terminal: <code>php tools/cek-proyek.php</code> — keluar dengan kode 1 bila ada GAGAL.',
+            'Sebelum rilis publik: pastikan tanpa item <em>Gagal</em>, jalankan cek-proyek, lalu ikuti <code>docs/UJI-MANUAL.md</code> &amp; <code>docs/DEPLOY.md</code>.',
+        ],
+    ],
+    [
+        'icon' => 'inventory_2', 'badge' => 'F11',
+        'judul' => 'Instrumen Rilis: Cadangan, Paket & Seed Demo',
+        'role'  => ['operator', 'admin', 'bendahara'],
+        'langkah' => [
+            'Cadangan database: <code>php tools/backup-db.php</code> → file gzip di <code>storage/backup/db/</code> (rotasi otomatis 14 hari). Password DB lewat environment — tidak pernah dicetak ke layar.',
+            'Cadangan berkas: <code>php tools/backup-berkas.php</code> → zip <code>storage/dokumen</code> ke <code>storage/backup/</code> (rotasi 14 hari).',
+            'Jadwalkan harian (Windows <code>schtasks</code> / cron Linux) — contoh perintah &amp; skrip pemulihan ada di <code>docs/DEPLOY.md</code> bagian Cadangan.',
+            'Paket rilis: <code>php tools/buat-paket.php</code> → zip di <code>dist/</code> yang sudah diverifikasi bebas <code>.env</code>, <code>.git</code>, dan folder data pribadi — aman diunggah ke hosting.',
+            'Data demo UAT lengkap (11 tahap, berkas, ujian): <code>mysql -u root db_spmb_mualimku &lt; database/seed_demo.sql</code> — idempoten; hapus dengan <code>seed_demo_hapus.sql</code>.',
+            'Semua tools di atas <strong>CLI-only</strong> — dibuka lewat browser akan 404.',
+        ],
+    ],
+    [
         'icon' => 'school', 'badge' => 'Portal Siswa',
+        'judul' => 'Portal Siswa',
         'role'  => ['operator', 'admin', 'kepsek'],
         'langkah' => [
             'Siswa login → portal menampilkan status verifikasi, seleksi, dan penempatan.',
@@ -264,6 +292,10 @@ $panduan = [
         <li>Username siswa dibuat otomatis & unik. Password di-hash bcrypt — tidak bisa dilihat ulang; reset terbaik via CLI: <code>php tools/set-password.php &lt;username&gt;</code> (min 10 karakter, konfirmasi 2×).</li>
         <li><strong>GANTI PASSWORD DEFAULT sebelum go-live</strong> — akun operator/bendahara/kepsek WAJIB diganti. Buka menu <a href="<?= url('app/staf/ganti-password.php') ?>">Ganti Password</a> di sidebar. Setelah reset via CLI, staf akan otomatis dipaksa ganti password saat login berikutnya. Password lama/daftarnya tidak lagi disimpan di file <code>hak akses.txt</code> (sudah dihapus).</li>
         <li><strong>Seed SQL mengunci akun staf</strong> (Fase 11): hash <code>'!LOCKED'</code> — tidak bisa login apa pun password lama. Setelah impor database, jalankan <code>php tools/set-password.php &lt;username&gt;</code> untuk operator/bendahara/kepsek (dan <code>siswa</code> bila memakai <code>database/seed_demo.sql</code>) sebelum login pertama.</li>
+        <li><strong>Token bayar disimpan ter-hash</strong> (Fase 11): kolom <code>pay_token_hash</code> (SHA-256, UNIQUE); registrasi ulang dengan data sama <strong>merotasi</strong> token sehingga tautan bayar lama mati. Token mentah hanya tampil 3 tempat: halaman sukses registrasi, pesan WA registrasi, dan hasil <em>Pulihkan Tautan</em> di cek-status.</li>
+        <li><strong>Rate anti-penyalahgunaan</strong> (Fase 11): ganti password maks 5 percobaan / 15 menit (per IP &amp; per akun); kirim WA registrasi maks 3 / nomor / 24 jam; cek-status diperiksa lintas IP per nomor pendaftaran (format <code>REG-YYYY-NNNN</code> saja yang dihitung, dan hanya saat gagal).</li>
+        <li><strong>Isi pesan WA instruksi bayar otomatis mengikuti metode aktif</strong> — jika transfer/QRIS/gateway dimatikan di Pengaturan, langkahnya ikut hilang; kalimat penutupnya selalu: "Setelah pembayaran terverifikasi, akun dan password dikirim lewat WhatsApp."</li>
+        <li><strong>Cadangan data wajib dijadwalkan</strong> sebelum go-live: <code>php tools/backup-db.php</code> &amp; <code>php tools/backup-berkas.php</code> (retensi 14 hari) — lihat skrip <code>schtasks</code>/cron di <code>docs/DEPLOY.md</code>. Semua tools rilis bersifat CLI-only (akses web = 404).</li>
         <li>API key Fonnte & Midtrans dibaca dari file <code>.env</code> di root proyek (di luar tree publik); bila kosong, fallback ke kolom CMS. <strong>Midtrans opsional</strong> — tanpa key, pembayaran tetap jalan via transfer manual / QRIS. <code>APP_URL</code> di <code>.env</code> dipakai untuk tautan WhatsApp absolut (kosongkan saat localhost).</li>
         <li>Berkas pribadi (KK, akta, bukti transfer) disimpan di <code>storage/dokumen/</code> dan hanya bisa diakses lewat gate PHP yang mengecek login & kepemilikan — hanya operator/admin/bendahara (kepsek melihat hasil & pengumuman lewat halamannya sendiri).</li>
         <li>Rate limiting login (max 5 gagal / 15 menit / IP) disimpan di tabel <code>login_attempts</code> — tidak bisa dilewati dengan membuang cookie.</li>
