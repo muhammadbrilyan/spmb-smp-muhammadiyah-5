@@ -17,6 +17,9 @@ storage/dokumen/*
 *~
 tmp-*
 
+# Output paket rilis (Fase 11 B1)
+dist/
+
 # OS
 Thumbs.db
 .DS_Store
