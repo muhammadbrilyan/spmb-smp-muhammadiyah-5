@@ -33,7 +33,7 @@ if ($nama === '' || !preg_match('/^(dok|bukti)-[A-Za-z0-9._-]+\.(jpg|jpeg|png|pd
     exit('Nama berkas tidak valid.');
 }
 
-$abs = dirname(__DIR__, 2) . '/storage/dokumen/' . $nama;
+$abs = storage_path('dokumen') . '/' . $nama;
 if (!is_file($abs)) {
     http_response_code(404);
     exit('Berkas tidak ditemukan.');

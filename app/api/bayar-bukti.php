@@ -141,7 +141,7 @@ if ($izinMime[$mime] !== $ekstensi && !($izinMime[$mime] === 'jpg' && $ekstensi 
 }
 
 /* Simpan ke storage/dokumen (private). */
-$targetDir = dirname(__DIR__, 2) . '/storage/dokumen';
+$targetDir = storage_path('dokumen');
 if (!is_dir($targetDir)) {
     mkdir($targetDir, 0755, true);
 }

@@ -32,7 +32,7 @@ $name = env_val('DB_NAME') ?: 'db_spmb_mualimku';
 
 $info = ['host' => $host, 'port' => $port, 'user' => $user, 'pass' => $pass, 'name' => $name];
 
-$dir = dirname(__DIR__) . '/storage/backup/db';
+$dir = storage_path('backup/db');
 if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
     backup_gagal('Gagal membuat folder storage/backup/db.');
 }

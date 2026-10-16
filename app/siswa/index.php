@@ -151,7 +151,7 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 if (!in_array($mime, $izinMime, true)) {
                     flash('error', 'Isi berkas bukan gambar/PDF yang sah.');
                 } else {
-                    $folder = dirname(__DIR__, 2) . '/storage/dokumen';
+                    $folder = storage_path('dokumen');
                     if (!is_dir($folder) && !@mkdir($folder, 0755, true)) {
                         flash('error', 'Folder unggahan tidak dapat dibuat.');
                     } else {
@@ -225,7 +225,7 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 if (!in_array($mime, $izinMime, true)) {
                     flash('error', 'Isi berkas bukan gambar yang sah.');
                 } else {
-                    $folder = dirname(__DIR__, 2) . '/storage/dokumen';
+                    $folder = storage_path('dokumen');
                     if (!is_dir($folder) && !@mkdir($folder, 0755, true)) {
                         flash('error', 'Folder unggahan tidak dapat dibuat.');
                     } else {

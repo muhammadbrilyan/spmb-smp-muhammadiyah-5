@@ -52,12 +52,22 @@ if ($__doc !== '' && strpos($__root, $__doc) === 0) {
 define('BASE_URL', rtrim($__base, '/'));
 
 /* ---------------------------------------------------------------
- * Loader .env sederhana — bila file .env ada di root proyek,
- * nilainya menimpa default di bawah. Jangan commit .env ke git.
- * Contoh isi (lihat .env.example): DB_USER=..., FONNTE_TOKEN=...
+ * Loader .env sederhana — cari di (1) satu tingkat di atas root
+ * proyek (disarankan produksi: .env & storage DI LUAR web root),
+ * lalu (2) root proyek (lokal/dev). Nilai menimpa default di bawah.
+ * Jangan commit .env ke git.
  * --------------------------------------------------------------- */
-$__envFile = dirname(__DIR__) . '/.env';
-if (is_file($__envFile) && is_readable($__envFile)) {
+$__envFile = null;
+foreach ([
+    dirname(__DIR__, 2) . '/.env',   /* di luar web root — dipakai bila ada */
+    dirname(__DIR__) . '/.env',      /* root proyek — fallback lokal */
+] as $__e) {
+    if (is_file($__e) && is_readable($__e)) {
+        $__envFile = $__e;
+        break;
+    }
+}
+if ($__envFile !== null) {
     foreach (file($__envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $__baris) {
         $__baris = trim($__baris);
         if ($__baris === '' || $__baris[0] === '#' || strpos($__baris, '=') === false) {
@@ -82,6 +92,30 @@ function env_val($key, $default = '')
 {
     $v = $_ENV[$key] ?? getenv($key);
     return ($v === false || $v === null || $v === '') ? $default : $v;
+}
+
+/* ---------------------------------------------------------------
+ * Folder penyimpanan berkas pribadi (unggahan) & cadangan.
+ * Default: <root>/storage (lokal). Produksi disarankan memindahkan
+ * folder ini ke luar public_html lalu menyetel STORAGE_DIR absolut
+ * di .env (Fase 12 C6). Jalur RELATIF yang tersimpan di DB
+ * ("storage/dokumen/...") TIDAK berubah — gate & query tetap pakai
+ * prefix itu; hanya resolusi fisiknya yang lewat fungsi ini.
+ * --------------------------------------------------------------- */
+$__storage = (string) env_val('STORAGE_DIR', '');
+if ($__storage === '') {
+    $__storage = dirname(__DIR__) . '/storage';
+} elseif ($__storage[0] !== '/' && !preg_match('#^[A-Za-z]:[\\\\/]#', $__storage)) {
+    /* Nilai relatif di .env -> relatif terhadap root proyek. */
+    $__storage = dirname(__DIR__) . '/' . $__storage;
+}
+define('STORAGE_DIR', rtrim(str_replace('\\', '/', $__storage), '/'));
+
+/** Path absolut ke subfolder storage ('' = folder storage itu sendiri). */
+function storage_path($sub = '')
+{
+    $sub = trim(str_replace('\\', '/', (string) $sub), '/');
+    return $sub === '' ? STORAGE_DIR : STORAGE_DIR . '/' . $sub;
 }
 
 /* ---------------------------------------------------------------

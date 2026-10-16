@@ -56,19 +56,19 @@ try {
 
 $izinOk = true;
 $izinMasalah = [];
-foreach (['storage/dokumen', 'storage/backup'] as $f) {
-    $p = dirname(__DIR__, 2) . '/' . $f;
+foreach (['dokumen', 'backup'] as $f) {
+    $p = storage_path($f);
     if (!is_dir($p) || !is_writable($p)) {
         $izinOk = false;
-        $izinMasalah[] = $f;
+        $izinMasalah[] = 'storage/' . $f;
     }
 }
 
 /* Cadangan terbaru (jam). */
 $cadanganJam = null;
 $cadanganFile = array_merge(
-    glob(dirname(__DIR__, 2) . '/storage/backup/db/*.sql.gz') ?: [],
-    glob(dirname(__DIR__, 2) . '/storage/backup/*.sql.gz') ?: []
+    glob(storage_path('backup') . '/db/*.sql.gz') ?: [],
+    glob(storage_path('backup') . '/*.sql.gz') ?: []
 );
 if ($cadanganFile) {
     $mt = array_map('filemtime', $cadanganFile);
@@ -208,6 +208,19 @@ $items[] = [
     'grup' => 'Sistem', 'status' => $izinOk ? 'ok' : 'gagal',
     'judul' => 'Izin tulis folder data',
     'ket'   => $izinDetail,
+];
+
+/* Lokasi storage (Fase 12 C6): idealnya DI LUAR web root. */
+$akarWeb = realpath(dirname(__DIR__, 2));
+$absStorage = realpath(STORAGE_DIR);
+$storageDiDalam = $absStorage !== false && $akarWeb !== false
+    && strpos($absStorage . '/', $akarWeb . '/') === 0;
+$items[] = [
+    'grup' => 'Sistem', 'status' => $storageDiDalam ? 'hati' : 'ok',
+    'judul' => 'Lokasi folder storage (di luar web root)',
+    'ket'   => $storageDiDalam
+        ? 'Folder storage masih berada DI DALAM root web — pengguna internet bisa mencoba mengakses isunya langsung. Di produksi: pindahkan folder ke luar public_html, lalu setel STORAGE_DIR=<path-absolut> di .env (lihat docs/DEPLOY.md).'
+        : 'Folder storage berada di luar root web (STORAGE_DIR: ' . STORAGE_DIR . ') — unggahan & cadangan tidak terekspos langsung ke web.',
 ];
 
 $cadStatus = $cadanganJam === null ? 'hati' : ($cadanganJam <= 48 ? 'ok' : 'hati');

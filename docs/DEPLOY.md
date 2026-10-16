@@ -58,6 +58,13 @@ Migrasi SQL tambahan per fase: jalankan berurutan file di
 4. Impor SQL & migrasi (lihat bagian 1), lalu `set-password.php` semua staf.
 5. Login sebagai operator → **Pengaturan**: ubah S&K, daftar berkas
    persyaratan, rekening bank, gambar QRIS, nomor WA notifikasi.
+5b. **(C6) Pindahkan `.env` & `storage/` ke luar web root** — di cPanel:
+   buat folder di home account (mis. `/home/USERNAME/spmb-data/`), pindahkan
+   `storage/` ke sana, lalu di `.env` isi
+   `STORAGE_DIR=/home/USERNAME/spmb-data/storage` dan salin `.env` ke
+   `/home/USERNAME/spmb-data/.env` (diakus oleh aplikasi otomatis sebelum
+   mencari `.env` di root proyek). Pastikan folder bisa ditulis user cPanel
+   (File Manager → Permissions 755/775).
 6. Pengaturan PHP produksi — `display_errors=Off`, `log_errors=On`,
    `upload_max_filesize=3M`, `post_max_size=8M`:
    - **PHP-FPM/CGI (lazim di cPanel)**: file `.user.ini` di root proyek sudah

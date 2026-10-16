@@ -175,14 +175,15 @@ if ($db !== null) {
 /* ---------------------------------------------------------------
  * 6. Izin tulis folder data
  * ------------------------------------------------------------- */
-$folderData = ['storage/dokumen', 'storage/backup'];
+$folderData = ['dokumen', 'backup'];
 $masalah = [];
 foreach ($folderData as $f) {
-    $p = $root . '/' . $f;
+    $p = storage_path($f);
+    $label = 'storage/' . $f;
     if (!is_dir($p)) {
-        $masalah[] = $f . ' belum ada (akan dibuat oleh tool cadangan)';
+        $masalah[] = $label . ' belum ada (akan dibuat oleh tool cadangan)';
     } elseif (!is_writable($p)) {
-        $masalah[] = $f . ' TIDAK bisa ditulis web server';
+        $masalah[] = $label . ' TIDAK bisa ditulis web server';
     }
 }
 $gagalIzin = (bool) array_filter($masalah, function ($m) {
@@ -193,7 +194,7 @@ if ($gagalIzin) {
 } elseif ($masalah) {
     catat('WARN', 'Izin folder data', implode('; ', $masalah));
 } else {
-    catat('PASS', 'Izin folder data', implode(', ', $folderData) . ' bisa ditulis');
+    catat('PASS', 'Izin folder data', 'storage/dokumen & storage/backup (' . STORAGE_DIR . ') bisa ditulis');
 }
 
 /* ---------------------------------------------------------------

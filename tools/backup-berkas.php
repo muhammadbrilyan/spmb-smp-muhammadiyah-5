@@ -25,9 +25,10 @@ if (!class_exists('ZipArchive')) {
     gagal_backup_berkas('Ekstensi PHP "zip" belum aktif (ZipArchive tidak ditemukan).');
 }
 
-$root = dirname(__DIR__);
-$src  = $root . '/storage/dokumen';
-$dir  = $root . '/storage/backup';
+require_once dirname(__DIR__) . '/includes/config.php';   /* storage_path(), STORAGE_DIR */
+
+$src  = storage_path('dokumen');
+$dir  = storage_path('backup');
 
 if (!is_dir($src)) {
     fwrite(STDOUT, "CADANGAN BERKAS — tidak ada folder storage/dokumen, tidak ada yang dicadangkan.\n");
