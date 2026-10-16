@@ -8,6 +8,7 @@
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
 require_role(['operator', 'admin']);
+$me = current_user();
 
 /* --- Proses POST --- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,6 +21,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dokId = (string) ($_POST['dok_id'] ?? '');
     $pendId = (string) ($_POST['pendaftar_id'] ?? '');
     $balik = 'berkas.php' . ($pendId !== '' ? '?id=' . rawurlencode($pendId) : '');
+
+    /* [Fase 12 E3] Hapus berkas pribadi (retensi) — konfirmasi ganda. */
+    if ($aksi === 'retensi_hapus' && $pendId !== '') {
+        if (!rate_limit_cek('retensi_hapus', 5, 60, 'prtn:' . $pendId)) {
+            flash('error', 'Batas eksekusi retensi per pendaftar terlampaui (maks 5/jam).');
+            header('Location: ' . $balik);
+            exit;
+        }
+        $cekP = q_all('SELECT no_pendaftaran FROM pendaftar WHERE id = ?', [$pendId]);
+        $noP  = $cekP ? (string) $cekP[0]['no_pendaftaran'] : '';
+        if ($noP === '') {
+            flash('error', 'Pendaftar tidak ditemukan.');
+            header('Location: berkas.php');
+            exit;
+        }
+        if (trim((string) ($_POST['konfirmasi'] ?? '')) !== $noP) {
+            flash('error', 'Konfirmasi tidak cocok — ketik no. pendaftaran (' . e($noP) . ') dengan persis.');
+            header('Location: ' . $balik);
+            exit;
+        }
+        rate_limit_catat('retensi_hapus', 'prtn:' . $pendId);
+        $hasil = retensi_hapus_berkas($pendId, 'manual_detail_berkas', $me['id'] ?? null);
+        if ($hasil['ok']) {
+            $pesan = 'Berkas pribadi ' . $noP . ' dihapus: ' . $hasil['jumlah'] . ' berkas';
+            if (!empty($hasil['gagal'])) {
+                $pesan .= ' (' . $hasil['gagal'] . ' gagal/dilewati)';
+            }
+            if (isset($hasil['jejak']) && !$hasil['jejak']) {
+                $pesan .= ' — PERINGATAN: jejak di retensi_log GAGAL tercatat.';
+            }
+            flash('sukses', $pesan . '.');
+        } else {
+            flash('error', $hasil['pesan'] ?? 'Gagal menjalankan retensi.');
+        }
+        header('Location: ' . $balik);
+        exit;
+    }
 
     if ($aksi === 'keputusan' && $dokId !== '') {
         $setuju = ($_POST['setuju'] ?? '') === '1';
@@ -146,6 +184,28 @@ $terkunci  = in_array($detail['pend']['tahap'] ?? '', ['BERKAS_TERVERIFIKASI', '
             </div>
           </article>
         <?php endforeach; ?>
+      </section>
+
+      <!-- ====================== ZONA RETENSI [Fase 12 E3] ====================== -->
+      <section class="mt-6 card p-5 bg-canvas">
+        <h2 class="text-base font-semibold text-ink-900">Retensi berkas pribadi</h2>
+        <p class="mt-1 text-[13px] text-ink-500 max-w-2xl">
+          Menghapus berkas pribadi <strong>terunggah</strong> (KK, akta, bukti transfer) milik pendaftar ini
+          beserta jejaknya di tabel dokumen. Baris pendaftar &amp; data seleksi tetap ada.
+          Eksekusi tercatat di <span class="font-mono">retensi_log</span> (maks 5×/jam per pendaftar).
+        </p>
+        <form method="post" action="berkas.php" class="mt-4 flex flex-wrap items-end gap-3" autocomplete="off"
+              onsubmit="return confirm('Hapus SEMUA berkas pribadi <?= e($p['no_pendaftaran']) ?>? Tindakan ini tidak bisa dibatalkan.');">
+          <?= csrf_field() ?>
+          <input type="hidden" name="aksi" value="retensi_hapus">
+          <input type="hidden" name="pendaftar_id" value="<?= e($p['id']) ?>">
+          <label class="block">
+            <span class="text-[13px] font-medium text-ink-700">Ketik <span class="font-mono"><?= e($p['no_pendaftaran']) ?></span> untuk konfirmasi</span>
+            <input type="text" name="konfirmasi" required placeholder="<?= e($p['no_pendaftaran']) ?>"
+                   class="mt-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-mono w-[220px]">
+          </label>
+          <button type="submit" class="btn btn-danger btn-sm"><?= icon('delete', 'text-[15px]') ?> Hapus berkas pribadi</button>
+        </form>
       </section>
 
     <?php else: ?>
