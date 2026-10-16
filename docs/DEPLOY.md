@@ -106,18 +106,23 @@ schtasks /create /tn "SPMB Cadangan Berkas" /tr "C:\xampp\php\php.exe C:\xampp\h
 
 ## 4. Rilis & Pembaruan
 
-1. Buat paket dari mesin pengembangan — **bukan** dengan meng-zip folder kerja:
+1. **Uji dulu isi paket** — buat pohon umpan sementara, pastikan tidak ada file
+   terlarang yang bocor (exit ≠ 0 bila bocor):
+   ```bat
+   php tools/buat-paket.php --uji
+   ```
+2. Buat paket dari mesin pengembangan — **bukan** dengan meng-zip folder kerja:
    ```bat
    php tools/buat-paket.php v1.2
    ```
    hasilnya `dist/mualimku-v1.2.zip` yang sudah diverifikasi bebas
-   `.env`, `.git/`, dan dokumen pribadi.
-2. Di server: ekstrak di atas instalasi lama (timpa file kode), **jangan**
+   `.env`, `.git/`, `storage/backup/`, `node_modules/`, seed demo, dan dokumen pribadi.
+3. Di server: ekstrak di atas instalasi lama (timpa file kode), **jangan**
    timpa `.env`.
-3. Jalankan migrasi baru yang belum pernah jalan
+4. Jalankan migrasi baru yang belum pernah jalan
    (urut nama file di `database/migrations/` — idempoten).
-4. Verifikasi: `php tools/cek-proyek.php` harus tanpa GAGAL.
-5. Uji cepat: halaman publik `index.php`, `app/spmb/cek-status.php`, login staf.
+5. Verifikasi: `php tools/cek-proyek.php` harus tanpa GAGAL.
+6. Uji cepat: halaman publik `index.php`, `app/spmb/cek-status.php`, login staf.
 
 ---
 
