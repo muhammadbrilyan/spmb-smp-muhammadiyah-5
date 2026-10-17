@@ -1,0 +1,5 @@
+# Fase 13 — semua alat di tools/ CLI-only (403), kecuali set-password-web.php
+# yang memang untuk browser (dan punya pengaman sendiri: penanda + kode instalasi).
+<FilesMatch "^(?!set-password-web\.php$)">
+  Require all denied
+</FilesMatch>

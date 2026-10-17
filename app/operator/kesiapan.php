@@ -268,6 +268,18 @@ $items[] = [
             : 'Retensi nonaktif dan belum ada pendaftar >12 bulan menyimpan berkas — belum mendesak.'),
 ];
 
+/* Alat darurat set-password (Fase 13 butir 1) — harus sudah lenyap sebelum publikasi. */
+$penandaSpw = storage_path('.izinkan-set-password');
+$toolSpw    = dirname(__DIR__, 2) . '/tools/set-password-web.php';
+$spwSisa    = (is_file($penandaSpw) ? 1 : 0) + (is_file($toolSpw) ? 1 : 0);
+$items[] = [
+    'grup' => 'Sistem', 'status' => $spwSisa > 0 ? 'gagal' : 'ok',
+    'judul' => 'Alat set-password web dihapus',
+    'ket'   => $spwSisa > 0
+        ? 'Masih ada ' . $spwSisa . ' dari 2 berkas aktif (penanda storage/.izinkan-set-password & tools/set-password-web.php) — siapa pun yang menemukan URL-nya bisa memakainya selama kode instalasi belum diganti. HAPUS keduanya via File Manager sebelum domain dipublikasikan.'
+        : 'Penanda & alat web sudah tidak ada (hanya alat CLI set-password.php yang tetap ada).',
+];
+
 /* Skor. */
 $totalItem  = count($items);
 $jumlahOk   = count(array_filter($items, function ($i) {
