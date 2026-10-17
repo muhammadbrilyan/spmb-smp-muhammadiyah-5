@@ -88,16 +88,21 @@ dikecualikan dari paket rilis.
 
 Seed mengunci semua akun staf. Lewat browser:
 
-1. File Manager → buat file kosong bernama `.izinkan-set-password` di
-   dalam folder `storage/` (nama persis, tanpa ekstensi).
-2. Buka `https://domain-anda/tools/set-password-web.php`.
-3. Pilih akun (`operator`, `bendahara`, `kepsek`) → isi password baru
-   (min 10 karakter, konfirmasi 2×) → Simpan.
-4. Ulangi untuk tiap akun staf. (Setiap sukses, penanda otomatis terhapus —
-   buat lagi bila masih ada akun terkunci.)
-5. **Langkah wajib:** hapus `tools/set-password-web.php` dari server dan
-   pastikan penanda `.izinkan-set-password` sudah tidak ada.
-6. Login tiap staf — sistem memaksa **ganti password** saat login pertama.
+1. File Manager → buat file `.izinkan-set-password` di dalam folder
+   `storage/` (nama persis, tanpa ekstensi) yang **berisi kode acak
+   minimal 8 karakter** (mis. hasil password generator). Tanpa kode ini
+   alat tidak menampilkan apa pun (Fase 13 — cegah pengambilalihan akun).
+2. Buka `https://domain-anda/tools/set-password-web.php` → ketik **kode
+   instalasi** tadi → pilih akun (`operator`, `bendahara`, `kepsek`) →
+   isi password baru (min 10 karakter, konfirmasi 2×) → Simpan.
+3. Ulangi untuk tiap akun staf. Setelah tiap sukses, penanda lama terhapus
+   dan (bila masih ada akun terkunci) penanda **baru** berisi kode acak baru
+   ditampilkan sekali di layar — catat untuk langkah berikutnya.
+4. Setelah akun terkunci terakhir, penanda terhapus dan alat **menghapus
+   dirinya sendiri**. Bila penghapusan diri gagal (izin file), segera hapus
+   `tools/set-password-web.php` via File Manager — halaman Kesiapan akan
+   menandai GAGAL selama penanda atau alat ini masih ada.
+5. Login tiap staf — sistem memaksa **ganti password** saat login pertama.
 
 Alternatif bila ada akses SSH/terminal cPanel:
 `php tools/set-password.php <username>` (CLI-only).

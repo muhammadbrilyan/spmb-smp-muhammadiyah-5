@@ -9,8 +9,8 @@
  *      sebelum daftar akun terlihat — pengunjung anonim TIDAK bisa melihat
  *      daftar akun terkunci apalagi menyetel password tanpa kode ini.
  *   3. CSRF token per sesi; otorisasi kode disimpan di sesi privat.
- *   4. Rate limit 5 percobaan/jam per IP — DIHITUNG SETIAP percobaan
- *      (kode maupun password, sukses maupun gagal).
+ *   4. Rate limit 10 percobaan/jam per IP (2 per akun) — DIHITUNG SETIAP
+ *      percobaan (kode maupun password, sukses maupun gagal).
  *   5. HANYA akun berpassword_hash '!LOCKED' yang bisa dipilih.
  *   6. Setelah sukses: penanda DIHAPUS dan berkas ini menghapus DIRINYA
  *      SENDIRI (bila izin mengizinkan — kalau tidak, halaman meminta
@@ -33,6 +33,7 @@ $authorized = !empty($_SESSION['spw_authorized']);
 $pesan      = null;
 $sukses     = false;
 $toolHapus  = false;
+$kodeBaruTampil = null;
 $akun       = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -41,8 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!csrf_cek($_POST['_csrf'] ?? '')) {
         $pesan = 'Formulir kedaluwarsa — muat ulang halaman lalu coba lagi.';
-    } elseif (!rate_limit_cek('set_pass_web', 5, 60)) {
-        $pesan = 'Terlalu banyak percobaan (maks 5/jam per IP). Coba lagi nanti.';
+    } elseif (!rate_limit_cek('set_pass_web', 10, 60)) {
+        $pesan = 'Terlalu banyak percobaan (maks 10/jam per IP — 2 percobaan tiap akun). Coba lagi nanti.';
     } else {
         $langkah = (string) ($_POST['langkah'] ?? '');
 
@@ -106,7 +107,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
                         if ($ok) {
                             @unlink($penanda);
-                            $toolHapus = @unlink(__FILE__);   /* hapus diri sendiri */
+                            $sisa = (int) (q_col(
+                                "SELECT COUNT(*) FROM users WHERE password_hash = '!LOCKED'
+                                   AND role IN ('operator','admin','bendahara','kepsek')"
+                            ) ?? 0);
+                            if ($sisa > 0) {
+                                /* Masih ada akun terkunci — tulis penanda BARU
+                                 * berisi kode acak (tampil sekali di layar ini). */
+                                $kodeBaruTampil = bin2hex(random_bytes(12));
+                                @file_put_contents($penanda, $kodeBaruTampil);
+                            } else {
+                                $toolHapus = @unlink(__FILE__);   /* hapus diri sendiri */
+                            }
                             unset($_SESSION['spw_authorized']);
                             $sukses = true;
                         } else {
@@ -124,6 +136,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 /* Kunci daftar akun di belakang verifikasi kode. */
 if (!$authorized && !$sukses) {
     $akun = [];
+}
+/* Sudah terverifikasi tapi belum mengirim form simpan — muat daftar untuk dirender. */
+if ($authorized && !$sukses && !$akun) {
+    try {
+        $akun = q_all(
+            "SELECT username, role, nama_lengkap FROM users
+              WHERE password_hash = '!LOCKED'
+                AND role IN ('operator','admin','bendahara','kepsek')
+              ORDER BY role, username"
+        ) ?: [];
+    } catch (Throwable $e) {
+        $akun = [];
+    }
 }
 
 $csrf = csrf_token();
@@ -155,10 +180,17 @@ $csrf = csrf_token();
 
   <?php if ($sukses): ?>
     <div class="ok">
-      Password tersimpan. Akun ditandai <em>wajib ganti password</em> saat login pertama.<br>
-      Penanda instalasi sudah dihapus<?php if ($toolHapus): ?>, begitu juga berkas alat ini<?php else: ?> —
-      <strong>berkas alat ini belum bisa dihapus otomatis, hapus
-      <code>tools/set-password-web.php</code> via File Manager SEKARANG</strong><?php endif; ?>.
+      Password tersimpan. Akun ditandai <em>wajib ganti password</em> saat login pertama.
+      <?php if ($kodeBaruTampil): ?>
+        <br><br>Masih ada akun terkunci lain — penanda instalasi sudah DIGANTI dengan kode baru
+        di bawah (tampil <strong>sekali ini saja</strong>; catat lalu ketik di langkah berikutnya):<br>
+        <code style="user-select:all"><?= e($kodeBaruTampil) ?></code>
+      <?php elseif ($toolHapus): ?>
+        <br><br>Semua akun staf sudah terkunci — penanda &amp; berkas alat ini sudah terhapus otomatis.
+      <?php else: ?>
+        <br><br>Penanda sudah dihapus, tetapi <strong>berkas alat ini belum bisa dihapus otomatis —
+        hapus <code>tools/set-password-web.php</code> via File Manager sekarang</strong>.
+      <?php endif; ?>
     </div>
   <?php else: ?>
     <?php if ($pesan): ?><div class="err"><?= e($pesan) ?></div><?php endif; ?>
