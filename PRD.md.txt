@@ -142,3 +142,22 @@ CREATE TABLE pembayaran (
   nominal DECIMAL(12,2) NOT NULL,
   bukti_transfer_url TEXT,
   status ENUM('PENDING', 'VERIFIED', 'REJECTED', 'ANGSURAN_1', '
+```
+
+### 9. CATATAN SINKRONISASI IMPLEMENTASI (ditambahkan 18 Okt 2026 — Fase 13)
+
+Berkas PRD ini terpotong di tengah tabel `pembayaran` (baris akhir) dan TIDAK
+memuat bagian 8.2 yang dirujuk audit Fase 12. Bila pihak sekolah memiliki
+dokumen PRD lengkap, serahkan ke pengelola agar bagian yang hilang bisa
+diselaraskan kembali.
+
+**Jumlah tabel implementasi kini 17** (bukan 5 pada skema di atas):
+
+1. pengaturan_sekolah  2. users  3. pendaftar  4. orang_tua  5. pembayaran
+6. kelas  7. seleksi  8. jadwal_tes  9. dokumen  10. login_attempts
+11. rate_limit  12. peserta_ujian  13. penempatan_kelas  14. notifikasi
+15. wa_log  16. jenis_dokumen  17. retensi_log (Fase 12 E)
+
+Sumber kebenaran skema: `database/db_spmb_mualimku.sql` (portabel
+MySQL 8 / MariaDB 10.x). Perubahan skema wajib lewat
+`database/migrations/YYYYMMDD_faseN_*.sql` yang idempoten.
