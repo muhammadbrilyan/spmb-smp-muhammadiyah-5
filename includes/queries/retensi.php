@@ -39,7 +39,11 @@ function retensi_kandidat($kategori, $bulan)
     }
     $where = [
         'tidak_lulus' => "p.status_seleksi = 'TIDAK_LULUS'",
-        'batal'       => "p.status_verifikasi = 'DITOLAK'",
+        /* Batal: ditolak verifikasi ATAU terhenti di tahap awal pendaftaran
+         * (belum pernah melaju — pendaftar menggantung, berkasnya tetap
+         * pribadi). status_seleksi tidak punya nilai DIBATALKAN. */
+        'batal'       => "(p.status_verifikasi = 'DITOLAK'
+                          OR p.tahap IN ('MENUNGGU_PEMBAYARAN','AKUN_TERKIRIM','MELENGKAPI_BERKAS'))",
         'lulus_arsip' => "p.status_seleksi = 'LULUS'",
     ][$kategori] ?? null;
     if ($where === null) {
@@ -47,12 +51,24 @@ function retensi_kandidat($kategori, $bulan)
     }
     return q_all(
         "SELECT p.id, p.no_pendaftaran, p.nama_siswa, p.created_at,
-                COUNT(d.id) AS jumlah_berkas
+                ((SELECT COUNT(*) FROM dokumen d
+                   WHERE d.pendaftar_id = p.id
+                     AND d.file_url IS NOT NULL AND d.file_url <> '')
+                + (SELECT COUNT(*) FROM pembayaran byr
+                   WHERE byr.pendaftar_id = p.id
+                     AND byr.bukti_transfer_url IS NOT NULL AND byr.bukti_transfer_url <> '')
+                ) AS jumlah_berkas
            FROM pendaftar p
-           JOIN dokumen d ON d.pendaftar_id = p.id
-                        AND d.file_url IS NOT NULL AND d.file_url <> ''
           WHERE $where
             AND p.created_at <= (NOW() - INTERVAL ? MONTH)
+            AND (
+                  EXISTS (SELECT 1 FROM dokumen d2
+                           WHERE d2.pendaftar_id = p.id
+                             AND d2.file_url IS NOT NULL AND d2.file_url <> '')
+               OR EXISTS (SELECT 1 FROM pembayaran byr2
+                           WHERE byr2.pendaftar_id = p.id
+                             AND byr2.bukti_transfer_url IS NOT NULL AND byr2.bukti_transfer_url <> '')
+            )
           GROUP BY p.id, p.no_pendaftaran, p.nama_siswa, p.created_at
           ORDER BY p.created_at
           LIMIT 200",
@@ -90,6 +106,7 @@ function retensi_hapus_berkas($pendaftarId, $alasan, $operatorId = null)
 
     $prefix  = 'storage/dokumen/';
     $dokuDir = storage_path('dokumen');
+    $pola    = '/^(dok|bukti)-[A-Za-z0-9._-]+\.(jpg|jpeg|png|pdf)$/i';
     $hapus   = 0;
     $gagal   = 0;
 
@@ -100,7 +117,7 @@ function retensi_hapus_berkas($pendaftarId, $alasan, $operatorId = null)
             continue;
         }
         $nama = basename($rel);
-        if (!preg_match('/^(dok|bukti)-[A-Za-z0-9._-]+\.(jpg|jpeg|png|pdf)$/i', $nama)) {
+        if (!preg_match($pola, $nama)) {
             $gagal++;
             continue;
         }
@@ -113,6 +130,32 @@ function retensi_hapus_berkas($pendaftarId, $alasan, $operatorId = null)
             'UPDATE dokumen SET file_url = NULL, ukuran_kb = NULL WHERE id = ?',
             [$d['id']]
         );
+        $hapus++;
+    }
+
+    /* Fase 13 butir 2 — bukti transfer di tabel pembayaran ikut diretensi. */
+    $bay = q_all(
+        "SELECT id, bukti_transfer_url FROM pembayaran
+          WHERE pendaftar_id = ? AND bukti_transfer_url IS NOT NULL AND bukti_transfer_url <> ''",
+        [$pendaftarId]
+    ) ?: [];
+    foreach ($bay as $b) {
+        $rel = (string) $b['bukti_transfer_url'];
+        if (strpos($rel, $prefix) !== 0) {
+            $gagal++;
+            continue;
+        }
+        $nama = basename($rel);
+        if (!preg_match($pola, $nama)) {
+            $gagal++;
+            continue;
+        }
+        $abs = $dokuDir . '/' . $nama;
+        if (is_file($abs) && !@unlink($abs)) {
+            $gagal++;
+            continue;
+        }
+        q_exec('UPDATE pembayaran SET bukti_transfer_url = NULL WHERE id = ?', [$b['id']]);
         $hapus++;
     }
 
@@ -136,7 +179,7 @@ function retensi_hapus_berkas($pendaftarId, $alasan, $operatorId = null)
 function retensi_riwayat($limit = 20)
 {
     return q_all(
-        'SELECT l.*, u.nama AS operator_nama
+        'SELECT l.*, u.nama_lengkap AS operator_nama
            FROM retensi_log l
            LEFT JOIN users u ON u.id = l.operator_id
           ORDER BY l.dibuat_pada DESC

@@ -15,6 +15,7 @@ function q_all($sql, $params = [])
         $baris = $stmt->fetchAll();
         return $baris ?: [];
     } catch (Throwable $e) {
+        error_log('q_all gagal: ' . $e->getMessage() . ' | SQL: ' . substr((string) $sql, 0, 200));
         return null;
     }
 }
@@ -33,6 +34,7 @@ function q_col($sql, $params = [])
         $nilai = $stmt->fetchColumn();
         return $nilai === false ? null : $nilai;
     } catch (Throwable $e) {
+        error_log('q_col gagal: ' . $e->getMessage() . ' | SQL: ' . substr((string) $sql, 0, 200));
         return null;
     }
 }
@@ -49,6 +51,7 @@ function q_exec($sql, $params = [])
         $stmt = $db->prepare($sql);
         return $stmt->execute($params);
     } catch (Throwable $e) {
+        error_log('q_exec gagal: ' . $e->getMessage() . ' | SQL: ' . substr((string) $sql, 0, 200));
         return false;
     }
 }

@@ -136,7 +136,9 @@ $kategori = [
     'batal' => [
         'judul'  => 'Pendaftaran ditolak/dibatalkan',
         'bulan'  => $P['bulan_batal'],
-        'ket'    => 'Pendaftar berstatus verifikasi DITOLAK yang pendaftarannya lebih tua dari batas bulan.',
+        'ket'    => 'Pendaftar berstatus verifikasi DITOLAK atau terhenti di tahap awal '
+            . '(MENUNGGU_PEMBAYARAN / AKUN_TERKIRIM / MELENGKAPI_BERKAS) yang pendaftarannya '
+            . 'lebih tua dari batas bulan.',
     ],
     'lulus_arsip' => [
         'judul'  => 'Lulus — arsip berkas',
