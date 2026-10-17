@@ -1,6 +1,7 @@
 <?php
 /**
- * Fase 12 D — Pemeriksaan statis kode (12 pemeriksaan, tanpa DB/web).
+ * Fase 12 D + Fase 13 butir 8 — Pemeriksaan statis kode (17 pemeriksaan,
+ * tanpa DB/web).
  *
  * Output : [LULUS] / [GAGAL] per pemeriksaan + ringkasan.
  * Exit   : 0 = semua LULUS, 1 = ada minimal satu GAGAL.
@@ -247,6 +248,79 @@ if ($ui === '' || strpos($ui, 'display_errors=Off') === false) {
 }
 catat($masalah12 ? 'GAGAL' : 'LULUS', '12. .htaccess & .user.ini produksi',
     $masalah12 ? implode('; ', $masalah12) : 'blokir database/includes + display_errors=Off ada');
+
+/* 13. Tanpa mojibake (UTF-8 salah decode) di source. */
+$moji = [];
+foreach ($daftar as $rel => $path) {
+    if (!preg_match('/\.(php|css|js|sql)$/', $rel)) {
+        continue;
+    }
+    if ($rel === 'tools/cek-statis.php') {
+        continue;   /* kata kunci pemeriksaan ada di dalam string tool ini */
+    }
+    if (preg_match('/Ã|â€|Â\xC2/', (string) file_get_contents($path))) {
+        $moji[] = $rel;
+    }
+}
+catat($moji ? 'GAGAL' : 'LULUS', '13. Tanpa mojibake encoding',
+    $moji ? implode(', ', array_slice($moji, 0, 5)) : 'tidak ada pola UTF-8 salah decode');
+
+/* 14. csrf_cek tidak dibuang sebagai statement mati (Fase 13). */
+$csrfBuang = [];
+foreach ($phpFiles as $rel => $path) {
+    foreach (explode("\n", (string) file_get_contents($path)) as $baris) {
+        if (preg_match('/\bcsrf_cek\s*\(/', $baris)
+            && strpos($baris, ';') !== false
+            && !preg_match('/\b(if|elseif|return|while|and|or)\b|=|&&|\|\||\?|!/', $baris)) {
+            $csrfBuang[] = $rel;
+            break;
+        }
+    }
+}
+catat($csrfBuang ? 'GAGAL' : 'LULUS', '14. csrf_cek tidak dibuang',
+    $csrfBuang ? implode(', ', array_slice($csrfBuang, 0, 5)) : 'tidak ada csrf_cek sebagai statement mati');
+
+/* 15. midtrans_aktif() hanya di berkas yang diizinkan. */
+$midIzin = ['includes/midtrans.php', 'app/api/snap-token.php', 'app/operator/pengaturan.php'];
+$midDiluar = [];
+foreach ($phpFiles as $rel => $path) {
+    if (in_array($rel, $midIzin, true)) {
+        continue;
+    }
+    if (preg_match('/\bmidtrans_aktif\s*\(/', isi_bersih($path))) {
+        $midDiluar[] = $rel;
+    }
+}
+catat($midDiluar ? 'GAGAL' : 'LULUS', '15. midtrans_aktif hanya di berkas izin',
+    $midDiluar ? implode(', ', array_slice($midDiluar, 0, 5)) : 'hanya di ' . count($midIzin) . ' berkas izin');
+
+/* 16. REMOTE_ADDR hanya lewat klien_ip() (functions.php). */
+$rawIp = [];
+foreach ($phpFiles as $rel => $path) {
+    if ($rel === 'includes/functions.php') {
+        continue;
+    }
+    if (preg_match('/\$_SERVER\s*\[\s*[\'"]REMOTE_ADDR/', isi_bersih($path))) {
+        $rawIp[] = $rel;
+    }
+}
+catat($rawIp ? 'GAGAL' : 'LULUS', '16. REMOTE_ADDR hanya lewat klien_ip()',
+    $rawIp ? implode(', ', array_slice($rawIp, 0, 5)) : 'tidak ada akses REMOTE_ADDR di luar functions.php');
+
+/* 17. Tanpa ADD ... IF NOT EXISTS di SQL (MariaDB-only, tidak portabel). */
+$sqlFiles = array_filter($daftar, function ($p) {
+    return preg_match('/\.sql$/', $p) === 1;
+});
+$ifne = [];
+foreach ($sqlFiles as $rel => $path) {
+    /* Komentar SQL (-- ...) dikecualikan — pola sering muncul di penjelasan. */
+    $isiSql = preg_replace('/--[^\n]*/', '', (string) file_get_contents($path));
+    if (preg_match('/\bADD\s+(COLUMN\s+|INDEX\s+|KEY\s+)?IF\s+NOT\s+EXISTS\b/i', $isiSql)) {
+        $ifne[] = $rel;
+    }
+}
+catat($ifne ? 'GAGAL' : 'LULUS', '17. SQL tanpa ADD ... IF NOT EXISTS',
+    $ifne ? implode(', ', array_slice($ifne, 0, 5)) : count($sqlFiles) . ' file SQL portabel');
 
 /* --------------------------------------------------------------- */
 $gagal = array_filter($hasil, function ($h) {
