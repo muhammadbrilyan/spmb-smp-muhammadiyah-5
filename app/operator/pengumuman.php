@@ -56,10 +56,7 @@ $desc  = 'Umumkan atau jadwalkan pengumuman hasil seleksi SPMB, kirim WA ke pend
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 $activeMenu = 'pengumuman';
 require_once __DIR__ . '/../../includes/partials/head.php';
-$breadcrumbs = [
-    ['label' => 'Dashboard', 'href' => role_home(user_role())],
-    ['label' => 'Pengumuman Hasil'],
-];
+$breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Pengumuman Hasil' => null];
 require_once __DIR__ . '/../../includes/partials/sidebar.php';
 require_once __DIR__ . '/../../includes/partials/topbar.php';
 ?>
