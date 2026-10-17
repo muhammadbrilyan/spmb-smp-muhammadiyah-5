@@ -255,7 +255,7 @@ function rate_limit_identitas($kunci = null)
  * Hasil divalidasi FILTER_VALIDATE_IP; tidak valid -> REMOTE_ADDR.
  * Parameter opsional dipakai tools/uji-klien-ip.php.
  */
-function klien_ip(array $server = null, $proxiesCsv = null, $headerName = null)
+function klien_ip(?array $server = null, $proxiesCsv = null, $headerName = null)
 {
     $server = $server ?? $_SERVER;
     $remote = trim((string) ($server['REMOTE_ADDR'] ?? ''));
