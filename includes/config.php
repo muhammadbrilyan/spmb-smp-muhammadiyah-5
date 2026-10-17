@@ -56,16 +56,39 @@ define('BASE_URL', rtrim($__base, '/'));
  * proyek (disarankan produksi: .env & storage DI LUAR web root),
  * lalu (2) root proyek (lokal/dev). Nilai menimpa default di bawah.
  * Jangan commit .env ke git.
+ *
+ * Fase 13 butir 6: kandidat di LUAR root proyek HANYA dipakai bila
+ * file-nya berisi baris APP_NAME=... (penanda identitas). Tanpa
+ * penanda itu, .env tetangga di web root / htdocs bisa terbaca
+ * tanpa sengaja — file tersebut dilewati.
  * --------------------------------------------------------------- */
-$__envFile = null;
+$__rootProyek = dirname(__DIR__);
+$__envFile    = null;
 foreach ([
-    dirname(__DIR__, 2) . '/.env',   /* di luar web root — dipakai bila ada */
-    dirname(__DIR__) . '/.env',      /* root proyek — fallback lokal */
+    dirname(__DIR__, 2) . '/.env',   /* di luar web root — wajar dgn APP_NAME= */
+    $__rootProyek . '/.env',         /* root proyek — fallback lokal */
 ] as $__e) {
-    if (is_file($__e) && is_readable($__e)) {
+    if (!is_file($__e) || !is_readable($__e)) {
+        continue;
+    }
+    $__isi = @file($__e, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    $__adaNama = false;
+    foreach ($__isi as $__b) {
+        $__b = trim($__b);
+        if ($__b === '' || $__b[0] === '#' || strpos($__b, '=') === false) {
+            continue;
+        }
+        list($__k, $__v2) = explode('=', $__b, 2);
+        if (trim($__k) === 'APP_NAME') {
+            $__adaNama = true;
+            break;
+        }
+    }
+    if ($__adaNama || $__e === $__rootProyek . '/.env') {
         $__envFile = $__e;
         break;
     }
+    /* Tanpa APP_NAME di luar root proyek -> dilewati (bisa .env proyek lain). */
 }
 if ($__envFile !== null) {
     foreach (file($__envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $__baris) {

@@ -55,6 +55,7 @@ Edit) lalu isi:
 
 | Kunci | Nilai |
 |-------|-------|
+| `APP_NAME` | `SMP Muhammadiyah 5 Kota Tangerang` — **wajib**; penanda identitas: loader menolak `.env` di luar root proyek yang tidak memuat kunci ini (Fase 13 butir 6) |
 | `DB_HOST` | `localhost` (lazim di cPanel) |
 | `DB_PORT` | `3306` |
 | `DB_NAME` / `DB_USER` / `DB_PASS` | nama & user lengkap (dgn awalan) + password |
@@ -77,10 +78,14 @@ dikecualikan dari paket rilis.
    ke **755** (atau 775 bila user hosting menuntut demikian) agar bisa
    ditulis web server.
 3. Di `.env` isi `STORAGE_DIR=/home/USERNAME/spmb-data/storage`.
-4. Salin `.env` ke `/home/USERNAME/spmb-data/.env` — aplikasi otomatis
-   mencari `.env` satu tingkat di atas root proyek LEBIH DAHULU sebelum
-   `.env` di root proyek (Fase 12 C6). Anda boleh menghapus `.env` di
-   `public_html` setelah itu.
+4. Salin `.env` ke **satu tingkat di atas root proyek** — bila aplikasi
+   ada di `public_html/mualimku` maka tujuannya `public_html/.env`;
+   bila aplikasi langsung di `public_html`, tujuannya
+   `/home/USERNAME/.env` (bukan `spmb-data/`). Aplikasi mencari `.env`
+   di lokasi itu LEBIH DAHULU sebelum `.env` di root proyek
+   (Fase 12 C6) — **pastikan baris `APP_NAME=...` tetap ada** di dalamnya
+   (Fase 13 butir 6: tanpa penanda itu file dilewati). Anda boleh
+   menghapus `.env` di root proyek setelah itu.
 5. Halaman **Kesiapan Rilis** (operator) menampilkan status lokasi storage —
    harus berstatus baik (di luar web root).
 
