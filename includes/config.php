@@ -5,6 +5,27 @@
  * Fallback: includes/dummy.php dipakai otomatis bila database tidak tersedia.
  */
 
+/* --- Cek ekstensi kritis (Fase 13 butir 9) ---
+ * Tanpa mbstring/PDO/json aplikasi menghasilkan fatal error yang TIDAK
+ * tampil (display_errors=Off di produksi) — periksa di sini dan beri
+ * pesan jelas sebelum bagian lain gagal diam-diam. */
+$__ekKritis = ['pdo_mysql' => 'PDO MySQL', 'mbstring' => 'mbstring', 'json' => 'JSON'];
+$__ekKurang = [];
+foreach ($__ekKritis as $__ek => $__label) {
+    if (!extension_loaded($__ek)) {
+        $__ekKurang[] = $__label;
+    }
+}
+if ($__ekKurang) {
+    http_response_code(500);
+    if (!headers_sent()) {
+        header('Content-Type: text/plain; charset=utf-8');
+    }
+    exit("Aplikasi SPMB tidak dapat berjalan: ekstensi PHP belum aktif — "
+        . implode(', ', $__ekKurang)
+        . ". Aktifkan lewat MultiPHP Manager / php.ini hosting lalu muat ulang halaman.");
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     /* --- Session cookie hardening --- */
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
