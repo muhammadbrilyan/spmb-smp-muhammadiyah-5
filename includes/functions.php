@@ -419,3 +419,65 @@ function tahap_minimal($tahap, $minimal)
     }
     return $a >= $b;
 }
+
+/**
+ * Render teks Syarat & Ketentuan polos menjadi HTML terstruktur yang nyaman
+ * dibaca (judul terpusat + daftar pasal bernomor kartu). Aman: semua teks
+ * di-escape dulu. Dipakai modal S&K di halaman registrasi publik.
+ */
+function syarat_ke_html($teks)
+{
+    $teks = trim((string) $teks);
+    if ($teks === '') {
+        return '';
+    }
+    $baris  = preg_split('/\R/u', $teks) ?: [];
+    $judul  = '';
+    $sub    = [];
+    $pasal  = [];
+    $kini   = null;
+
+    foreach ($baris as $b) {
+        $b = trim($b);
+        if ($b === '') {
+            continue;
+        }
+        /* Baris "1." / "1)" = awal pasal baru. */
+        if (preg_match('/^(\d+)\s*[.)]\s*(.+)$/u', $b, $m)) {
+            $kini = (int) $m[1];
+            $pasal[$kini] = [$m[2]];
+            continue;
+        }
+        if ($kini === null) {
+            if ($judul === '') {
+                $judul = $b;
+            } else {
+                $sub[] = $b;
+            }
+        } else {
+            $pasal[$kini][] = $b;   /* lanjutan isi pasal */
+        }
+    }
+
+    $h  = '<div class="sk-doc">';
+    if ($judul !== '') {
+        $h .= '<p class="sk-judul">' . e($judul) . '</p>';
+    }
+    foreach ($sub as $s) {
+        $h .= '<p class="sk-sub">' . e($s) . '</p>';
+    }
+    if ($pasal) {
+        ksort($pasal);
+        $h .= '<ol class="sk-ol">';
+        foreach ($pasal as $no => $isi) {
+            $h .= '<li><span class="sk-badge">' . e((string) $no) . '</span>'
+                . '<div class="sk-teks">' . e(implode(' ', $isi)) . '</div></li>';
+        }
+        $h .= '</ol>';
+    } else {
+        /* Tanpa nomor pasal — tampilkan sebagai paragraf biasa. */
+        $h .= '<p class="sk-teks">' . e(implode(' ', $sub)) . '</p>';
+    }
+    $h .= '</div>';
+    return $h;
+}

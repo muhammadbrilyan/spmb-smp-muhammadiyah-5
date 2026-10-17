@@ -23,18 +23,24 @@ $f = ['nama' => '', 'wa' => '', 'jalur' => '', 'asal' => ''];
 
 $jalurValid = jalur_aktif();
 
-/* Teks S&K bawaan sementara — Fase 2 akan menambahkan editor di CMS. */
+/* Teks S&K dari CMS (bisa diubah operator di Pengaturan). Bila kosong,
+ * pakai bawaan lengkap 8 pasal. */
 $syaratTeks = $PENGATURAN['syarat_ketentuan'] ?? null;
 if (!$syaratTeks) {
     $syaratTeks = "SYARAT & KETENTUAN PENDAFTARAN\nSMP MUHAMMADIYAH 5 KOTA TANGERANG\n\n"
-        . "1. Pendaftar adalah siswa kelas 6 SD/MI yang akan melanjutkan ke SMP kelas 7.\n\n"
-        . "2. Data yang diisi harus benar sesuai dokumen resmi.\n\n"
-        . "3. Biaya formulir pendaftaran tidak dapat dikembalikan.\n\n"
-        . "4. Pendaftar wajib mengunggah seluruh berkas persyaratan.\n\n"
-        . "5. Panitia berhak menolak pendaftar dengan data tidak benar.\n\n"
-        . "6. Keputusan panitia bersifat final.";
+        . "1. Pendaftar adalah siswa kelas 6 SD/MI yang akan melanjutkan ke SMP kelas 7 pada tahun ajaran berikutnya.\n\n"
+        . "2. Data yang diisi pada formulir pendaftaran harus benar sesuai dokumen resmi (akta kelahiran, Kartu Keluarga, Ijazah SD/MI).\n\n"
+        . "3. Biaya formulir pendaftaran sebesar yang tertera di halaman ini tidak dapat dikembalikan dalam keadaan apa pun.\n\n"
+        . "4. Pendaftar wajib mengunggah seluruh berkas persyaratan sesuai daftar yang ditentukan panitia.\n\n"
+        . "5. Panitia berhak menolak pendaftar yang memberikan data tidak benar atau berkas tidak lengkap.\n\n"
+        . "6. Jadwal ujian, pengumuman hasil, dan pembagian kelas akan diinformasikan melalui website resmi dan/atau WhatsApp orang tua.\n\n"
+        . "7. Keputusan panitia bersifat final.\n\n"
+        . "8. PRIVASI & RETENSI DATA. Data pribadi siswa dan orang tua hanya digunakan untuk keperluan seleksi dan administrasi pendaftaran. "
+        . "Berkas pribadi disimpan terbatas dan dapat dihapus melalui kebijakan retensi yang ditetapkan sekolah. "
+        . "Sekolah tidak membagikan data kepada pihak ketiga tanpa dasar hukum atau persetujuan orang tua/wali.";
 }
 $syaratVersi = (int) ($PENGATURAN['syarat_versi'] ?? 1);
+$syaratHtml  = syarat_ke_html($syaratTeks);
 
 /* Idempotency key — satu per render form; retry / double-submit memakai key yang sama. */
 $regToken = idem_key_valid($_SESSION['reg_token'] ?? '');
@@ -286,45 +292,81 @@ require_once __DIR__ . '/../../includes/partials/head.php';
 </div>
 
 <!-- ==================== MODAL SYARAT & KETENTUAN ==================== -->
+<style>
+  /* Gaya khusus modal S&K — warna lembut, nyaman dibaca */
+  .sk-hd { background: linear-gradient(135deg, #0056B3 0%, #00448f 100%); }
+  .sk-hd .sk-ic { background: rgba(255,255,255,.18); color: #fff; }
+  .sk-doc { padding-bottom: 4px; }
+  .sk-judul { font-size: 15px; font-weight: 800; color: #0F172A; text-align: center; letter-spacing: .02em; line-height: 1.4; }
+  .sk-sub { font-size: 12.5px; font-weight: 600; color: #64748B; text-align: center; margin-top: 3px; }
+  .sk-ol { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .sk-ol > li { display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+  .sk-badge { flex: none; width: 24px; height: 24px; border-radius: 8px; background: #cce0f5; color: #00448f; font-size: 12px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+  .sk-teks { font-size: 13px; line-height: 1.65; color: #334155; }
+  .sk-prog { height: 4px; background: #E2E8F0; border-radius: 999px; overflow: hidden; }
+  .sk-prog > i { display: block; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #0056B3, #0E9F6E); transition: width .15s ease; }
+  .sk-ft { background: #F8FAFC; }
+  .sk-cb { accent-color: #0056B3; }
+  @media (max-width: 640px) {
+    .sk-ol > li { padding: 9px 10px; }
+    .sk-teks { font-size: 12.5px; }
+  }
+</style>
+
 <div id="modal-sk" class="fixed inset-0 z-[80] hidden" role="dialog" aria-modal="true" aria-labelledby="sk-title">
   <!-- Overlay -->
-  <div id="modal-sk-overlay" class="absolute inset-0 bg-ink-900/50 backdrop-blur-sm"></div>
+  <div id="modal-sk-overlay" class="absolute inset-0 bg-ink-900/55 backdrop-blur-sm"></div>
 
   <!-- Konten modal -->
   <div class="relative flex items-end sm:items-center justify-center min-h-full p-0 sm:p-4">
     <div id="modal-sk-panel"
-         class="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
+         class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden"
          tabindex="-1">
-      <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-4 border-b border-line shrink-0">
-        <h2 id="sk-title" class="font-bold text-ink-900 text-lg">Syarat &amp; Ketentuan</h2>
+      <!-- Header gradien -->
+      <div class="sk-hd shrink-0 px-5 py-4 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="sk-ic w-9 h-9 rounded-xl grid place-items-center shrink-0">
+            <span class="ms text-[20px]">gavel</span>
+          </span>
+          <div class="min-w-0">
+            <h2 id="sk-title" class="font-bold text-white text-[17px] leading-tight">Syarat &amp; Ketentuan</h2>
+            <p class="text-[11.5px] text-white/75 mt-0.5">Pembacaan wajib sebelum mendaftar · Versi <?= e((string) $syaratVersi) ?></p>
+          </div>
+        </div>
         <button type="button" id="modal-sk-close"
-                class="w-8 h-8 grid place-items-center rounded-lg text-ink-400 hover:text-ink-700 hover:bg-line-soft"
+                class="w-8 h-8 grid place-items-center rounded-lg text-white/80 hover:text-white hover:bg-white/15 shrink-0"
                 aria-label="Tutup">
           <span class="ms text-[20px]">close</span>
         </button>
       </div>
 
-      <!-- Isi teks S&K — bisa di-scroll -->
-      <div id="modal-sk-isi" class="flex-1 overflow-y-auto px-5 py-4 text-sm text-ink-700 leading-relaxed whitespace-pre-line">
-<?= e($syaratTeks) ?>
+      <!-- Isi teks S&K — kartu pasal, bisa di-scroll -->
+      <div class="flex-1 overflow-y-auto overscroll-contain bg-canvas px-5 py-5">
+        <?= $syaratHtml ?>
+        <p class="mt-4 text-center text-[11.5px] text-ink-400">
+          Versi berlaku: <strong class="text-ink-500"><?= e((string) $syaratVersi) ?></strong>
+          · Perubahan teks selanjutnya hanya berlaku untuk pendaftar baru.
+        </p>
+      </div>
+
+      <!-- Indikator progres baca -->
+      <div class="shrink-0 px-5 pt-2">
+        <div class="sk-prog" aria-hidden="true"><i id="modal-sk-prog"></i></div>
       </div>
 
       <!-- Footer: checkbox + tombol -->
-      <div class="px-5 py-4 border-t border-line shrink-0 space-y-3">
+      <div class="sk-ft shrink-0 px-5 py-4 border-t border-line space-y-3">
         <label class="flex items-start gap-3 cursor-pointer select-none">
-          <input type="checkbox" id="modal-sk-setuju" class="mt-0.5 w-5 h-5 rounded border-line text-primary shrink-0" disabled>
-          <span class="text-sm text-ink-700">Saya telah membaca dan menyetujui Syarat &amp; Ketentuan di atas.</span>
+          <input type="checkbox" id="modal-sk-setuju" class="sk-cb mt-0.5 w-5 h-5 rounded border-line shrink-0" disabled>
+          <span class="text-sm text-ink-700 leading-snug">Saya telah membaca dan menyetujui <strong>Syarat &amp; Ketentuan</strong> di atas.</span>
         </label>
-        <div class="flex gap-3 justify-end">
-          <button type="button" id="modal-sk-batal"
-                  class="btn btn-outline">Batal</button>
-          <button type="button" id="modal-sk-lanjut"
-                  class="btn btn-primary" disabled>
+        <div class="flex gap-3">
+          <button type="button" id="modal-sk-batal" class="btn btn-outline flex-1 sm:flex-none">Batal</button>
+          <button type="button" id="modal-sk-lanjut" class="btn btn-primary flex-1 sm:flex-none" disabled>
             Lanjut &amp; Daftar <?= icon('arrow_forward') ?>
           </button>
         </div>
-        <p id="modal-sk-hint" class="text-xs text-ink-400 text-right">Gulir ke bawah untuk membaca seluruh isi.</p>
+        <p id="modal-sk-hint" class="text-xs text-ink-400">Gulir ke bawah untuk membaca seluruh isi.</p>
       </div>
     </div>
   </div>
@@ -337,12 +379,13 @@ require_once __DIR__ . '/../../includes/partials/head.php';
   var modal   = document.getElementById('modal-sk');
   var panel   = document.getElementById('modal-sk-panel');
   var overlay = document.getElementById('modal-sk-overlay');
-  var isi     = document.getElementById('modal-sk-isi');
+  var isi     = panel.querySelector('.flex-1.overflow-y-auto');
   var cb      = document.getElementById('modal-sk-setuju');
   var btnOK   = document.getElementById('modal-sk-lanjut');
   var btnBatal= document.getElementById('modal-sk-batal');
   var btnClose= document.getElementById('modal-sk-close');
   var hint    = document.getElementById('modal-sk-hint');
+  var prog    = document.getElementById('modal-sk-prog');
   var form    = document.querySelector('form[action*="registrasi"]');
   var lastFocus = null;
 
@@ -351,14 +394,15 @@ require_once __DIR__ . '/../../includes/partials/head.php';
     lastFocus = document.activeElement;
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-    /* Reset state */
     isi.scrollTop = 0;
     cb.checked = false;
     cb.disabled = true;
     btnOK.disabled = true;
+    prog.style.width = '0%';
     hint.textContent = 'Gulir ke bawah untuk membaca seluruh isi.';
-    hint.className = 'text-xs text-ink-400 text-right';
+    hint.className = 'text-xs text-ink-400';
     panel.focus();
+    cekScroll();
   }
 
   /* Tutup modal */
@@ -368,13 +412,16 @@ require_once __DIR__ . '/../../includes/partials/head.php';
     if (lastFocus) lastFocus.focus();
   }
 
-  /* Cek apakah sudah digulir sampai bawah */
+  /* Progres baca + aktifkan checkbox bila sudah sampai bawah */
   function cekScroll() {
-    var bawah = isi.scrollTop + isi.clientHeight >= isi.scrollHeight - 8;
+    var total   = isi.scrollHeight - isi.clientHeight;
+    var persen  = total <= 2 ? 100 : Math.min(100, Math.round(isi.scrollTop / total * 100));
+    prog.style.width = persen + '%';
+    var bawah = total <= 2 || isi.scrollTop + isi.clientHeight >= isi.scrollHeight - 8;
     if (bawah) {
       cb.disabled = false;
       hint.textContent = 'Anda sudah membaca seluruh isi. Silakan centang persetujuan.';
-      hint.className = 'text-xs text-[#065F46] text-right font-medium';
+      hint.className = 'text-xs text-[#065F46] font-medium';
     }
   }
 
@@ -386,7 +433,6 @@ require_once __DIR__ . '/../../includes/partials/head.php';
   /* Intercept submit form → tampilkan modal dulu */
   if (form) {
     form.addEventListener('submit', function (e) {
-      /* Biarkan validasi HTML5 (required fields) jalan dulu */
       if (!form.checkValidity()) return;
       e.preventDefault();
       bukaModal();
@@ -394,6 +440,7 @@ require_once __DIR__ . '/../../includes/partials/head.php';
   }
 
   isi.addEventListener('scroll', cekScroll, { passive: true });
+  window.addEventListener('resize', cekScroll);
   cb.addEventListener('change', sinkron);
   btnBatal.addEventListener('click', tutupModal);
   btnClose.addEventListener('click', tutupModal);
@@ -402,7 +449,6 @@ require_once __DIR__ . '/../../includes/partials/head.php';
   /* Tombol Lanjut: submit form final dengan setuju_sk=1 */
   btnOK.addEventListener('click', function () {
     if (btnOK.disabled) return;
-    /* Tambahkan input setuju_sk ke form */
     var input = form.querySelector('input[name="setuju_sk"]');
     if (!input) {
       input = document.createElement('input');
@@ -412,11 +458,10 @@ require_once __DIR__ . '/../../includes/partials/head.php';
       form.appendChild(input);
     }
     tutupModal();
-    /* Submit tanpa intercept (bypass preventDefault) */
     form.submit();
   });
 
-  /* Kunci fokus di dalam modal (focus trap) */
+  /* Kunci fokus di dalam modal (focus trap) + Escape */
   panel.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { tutupModal(); return; }
     if (e.key !== 'Tab') return;
