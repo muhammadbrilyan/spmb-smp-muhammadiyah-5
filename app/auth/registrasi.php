@@ -307,9 +307,22 @@ require_once __DIR__ . '/../../includes/partials/head.php';
   .sk-prog > i { display: block; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #0056B3, #0E9F6E); transition: width .15s ease; }
   .sk-ft { background: #F8FAFC; }
   .sk-cb { accent-color: #0056B3; }
+  /* --- Layout kritis ber-ID (beberapa kelas Tailwind arbitrer tidak ada
+     di CSS terkompilasi — inline berjamin modal punya tinggi & scroll) --- */
+  #modal-sk { z-index: 80; }
+  .sk-wrap { min-height: 100%; }
+  .sk-panel { max-height: 92vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,.35); }
+  .sk-scroll { min-height: 0; overscroll-behavior: contain; }
+  /* Scrollbar terlihat & nyaman */
+  .sk-scroll::-webkit-scrollbar { width: 8px; }
+  .sk-scroll::-webkit-scrollbar-track { background: #F1F5F9; }
+  .sk-scroll::-webkit-scrollbar-thumb { background: #94A3B8; border-radius: 999px; border: 2px solid #F1F5F9; }
+  .sk-scroll::-webkit-scrollbar-thumb:hover { background: #64748B; }
+  .sk-scroll { scrollbar-width: thin; scrollbar-color: #94A3B8 #F1F5F9; }
   @media (max-width: 640px) {
     .sk-ol > li { padding: 9px 10px; }
     .sk-teks { font-size: 12.5px; }
+    .sk-panel { border-radius: 24px 24px 0 0; max-height: 94vh; }
   }
 </style>
 
@@ -318,9 +331,9 @@ require_once __DIR__ . '/../../includes/partials/head.php';
   <div id="modal-sk-overlay" class="absolute inset-0 bg-ink-900/55 backdrop-blur-sm"></div>
 
   <!-- Konten modal -->
-  <div class="relative flex items-end sm:items-center justify-center min-h-full p-0 sm:p-4">
+  <div class="sk-wrap relative flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div id="modal-sk-panel"
-         class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden"
+         class="sk-panel bg-white w-full max-w-lg flex flex-col overflow-hidden"
          tabindex="-1">
       <!-- Header gradien -->
       <div class="sk-hd shrink-0 px-5 py-4 flex items-center justify-between gap-3">
@@ -341,7 +354,7 @@ require_once __DIR__ . '/../../includes/partials/head.php';
       </div>
 
       <!-- Isi teks S&K — kartu pasal, bisa di-scroll -->
-      <div class="flex-1 overflow-y-auto overscroll-contain bg-canvas px-5 py-5">
+      <div class="sk-scroll flex-1 overflow-y-auto bg-canvas px-5 py-5">
         <?= $syaratHtml ?>
         <p class="mt-4 text-center text-[11.5px] text-ink-400">
           Versi berlaku: <strong class="text-ink-500"><?= e((string) $syaratVersi) ?></strong>
