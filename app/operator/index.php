@@ -25,7 +25,7 @@ $totalPend = count($pendaftar);
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 
-$activeMenu = 'ppdb';
+$activeMenu = 'dashboard';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 
 $breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Operasional Operator SPMB' => null];

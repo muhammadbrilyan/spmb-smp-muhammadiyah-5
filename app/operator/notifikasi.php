@@ -58,7 +58,10 @@ function notif_tautan($tipe)
             return url('app/bendahara/index.php');
         case 'BERKAS_DISUBMIT':
         case 'BERKAS_REVISI':
-            return url('app/operator/index.php');
+            return url('app/operator/berkas.php');
+        case 'VERIFIKASI_DATA':
+        case 'KOREKSI_DATA':
+            return url('app/operator/verifikasi-data.php');
         default:
             return url('app/operator/notifikasi.php');
     }

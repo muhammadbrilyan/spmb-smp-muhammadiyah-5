@@ -21,6 +21,7 @@ DROP TABLE IF EXISTS peserta_ujian;
 DROP TABLE IF EXISTS penempatan_kelas;
 DROP TABLE IF EXISTS seleksi;
 DROP TABLE IF EXISTS jadwal_tes;
+DROP TABLE IF EXISTS pengajuan_koreksi;
 DROP TABLE IF EXISTS dokumen;
 DROP TABLE IF EXISTS pembayaran;
 DROP TABLE IF EXISTS orang_tua;
@@ -243,6 +244,9 @@ CREATE TABLE pendaftar (
     'MELENGKAPI_BERKAS','BERKAS_DISUBMIT','BERKAS_REVISI','BERKAS_TERVERIFIKASI',
     'JADWAL_DITETAPKAN','NILAI_TERINPUT','DIUMUMKAN'
   ) DEFAULT 'MENUNGGU_PEMBAYARAN',                        -- [TAMBAHAN] model status alur SPMB
+  catatan_verifikasi_data TEXT,                         -- [Fase 13] catatan panitia untuk siswa
+  data_verified_at DATETIME,                            -- [Fase 13] waktu verifikasi DATA (bukan berkas)
+  data_verified_by VARCHAR(36),                         -- [Fase 13] users.id petugas verifikator data
   kred_sent_at DATETIME,                                -- [TAMBAHAN] waktu kirim WA
   setuju_sk_at DATETIME,                                -- [TAMBAHAN] bukti persetujuan S&K
   setuju_sk_versi INT,                                  -- [TAMBAHAN] versi S&K yang disetujui
@@ -255,8 +259,11 @@ CREATE TABLE pendaftar (
   UNIQUE KEY uq_pendaftar_regtoken (registration_token),
   UNIQUE KEY uq_pendaftar_pay_token (pay_token),
   UNIQUE KEY uq_pendaftar_pay_token_hash (pay_token_hash),
+  KEY idx_pendaftar_verifikasi_data (status_verifikasi, updated_at),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (kelas_id) REFERENCES kelas(id) ON DELETE SET NULL
+  FOREIGN KEY (kelas_id) REFERENCES kelas(id) ON DELETE SET NULL,
+  CONSTRAINT fk_pendaftar_data_verifier FOREIGN KEY (data_verified_by)
+      REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 INSERT INTO pendaftar
@@ -375,7 +382,34 @@ CREATE TABLE dokumen (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
--- 8. jadwal_tes - jadwal tes offline / video call (FR-05.3)
+-- 7b. pengajuan_koreksi - koreksi data setelah formulir terkunci
+--     [Fase 13] Siswa mengajukan, operator meninjau. Tabel ini TIDAK
+--     mengubah data induk otomatis; data tetap diperbaiki siswa.
+-- ---------------------------------------------------------------------
+CREATE TABLE pengajuan_koreksi (
+  id VARCHAR(36) PRIMARY KEY,
+  pendaftar_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(36) NULL,
+  bidang ENUM('IDENTITAS','ORANG_TUA','ALAMAT_KONTAK','DOKUMEN','AKADEMIK','LAINNYA')
+      NOT NULL DEFAULT 'LAINNYA',
+  pesan TEXT NOT NULL,
+  status ENUM('MENUNGGU','DIPROSES','DISETUJUI','DITOLAK')
+      NOT NULL DEFAULT 'MENUNGGU',
+  catatan_operator TEXT NULL,
+  reviewed_by VARCHAR(36) NULL,
+  reviewed_at DATETIME NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_koreksi_pendaftar (pendaftar_id),
+  KEY idx_koreksi_status (status),
+  CONSTRAINT fk_koreksi_pendaftar FOREIGN KEY (pendaftar_id)
+      REFERENCES pendaftar(id) ON DELETE CASCADE,
+  CONSTRAINT fk_koreksi_user FOREIGN KEY (user_id)
+      REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_koreksi_reviewer FOREIGN KEY (reviewed_by)
+      REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 --     [TAMBAHAN] seluruh tabel
 -- ---------------------------------------------------------------------
 CREATE TABLE jadwal_tes (

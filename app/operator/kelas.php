@@ -90,7 +90,7 @@ foreach ($kelasList as $k) {
 }
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'ppdb';
+$activeMenu = 'kelas';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 $breadcrumbs = ['Portal Akademik', 'SPMB', 'Manajemen Kelas'];
 $pageActions = '';
@@ -175,48 +175,52 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             </tr>
           </thead>
           <tbody>
+            <?php $noBaris = 0; ?>
             <?php foreach ($kelasList as $k): $persen = $k['kuota'] > 0 ? round($k['terisi'] / $k['kuota'] * 100) : 0; ?>
+              <?php
+              /* [PERBAIKAN] <form> tidak boleh jadi anak <tr> (lihat catatan di
+               * app/operator/jadwal.php). Form Simpan & Hapus kini berada di dalam
+               * <td> aksi; input yang tersebar di sel lain memakai form="id". */
+              $noBaris++;
+              $fEdit  = 'kf-' . $noBaris;
+              $fHapus = 'kh-' . $noBaris;
+              ?>
               <tr class="tr-hover">
-                <form method="post" action="<?= url('app/operator/kelas.php') ?>">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="aksi" value="ubah">
-                  <input type="hidden" name="id" value="<?= e($k['id']) ?>">
-                  <td class="td"><input name="kode" value="<?= e($k['kode']) ?>" class="input h-8 font-mono uppercase w-20" maxlength="10" required></td>
-                  <td class="td"><input name="nama_kelas" value="<?= e($k['nama_kelas']) ?>" class="input h-8 w-full min-w-[180px]" required></td>
-                  <td class="td"><input name="wali_kelas" value="<?= e($k['wali_kelas']) ?>" class="input h-8 w-full min-w-[140px]"></td>
-                  <td class="td text-right"><input name="kuota" type="number" min="1" max="500" value="<?= (int) $k['kuota'] ?>" class="input h-8 w-20 text-right ml-auto" required></td>
-                  <td class="td text-right font-semibold"><?= number_format((int) $k['terisi']) ?></td>
-                  <td class="td min-w-[120px]">
-                    <div class="flex items-center gap-2">
-                      <div class="flex-1 h-2 rounded-full bg-line-soft overflow-hidden">
-                        <div class="h-full rounded-full <?= $persen >= 100 ? 'bg-[#0E9F6E]' : 'bg-primary' ?>" style="width: <?= min($persen, 100) ?>%"></div>
-                      </div>
-                      <span class="text-xs font-semibold text-ink-500 w-10 text-right"><?= $persen ?>%</span>
+                <td class="td"><input form="<?= e($fEdit) ?>" name="kode" value="<?= e($k['kode']) ?>" class="input h-8 font-mono uppercase w-20" maxlength="10" required></td>
+                <td class="td"><input form="<?= e($fEdit) ?>" name="nama_kelas" value="<?= e($k['nama_kelas']) ?>" class="input h-8 w-full min-w-[180px]" required></td>
+                <td class="td"><input form="<?= e($fEdit) ?>" name="wali_kelas" value="<?= e($k['wali_kelas']) ?>" class="input h-8 w-full min-w-[140px]"></td>
+                <td class="td text-right"><input form="<?= e($fEdit) ?>" name="kuota" type="number" min="1" max="500" value="<?= (int) $k['kuota'] ?>" class="input h-8 w-20 text-right ml-auto" required></td>
+                <td class="td text-right font-semibold"><?= number_format((int) $k['terisi']) ?></td>
+                <td class="td min-w-[120px]">
+                  <div class="flex items-center gap-2">
+                    <div class="flex-1 h-2 rounded-full bg-line-soft overflow-hidden">
+                      <div class="h-full rounded-full <?= $persen >= 100 ? 'bg-[#0E9F6E]' : 'bg-primary' ?>" style="width: <?= min($persen, 100) ?>%"></div>
                     </div>
-                  </td>
-                  <td class="td">
-                    <label class="inline-flex items-center gap-1.5 text-[13px]">
-                      <input type="checkbox" name="is_aktif" value="1" <?= $k['is_aktif'] ? 'checked' : '' ?> class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
-                      <?= $k['is_aktif'] ? 'Aktif' : 'Nonaktif' ?>
-                    </label>
-                  </td>
-                  <td class="td text-right whitespace-nowrap">
-                    <button type="submit" class="btn btn-sm btn-outline"><?= icon('save', 'text-[15px]') ?> Simpan</button>
-                  </td>
-                </form>
-                <form method="post" action="<?= url('app/operator/kelas.php') ?>" onsubmit="return confirm('Hapus kelas <?= e($k['kode']) ?>?');">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="aksi" value="hapus">
-                  <input type="hidden" name="id" value="<?= e($k['id']) ?>">
-                  <td class="hidden"></td>
-                  <td class="hidden"></td>
-                  <td class="hidden"></td>
-                  <td class="hidden"></td>
-                  <td class="hidden"></td>
-                  <td class="hidden"></td>
-                  <td class="hidden"></td>
-                  <td class="td text-right"><button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus"><?= icon('delete', 'text-[17px]') ?></button></td>
-                </form>
+                    <span class="text-xs font-semibold text-ink-500 w-10 text-right"><?= $persen ?>%</span>
+                  </div>
+                </td>
+                <td class="td">
+                  <label class="inline-flex items-center gap-1.5 text-[13px]">
+                    <input form="<?= e($fEdit) ?>" type="checkbox" name="is_aktif" value="1" <?= $k['is_aktif'] ? 'checked' : '' ?> class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
+                    <?= $k['is_aktif'] ? 'Aktif' : 'Nonaktif' ?>
+                  </label>
+                </td>
+                <td class="td text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <form id="<?= e($fEdit) ?>" method="post" action="<?= url('app/operator/kelas.php') ?>">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="aksi" value="ubah">
+                      <input type="hidden" name="id" value="<?= e($k['id']) ?>">
+                      <button type="submit" class="btn btn-sm btn-outline"><?= icon('save', 'text-[15px]') ?> Simpan</button>
+                    </form>
+                    <form id="<?= e($fHapus) ?>" method="post" action="<?= url('app/operator/kelas.php') ?>" onsubmit="return confirm('Hapus kelas <?= e($k['kode']) ?>?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="aksi" value="hapus">
+                      <input type="hidden" name="id" value="<?= e($k['id']) ?>">
+                      <button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus"><?= icon('delete', 'text-[17px]') ?></button>
+                    </form>
+                  </div>
+                </td>
               </tr>
             <?php endforeach; ?>
             <?php if (!$kelasList): ?>

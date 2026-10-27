@@ -67,7 +67,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 }
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'ppdb';
+$activeMenu = 'pendaftaran';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 $breadcrumbs = ['Portal Akademik', 'SPMB', 'Pendaftaran Manual'];
 $pageActions = '';

@@ -421,6 +421,29 @@ function tahap_minimal($tahap, $minimal)
 }
 
 /**
+ * Label ramah pengguna untuk tahap pendaftar (dipakai halaman operator).
+ * @return array{label:string,tone:string}
+ */
+function label_tahap($tahap)
+{
+    $peta = [
+        'MENUNGGU_PEMBAYARAN'       => ['Menunggu Pembayaran', 'amber'],
+        'MENUNGGU_VERIFIKASI_BAYAR' => ['Verifikasi Pembayaran', 'amber'],
+        'BAYAR_TERVERIFIKASI'       => ['Pembayaran Terverifikasi', 'blue'],
+        'AKUN_TERKIRIM'             => ['Akun Terkirim', 'blue'],
+        'MELENGKAPI_BERKAS'         => ['Melengkapi Berkas', 'amber'],
+        'BERKAS_DISUBMIT'           => ['Berkas Dikirim', 'blue'],
+        'BERKAS_REVISI'             => ['Revisi Berkas', 'red'],
+        'BERKAS_TERVERIFIKASI'      => ['Berkas Terverifikasi', 'green'],
+        'JADWAL_DITETAPKAN'         => ['Jadwal Ditentukan', 'blue'],
+        'NILAI_TERINPUT'            => ['Nilai Terinput', 'blue'],
+        'DIUMUMKAN'                 => ['Hasil Diumumkan', 'green'],
+    ];
+    $d = $peta[$tahap] ?? [$tahap !== '' ? $tahap : 'Belum Ada Tahap', 'gray'];
+    return ['label' => $d[0], 'tone' => $d[1]];
+}
+
+/**
  * Render teks Syarat & Ketentuan polos menjadi HTML terstruktur yang nyaman
  * dibaca (judul terpusat + daftar pasal bernomor kartu). Aman: semua teks
  * di-escape dulu. Dipakai modal S&K di halaman registrasi publik.

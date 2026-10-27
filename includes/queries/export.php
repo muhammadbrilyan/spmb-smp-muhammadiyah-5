@@ -13,7 +13,8 @@ function export_rekap($jenis)
                     DATE_FORMAT(p.created_at, '%d/%m/%Y %H:%i') AS terdaftar
                FROM pendaftar p
           LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
-          LEFT JOIN kelas k ON k.id = p.kelas_id
+          LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
+          LEFT JOIN kelas k ON k.id = pk.kelas_id
            ORDER BY p.no_pendaftaran"
         ) ?: [];
         $header = ['No. Pendaftaran', 'Nama', 'NISN', 'JK', 'Jalur', 'Asal Sekolah', 'Alamat',

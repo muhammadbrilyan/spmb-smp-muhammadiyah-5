@@ -125,7 +125,8 @@ function pembayaran_siswa($pendaftar_id)
         return [];
     }
     return q_all(
-        'SELECT jenis_pembayaran, nominal, status, keterangan, verified_at, created_at
+        'SELECT id, jenis_pembayaran, nominal, status, keterangan, bukti_transfer_url,
+                metode, payment_method, paid_at, verified_at, catatan, created_at
            FROM pembayaran
           WHERE pendaftar_id = ?
        ORDER BY created_at DESC',

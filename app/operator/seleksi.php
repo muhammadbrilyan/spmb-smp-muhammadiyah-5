@@ -223,7 +223,7 @@ $jadwalList    = daftar_jadwal_tes_admin();
 $jmlLulusTanpaKelas = lulus_belum_ditempatkan_jumlah();
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'ppdb';
+$activeMenu = 'seleksi';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 $breadcrumbs = ['Portal Akademik', 'SPMB', 'Input Hasil Seleksi'];
 $pageActions = '';

@@ -175,7 +175,7 @@ function proses_kirim_ulang($pendaftarId)
 }
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'ppdb';
+$activeMenu = 'pendaftar';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 $breadcrumbs = ['Portal Akademik', 'SPMB', 'Generate Akun & WA'];
 $pageActions = '';

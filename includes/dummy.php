@@ -97,10 +97,10 @@ $PENDAFTAR = [
  * 7. Tab 2 — Penjadwalan tes
  * ------------------------------------------------------------------ */
 $JADWAL_TES = [
-    ['kode' => 'TES-01', 'nama' => 'Ujian CBT & Wawancara BTQ', 'tgl' => '2025-10-18', 'jam' => '08:00 – 11:00', 'mode' => 'Offline Kampus', 'peserta' => 142, 'status' => 'Terjadwal', 'tone' => 'blue'],
-    ['kode' => 'TES-02', 'nama' => 'Wawancara Orang Tua / Wali', 'tgl' => '2025-10-19', 'jam' => '09:00 – 14:00', 'mode' => 'Offline Kampus', 'peserta' => 96,  'status' => 'Terjadwal', 'tone' => 'blue'],
+    ['kode' => 'TES-01', 'nama' => 'Ujian CBT & Wawancara BTQ', 'tgl' => '2025-10-18', 'jam' => '08:00 – 11:00', 'mode' => 'Offline Sekolah', 'peserta' => 142, 'status' => 'Terjadwal', 'tone' => 'blue'],
+    ['kode' => 'TES-02', 'nama' => 'Wawancara Orang Tua / Wali', 'tgl' => '2025-10-19', 'jam' => '09:00 – 14:00', 'mode' => 'Offline Sekolah', 'peserta' => 96,  'status' => 'Terjadwal', 'tone' => 'blue'],
     ['kode' => 'TES-03', 'nama' => 'Seleksi Prestasi & Tahfidz', 'tgl' => '2025-10-20', 'jam' => '13:00 – 16:00', 'mode' => 'Video Call',     'peserta' => 42,  'status' => 'Draft',     'tone' => 'amber'],
-    ['kode' => 'TES-04', 'nama' => 'Tes Kesehatan & Psikotes',   'tgl' => '2025-10-25', 'jam' => '08:00 – 12:00', 'mode' => 'Offline Kampus', 'peserta' => 184, 'status' => 'Draft',     'tone' => 'amber'],
+    ['kode' => 'TES-04', 'nama' => 'Tes Kesehatan & Psikotes',   'tgl' => '2025-10-25', 'jam' => '08:00 – 12:00', 'mode' => 'Offline Sekolah', 'peserta' => 184, 'status' => 'Draft',     'tone' => 'amber'],
 ];
 
 /* ------------------------------------------------------------------ *

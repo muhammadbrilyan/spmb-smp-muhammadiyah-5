@@ -83,7 +83,7 @@ $totalKuota = 0; $totalTerisi = 0;
 foreach ($kelasList as $k) { $totalKuota += (int) $k['kuota']; $totalTerisi += (int) $k['terisi']; }
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'ppdb';
+$activeMenu = 'penempatan';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 $breadcrumbs = ['Portal Akademik', 'SPMB', 'Penempatan Kelas'];
 $pageActions = '';

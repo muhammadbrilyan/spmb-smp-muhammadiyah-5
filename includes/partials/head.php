@@ -16,6 +16,11 @@ $desc    = $desc    ?? 'Sistem Informasi SPMB & CMS SMP Muhammadiyah 5 Kota Tang
 $bodyClass = $bodyClass ?? 'bg-canvas text-ink-700 antialiased';
 
 /* Warna tema dari CMS (Pengaturan → Warna Tema). Ubah di CMS, bukan di sini. */
+$favicon       = $PENGATURAN['favicon_url'] ?? '';
+if ($favicon === '') {
+    $favicon   = $PENGATURAN['logo_url'] ?? asset('assets/img/uploads/logo-sekolah.png');
+}
+
 $warnaPrima    = warna_valid($PENGATURAN['warna_utama'] ?? '') ? $PENGATURAN['warna_utama'] : '#0056B3';
 $warnaDark     = warna_campur($warnaPrima, '#000000', 0.18);
 $warnaDarker   = warna_campur($warnaPrima, '#000000', 0.30);
@@ -31,12 +36,12 @@ $teksKontras   = warna_kontras($warnaPrima);
 <meta name="description" content="<?= e($desc) ?>">
 <meta name="theme-color" content="<?= e($PENGATURAN['warna_utama']) ?>">
 <title><?= e($title) ?> · <?= e(APP_SHORT) ?></title>
-<link rel="icon" href="<?= asset('assets/img/uploads/logo-sekolah.png') ?>" type="image/png">
+<link rel="icon" href="<?= e($favicon) ?>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 
 <!-- Tailwind CSS lokal (tanpa CDN) — warna utama via CSS variable agar bisa diganti dari CMS -->
 <link rel="stylesheet" href="<?= asset('assets/css/tailwind.css') ?>">
@@ -120,6 +125,6 @@ $teksKontras   = warna_kontras($warnaPrima);
   html.gelap .icon-box { border-color: #475569 !important; color: #CBD5E1 !important; }
 </style>
 
-<link rel="stylesheet" href="<?= asset('assets/css/app.css') ?>">
+<link rel="stylesheet" href="<?= asset('assets/css/app.css') ?>?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/css/app.css') ?: 1) ?>">
 </head>
 <body class="<?= e($bodyClass) ?>">

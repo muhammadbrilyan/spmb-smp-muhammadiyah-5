@@ -55,7 +55,7 @@ $desc      = 'Kelola jenis berkas persyaratan yang diminta dari calon siswa.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'pengaturan';
+$activeMenu = 'jenis-dokumen';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 $breadcrumbs = ['Portal Akademik' => 'SPMB', 'Daftar Berkas' => null];
 require __DIR__ . '/../../includes/partials/topbar.php';

@@ -15,7 +15,8 @@ function daftar_pendaftar()
            FROM pendaftar p
       LEFT JOIN users u ON u.id = p.user_id
       LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
-      LEFT JOIN kelas k ON k.id = p.kelas_id
+      LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
+      LEFT JOIN kelas k ON k.id = pk.kelas_id
        ORDER BY p.created_at, p.no_pendaftaran'
     );
     if ($baris === null) {
@@ -361,5 +362,174 @@ function lulus_belum_ditempatkan_jumlah()
  * ================================================================== */
 
 /**
- * Daftar kelas untuk dropdown penempatan: id, kode, nama, wali, kuota, terisi.
+ * Daftar kelas untuk dropdown penempatan ada di queries/penempatan.php
+ * (penempatan_kelas_opsi).
  */
+
+/* ==================================================================
+ * 14. VERIFIKASI DATA CALON SISWA (Fase 13)
+ * ================================================================== */
+
+/**
+ * Daftar pendaftar untuk halaman Data Pendaftar / Verifikasi Data.
+ * @param string $status filter status_verifikasi ('' = semua)
+ * @param string $cari   pencarian nama / no. pendaftaran / NISN / WA
+ * @param string $id     ambil satu pendaftar saja (dipakai halaman detail)
+ * @return array<int,array>
+ */
+function pendaftar_data_antrean($status = '', $cari = '', $id = '')
+{
+    $sql = "SELECT p.id, p.user_id, p.no_pendaftaran, p.nama_siswa, p.nisn, p.jenis_kelamin,
+                   p.tempat_lahir, p.tanggal_lahir, p.alamat, p.asal_sekolah, p.jalur,
+                   p.is_luar_daerah, p.kelas_id, p.status_verifikasi, p.status_seleksi,
+                   p.status_akun, p.tahap, p.catatan_verifikasi_data, p.data_verified_at,
+                   p.data_verified_by, p.created_at, p.updated_at,
+                   u.username, o.nama_orang_tua, o.no_whatsapp, o.pekerjaan,
+                   o.penghasilan_bulanan, o.alamat AS alamat_orang_tua,
+                   k.kode AS kelas_kode, k.nama_kelas, vu.nama_lengkap AS data_verifier,
+                   (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.file_url IS NOT NULL) AS dok_terisi,
+                   (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.status_verifikasi = 'VERIFIED') AS dok_verifikasi,
+                   (SELECT COUNT(*) FROM jenis_dokumen j WHERE j.aktif = 1 AND j.wajib = 1) AS dok_wajib,
+                   (SELECT COALESCE(SUM(b.nominal),0) FROM pembayaran b
+                     WHERE b.pendaftar_id = p.id
+                       AND b.status IN ('VERIFIED','LUNAS','ANGSURAN_1','ANGSURAN_2')) AS bayar_verified,
+                   (SELECT COUNT(*) FROM pembayaran b WHERE b.pendaftar_id = p.id AND b.status = 'PENDING') AS bayar_pending,
+                   (SELECT COUNT(*) FROM pengajuan_koreksi kx
+                     WHERE kx.pendaftar_id = p.id AND kx.status IN ('MENUNGGU','DIPROSES')) AS koreksi_aktif
+              FROM pendaftar p
+         LEFT JOIN users u ON u.id = p.user_id
+         LEFT JOIN users vu ON vu.id = p.data_verified_by
+         LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
+         LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
+         LEFT JOIN kelas k ON k.id = pk.kelas_id
+             WHERE 1 = 1";
+    $params = [];
+
+    $status = strtoupper(trim((string) $status));
+    if (in_array($status, ['DRAFT', 'MENUNGGU_VERIFIKASI', 'TERVERIFIKASI', 'DITOLAK'], true)) {
+        $sql .= ' AND p.status_verifikasi = ?';
+        $params[] = $status;
+    }
+
+    $id = trim((string) $id);
+    if ($id !== '') {
+        $sql .= ' AND p.id = ?';
+        $params[] = $id;
+    }
+
+    $cari = trim((string) $cari);
+    if ($cari !== '') {
+        $sql .= ' AND (p.nama_siswa LIKE ? OR p.no_pendaftaran LIKE ? OR p.nisn LIKE ? OR o.no_whatsapp LIKE ?)';
+        $like = '%' . $cari . '%';
+        $params[] = $like;
+        $params[] = $like;
+        $params[] = $like;
+        $params[] = $like;
+    }
+
+    $sql .= " ORDER BY FIELD(p.status_verifikasi, 'MENUNGGU_VERIFIKASI', 'DRAFT', 'TERVERIFIKASI', 'DITOLAK'),
+                      p.updated_at DESC, p.no_pendaftaran";
+    return q_all($sql, $params) ?: [];
+}
+
+/** Detail satu pendaftar untuk verifikasi data. */
+function pendaftar_data_detail($pendaftar_id)
+{
+    $baris = pendaftar_data_antrean('', '', $pendaftar_id);
+    return $baris[0] ?? null;
+}
+
+/**
+ * Butir data wajib sebelum verifikasi DATA boleh dikunci.
+ * Dipakai bersama oleh halaman operator dan validasi server.
+ * @return array<string,string> kolom => label
+ */
+function pendaftar_data_wajib()
+{
+    return [
+        'jenis_kelamin'    => 'Jenis kelamin',
+        'tempat_lahir'     => 'Tempat lahir',
+        'tanggal_lahir'    => 'Tanggal lahir',
+        'alamat'           => 'Alamat siswa',
+        'asal_sekolah'     => 'Asal sekolah',
+        'nama_orang_tua'   => 'Nama orang tua / wali',
+        'no_whatsapp'      => 'Nomor WhatsApp orang tua',
+        'alamat_orang_tua' => 'Alamat orang tua / wali',
+        'pekerjaan'        => 'Pekerjaan orang tua / wali',
+    ];
+}
+
+/**
+ * Daftar label butir wajib yang masih kosong.
+ * @return array<int,string>
+ */
+function pendaftar_data_kurang(array $detail)
+{
+    $kurang = [];
+    foreach (pendaftar_data_wajib() as $kolom => $label) {
+        if (trim((string) ($detail[$kolom] ?? '')) === '') {
+            $kurang[] = $label;
+        }
+    }
+    return $kurang;
+}
+
+/**
+ * Tetapkan status verifikasi data calon siswa.
+ * - TERVERIFIKASI : kunci formulir siswa + catatan dibersihkan.
+ * - lainnya       : simpan catatan panitia agar siswa tahu yang perlu diperbaiki.
+ *
+ * @return array{ok:bool,pesan:string}
+ */
+function verifikasi_data_set($pendaftar_id, $status, $catatan, $verifier_id)
+{
+    $status = strtoupper(trim((string) $status));
+    if (!in_array($status, ['DRAFT', 'MENUNGGU_VERIFIKASI', 'TERVERIFIKASI', 'DITOLAK'], true)) {
+        return ['ok' => false, 'pesan' => 'Status verifikasi tidak valid.'];
+    }
+    $catatan = trim((string) $catatan);
+    if ($status === 'DITOLAK' && $catatan === '') {
+        return ['ok' => false, 'pesan' => 'Alasan penolakan wajib diisi.'];
+    }
+    if ($status === 'MENUNGGU_VERIFIKASI' && $catatan === '') {
+        return ['ok' => false, 'pesan' => 'Tuliskan bagian yang perlu diperbaiki agar siswa dapat menindaklanjuti.'];
+    }
+
+    $ada = q_col('SELECT id FROM pendaftar WHERE id = ?', [$pendaftar_id]);
+    if ($ada === null) {
+        return ['ok' => false, 'pesan' => 'Pendaftar tidak ditemukan.'];
+    }
+
+    if ($status === 'TERVERIFIKASI') {
+        /* Verifikasi penuh hanya boleh bila data wajib lengkap — dicek di
+         * server, bukan hanya menonaktifkan tombol di tampilan. */
+        $detail = pendaftar_data_detail($pendaftar_id);
+        $kurang = $detail ? pendaftar_data_kurang($detail) : [];
+        if ($kurang) {
+            return [
+                'ok'    => false,
+                'pesan' => 'Data belum lengkap: ' . implode(', ', $kurang) . '. Minta perbaikan terlebih dahulu.',
+            ];
+        }
+        $ok = q_exec(
+            "UPDATE pendaftar
+                SET status_verifikasi = 'TERVERIFIKASI', catatan_verifikasi_data = NULL,
+                    data_verified_at = NOW(), data_verified_by = ?
+              WHERE id = ?",
+            [$verifier_id ?: null, $pendaftar_id]
+        );
+    } else {
+        $ok = q_exec(
+            'UPDATE pendaftar
+                SET status_verifikasi = ?, catatan_verifikasi_data = ?,
+                    data_verified_at = NULL, data_verified_by = NULL
+              WHERE id = ?',
+            [$status, $catatan !== '' ? $catatan : null, $pendaftar_id]
+        );
+    }
+
+    return $ok
+        ? ['ok' => true, 'pesan' => 'Status verifikasi data diperbarui.']
+        : ['ok' => false, 'pesan' => 'Gagal memperbarui status verifikasi data.'];
+}
+

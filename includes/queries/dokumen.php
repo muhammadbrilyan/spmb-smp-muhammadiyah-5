@@ -13,7 +13,17 @@ function _dok_tahap_terkunci($tahap)
 {
     return in_array($tahap, [
         'BERKAS_DISUBMIT', 'BERKAS_TERVERIFIKASI', 'JADWAL_DITETAPKAN',
-        'NILAI_TERINPUT', 'DIUMUMKAN', 'AKUN_TERKIRIM',
+        'NILAI_TERINPUT', 'DIUMUMKAN',
+    ], true);
+}
+
+/* Tahap yang membuka unggah / kirim berkas. BAYAR_TERVERIFIKASI ikut
+ * dibuka karena siswa sudah dapat login dan pembayarannya sudah sah —
+ * akun mungkin belum sempat dikirim ulang oleh operator. */
+function dokumen_tahap_boleh_unggah($tahap)
+{
+    return in_array($tahap, [
+        'BAYAR_TERVERIFIKASI', 'AKUN_TERKIRIM', 'MELENGKAPI_BERKAS', 'BERKAS_REVISI',
     ], true);
 }
 
@@ -156,6 +166,9 @@ function dokumen_upload($pendaftar_id, $kode, $pathRel, $ukuranKb)
     if (_dok_tahap_terkunci($tahap)) {
         return ['ok' => false, 'pesan' => 'Berkas terkunci pada tahap ini. Menunggu keputusan panitia / proses selanjutnya.'];
     }
+    if (!dokumen_tahap_boleh_unggah($tahap)) {
+        return ['ok' => false, 'pesan' => 'Unggah berkas dibuka setelah pembayaran formulir diverifikasi.'];
+    }
 
     $j = q_all('SELECT * FROM jenis_dokumen WHERE kode = ? AND aktif = 1', [(string) $kode]);
     if (!$j) {
@@ -224,7 +237,7 @@ function dokumen_submit($pendaftar_id)
     if (_dok_tahap_terkunci($tahap)) {
         return ['ok' => false, 'pesan' => 'Berkas sudah terkirim & dikunci pada tahap ini.'];
     }
-    if (!in_array($tahap, ['MELENGKAPI_BERKAS', 'BERKAS_REVISI'], true)) {
+    if (!dokumen_tahap_boleh_unggah($tahap)) {
         return ['ok' => false, 'pesan' => 'Tahap saat ini belum memungkinkan pengiriman berkas (' . $tahap . ').'];
     }
 
@@ -246,7 +259,7 @@ function dokumen_submit($pendaftar_id)
     }
 
     $ok = q_exec(
-        "UPDATE pendaftar SET tahap = 'BERKAS_DISUBMIT' WHERE id = ? AND tahap IN ('MELENGKAPI_BERKAS', 'BERKAS_REVISI')",
+        "UPDATE pendaftar SET tahap = 'BERKAS_DISUBMIT' WHERE id = ? AND tahap IN ('BAYAR_TERVERIFIKASI', 'AKUN_TERKIRIM', 'MELENGKAPI_BERKAS', 'BERKAS_REVISI')",
         [$pendaftar_id]
     );
     if (!$ok) {

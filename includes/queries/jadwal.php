@@ -17,7 +17,7 @@ function daftar_jadwal_tes()
         return $JADWAL_TES;
     }
 
-    $labelMode = ['OFFLINE' => 'Offline Kampus', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video Call'];
+    $labelMode = ['OFFLINE' => 'Offline Sekolah', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video Call'];
     $toneStat  = ['DRAFT' => 'amber', 'TERJADWAL' => 'blue', 'SELESAI' => 'green'];
     $labelStat = ['DRAFT' => 'Draft', 'TERJADWAL' => 'Terjadwal', 'SELESAI' => 'Selesai'];
 

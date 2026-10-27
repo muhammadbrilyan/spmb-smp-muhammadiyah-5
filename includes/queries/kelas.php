@@ -7,7 +7,7 @@ function daftar_kelas_admin()
 {
     $baris = q_all(
         'SELECT k.id, k.kode, k.nama_kelas, k.wali_kelas, k.kuota, k.is_aktif,
-                (SELECT COUNT(*) FROM pendaftar p WHERE p.kelas_id = k.id) AS terisi
+                (SELECT COUNT(*) FROM penempatan_kelas pk WHERE pk.kelas_id = k.id) AS terisi
            FROM kelas k
        ORDER BY k.kode'
     );
@@ -42,7 +42,11 @@ function kelas_ubah($id, $kode, $nama, $wali, $kuota, $aktif)
 
 function kelas_hapus($id)
 {
-    $terisi = (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE kelas_id = ?', [$id]) ?? 0);
+    /* [PERBAIKAN] Cek keterisian harus ke tabel penempatan_kelas.
+     * pendaftar.kelas_id tidak pernah ditulis aplikasi (hanya seed demo),
+     * sehingga kelas berpenghuni lolos cek lalu FK ON DELETE CASCADE
+     * menghapus seluruh penempatan siswa secara diam-diam. */
+    $terisi = (int) (q_col('SELECT COUNT(*) FROM penempatan_kelas WHERE kelas_id = ?', [$id]) ?? 0);
     if ($terisi > 0) {
         return false;
     }

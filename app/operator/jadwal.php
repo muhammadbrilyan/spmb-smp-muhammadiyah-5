@@ -107,7 +107,7 @@ $labelStat = ['DRAFT' => 'Draft', 'TERJADWAL' => 'Terjadwal', 'SELESAI' => 'Sele
 $toneStat  = ['DRAFT' => 'amber', 'TERJADWAL' => 'blue', 'SELESAI' => 'green'];
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'ppdb';
+$activeMenu = 'jadwal';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 $breadcrumbs = ['Portal Akademik', 'SPMB', 'Kelola Jadwal Tes'];
 $pageActions = '';
@@ -198,62 +198,72 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             </tr>
           </thead>
           <tbody>
+            <?php $noBaris = 0; ?>
             <?php foreach ($jadwalList as $j): ?>
+              <?php
+              /* [PERBAIKAN] <form> TIDAK BOLEH jadi anak <tr> — parser HTML akan
+               * mengosongkan form-nya dan membuang field ke luar, sehingga tombol
+               * Simpan/Kirim WA/Hapus tidak punya form owner (klik = tidak terkirim).
+               * Kini ketiga form berada di dalam <td> aksi, sedangkan input yang
+               * tersebar di sel lain memakai atribut form="id" (HTML5). */
+              $noBaris++;
+              $fEdit = 'jf-' . $noBaris;
+              $fWa   = 'jw-' . $noBaris;
+              $fHapus = 'jh-' . $noBaris;
+              ?>
               <tr class="tr-hover align-top">
-                <form method="post" action="<?= url('app/operator/jadwal.php') ?>">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="aksi" value="ubah">
-                  <input type="hidden" name="id" value="<?= e($j['id']) ?>">
-                  <td class="td font-mono text-[13px]"><?= e($j['kode']) ?></td>
-                  <td class="td"><input name="nama_kegiatan" value="<?= e($j['nama_kegiatan']) ?>" class="input h-8 w-full min-w-[180px]" required></td>
-                  <td class="td"><input name="tanggal" type="date" value="<?= e($j['tanggal']) ?>" class="input h-8 w-40" required></td>
-                  <td class="td whitespace-nowrap">
-                    <div class="flex items-center gap-1">
-                      <input name="jam_mulai" type="time" value="<?= e(substr($j['jam_mulai'], 0, 5)) ?>" class="input h-8 w-24" required>
-                      <span class="text-ink-400">–</span>
-                      <input name="jam_selesai" type="time" value="<?= e(substr($j['jam_selesai'], 0, 5)) ?>" class="input h-8 w-24" required>
-                    </div>
-                  </td>
-                  <td class="td">
-                    <select name="mode" class="select h-8 w-28">
-                      <option value="OFFLINE" <?= $j['mode'] === 'OFFLINE' ? 'selected' : '' ?>>Offline</option>
-                      <option value="DARING" <?= $j['mode'] === 'DARING' ? 'selected' : '' ?>>Daring</option>
-                      <option value="VIDEO_CALL" <?= $j['mode'] === 'VIDEO_CALL' ? 'selected' : '' ?>>Video Call</option>
-                    </select>
-                  </td>
-                  <td class="td whitespace-nowrap">
-                    <input name="ruangan" value="<?= e($j['ruangan'] ?? '') ?>" placeholder="Ruangan" class="input h-8 w-32">
-                    <input name="kapasitas" type="number" min="0" max="1000" value="<?= (int) ($j['kapasitas'] ?? 0) ?>" class="input h-8 w-20 mt-1" title="0 = tanpa batas">
-                  </td>
-                  <td class="td text-right"><input name="peserta_dijadwalkan" type="number" min="0" max="1000" value="<?= (int) $j['peserta_dijadwalkan'] ?>" class="input h-8 w-20 text-right ml-auto"></td>
-                  <td class="td">
-                    <select name="status" class="select h-8 w-32">
-                      <?php foreach ($labelStat as $k => $lab): ?>
-                        <option value="<?= $k ?>" <?= $j['status'] === $k ? 'selected' : '' ?>><?= $lab ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                  </td>
-                  <td class="td text-right whitespace-nowrap">
-                    <button type="submit" class="btn btn-sm btn-outline"><?= icon('save', 'text-[15px]') ?> Simpan</button>
-                  </td>
-                </form>
-                <form method="post" action="<?= url('app/operator/jadwal.php') ?>"
-                      onsubmit="return confirm('Kirim notifikasi WA jadwal <?= e($j['kode']) ?> ke semua wali siswa terjadwal?');">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="aksi" value="kirim_notifikasi">
-                  <input type="hidden" name="id" value="<?= e($j['id']) ?>">
-                  <td class="hidden"></td><td class="hidden"></td><td class="hidden"></td>
-                  <td class="hidden"></td><td class="hidden"></td><td class="hidden"></td><td class="hidden"></td><td class="hidden"></td>
-                  <td class="td text-right"><button type="submit" class="icon-box border border-line text-ink-500 hover:text-emerald-600 hover:border-emerald-300" aria-label="Kirim Notifikasi WA"><?= icon('chat', 'text-[17px]') ?></button></td>
-                </form>
-                <form method="post" action="<?= url('app/operator/jadwal.php') ?>" onsubmit="return confirm('Hapus jadwal <?= e($j['kode']) ?>?');">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="aksi" value="hapus">
-                  <input type="hidden" name="id" value="<?= e($j['id']) ?>">
-                  <td class="hidden"></td><td class="hidden"></td><td class="hidden"></td>
-                  <td class="hidden"></td><td class="hidden"></td><td class="hidden"></td><td class="hidden"></td><td class="hidden"></td>
-                  <td class="td text-right"><button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus"><?= icon('delete', 'text-[17px]') ?></button></td>
-                </form>
+                <td class="td font-mono text-[13px]"><?= e($j['kode']) ?></td>
+                <td class="td"><input form="<?= e($fEdit) ?>" name="nama_kegiatan" value="<?= e($j['nama_kegiatan']) ?>" class="input h-8 w-full min-w-[180px]" required></td>
+                <td class="td"><input form="<?= e($fEdit) ?>" name="tanggal" type="date" value="<?= e($j['tanggal']) ?>" class="input h-8 w-40" required></td>
+                <td class="td whitespace-nowrap">
+                  <div class="flex items-center gap-1">
+                    <input form="<?= e($fEdit) ?>" name="jam_mulai" type="time" value="<?= e(substr($j['jam_mulai'], 0, 5)) ?>" class="input h-8 w-24" required>
+                    <span class="text-ink-400">–</span>
+                    <input form="<?= e($fEdit) ?>" name="jam_selesai" type="time" value="<?= e(substr($j['jam_selesai'], 0, 5)) ?>" class="input h-8 w-24" required>
+                  </div>
+                </td>
+                <td class="td">
+                  <select form="<?= e($fEdit) ?>" name="mode" class="select h-8 w-28">
+                    <option value="OFFLINE" <?= $j['mode'] === 'OFFLINE' ? 'selected' : '' ?>>Offline</option>
+                    <option value="DARING" <?= $j['mode'] === 'DARING' ? 'selected' : '' ?>>Daring</option>
+                    <option value="VIDEO_CALL" <?= $j['mode'] === 'VIDEO_CALL' ? 'selected' : '' ?>>Video Call</option>
+                  </select>
+                </td>
+                <td class="td whitespace-nowrap">
+                  <input form="<?= e($fEdit) ?>" name="ruangan" value="<?= e($j['ruangan'] ?? '') ?>" placeholder="Ruangan" class="input h-8 w-32">
+                  <input form="<?= e($fEdit) ?>" name="kapasitas" type="number" min="0" max="1000" value="<?= (int) ($j['kapasitas'] ?? 0) ?>" class="input h-8 w-20 mt-1" title="0 = tanpa batas">
+                </td>
+                <td class="td text-right"><input form="<?= e($fEdit) ?>" name="peserta_dijadwalkan" type="number" min="0" max="1000" value="<?= (int) $j['peserta_dijadwalkan'] ?>" class="input h-8 w-20 text-right ml-auto"></td>
+                <td class="td">
+                  <select form="<?= e($fEdit) ?>" name="status" class="select h-8 w-32">
+                    <?php foreach ($labelStat as $k => $lab): ?>
+                      <option value="<?= $k ?>" <?= $j['status'] === $k ? 'selected' : '' ?>><?= $lab ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </td>
+                <td class="td text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <form id="<?= e($fEdit) ?>" method="post" action="<?= url('app/operator/jadwal.php') ?>">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="aksi" value="ubah">
+                      <input type="hidden" name="id" value="<?= e($j['id']) ?>">
+                      <button type="submit" class="btn btn-sm btn-outline"><?= icon('save', 'text-[15px]') ?> Simpan</button>
+                    </form>
+                    <form id="<?= e($fWa) ?>" method="post" action="<?= url('app/operator/jadwal.php') ?>"
+                          onsubmit="return confirm('Kirim notifikasi WA jadwal <?= e($j['kode']) ?> ke semua wali siswa terjadwal?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="aksi" value="kirim_notifikasi">
+                      <input type="hidden" name="id" value="<?= e($j['id']) ?>">
+                      <button type="submit" class="icon-box border border-line text-ink-500 hover:text-emerald-600 hover:border-emerald-300" aria-label="Kirim Notifikasi WA"><?= icon('chat', 'text-[17px]') ?></button>
+                    </form>
+                    <form id="<?= e($fHapus) ?>" method="post" action="<?= url('app/operator/jadwal.php') ?>" onsubmit="return confirm('Hapus jadwal <?= e($j['kode']) ?>?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="aksi" value="hapus">
+                      <input type="hidden" name="id" value="<?= e($j['id']) ?>">
+                      <button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus"><?= icon('delete', 'text-[17px]') ?></button>
+                    </form>
+                  </div>
+                </td>
               </tr>
             <?php endforeach; ?>
             <?php if (!$jadwalList): ?>

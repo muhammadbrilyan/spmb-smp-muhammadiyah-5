@@ -10,11 +10,11 @@
  */
 
 /** Logo boleh URL luar, path lokal relatif, atau path lama ber-BASE_URL. */
-function normalisasi_logo($logo)
+function normalisasi_logo($logo, $default = null)
 {
     $logo = trim((string) $logo);
     if ($logo === '') {
-        return asset('assets/img/uploads/logo-sekolah.png');
+        return $default ?? asset('assets/img/uploads/logo-sekolah.png');
     }
     if (preg_match('#^(https?:)?//#i', $logo) || stripos($logo, 'data:') === 0) {
         return $logo;
@@ -69,8 +69,9 @@ function pengaturan()
     $nilai['logo_url'] = normalisasi_logo($nilai['logo_url'] ?? '');
     /* Banner hero & banner login juga perlu dinormalisasi agar path
      * relatif diubah ke URL absolut — sama seperti logo. */
-    $nilai['hero_banner_url']   = normalisasi_logo($nilai['hero_banner_url'] ?? '');
-    $nilai['login_banner_url']  = normalisasi_logo($nilai['login_banner_url'] ?? '');
+    $nilai['hero_banner_url']   = normalisasi_logo($nilai['hero_banner_url'] ?? '', '');
+    $nilai['login_banner_url']  = normalisasi_logo($nilai['login_banner_url'] ?? '', '');
+    $nilai['favicon_url']       = normalisasi_logo($nilai['favicon_url'] ?? '', '');
     /* Nilai default untuk kolom baru agar tidak kosong. */
     $nilai['deskripsi_sekolah'] = $nilai['deskripsi_sekolah']
         ?? 'Membentuk generasi muda yang unggul dalam ilmu pengetahuan, berkarakter Islam, dan berdaya saing global di wilayah Kota Tangerang.';
@@ -145,7 +146,7 @@ function rombel()
         try {
             $baris = $db->query(
                 'SELECT k.kode, k.nama_kelas, k.wali_kelas, k.kuota,
-                        (SELECT COUNT(*) FROM pendaftar p WHERE p.kelas_id = k.id) AS terisi
+                        (SELECT COUNT(*) FROM penempatan_kelas pk WHERE pk.kelas_id = k.id) AS terisi
                    FROM kelas k
                   WHERE k.is_aktif = 1
                   ORDER BY k.kode'
