@@ -52,10 +52,13 @@ function wa_kirim($nomor, $pesan)
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_POST           => true,
+        /* 'typing' => 'off' ditolak Fonnte dengan reason menyesatkan
+         * "invalid/empty body value" (teruji 2026-10-28); nilai yang diterima
+         * adalah 'false'/'0'/'on'. Transport urlencoded sendiri tidak masalah. */
         CURLOPT_POSTFIELDS     => http_build_query([
             'target'  => $target,
             'message' => $pesan,
-            'typing'  => 'off',
+            'typing'  => 'false',
             'delay'   => 1,
         ]),
         CURLOPT_HTTPHEADER => [
@@ -75,10 +78,19 @@ function wa_kirim($nomor, $pesan)
         return ['ok' => false, 'pesan' => 'Respons gateway tidak valid.', 'id' => null];
     }
     if (!empty($j['status'])) {
-        return ['ok' => true, 'pesan' => 'Terkirim.', 'id' => isset($j['id']) ? (string) $j['id'] : null];
+        return ['ok' => true, 'pesan' => 'Terkirim.', 'id' => wa_teks($j['id'] ?? null) ?: null];
     }
-    $alasan = isset($j['reason']) ? (string) $j['reason'] : (string) ($j['message'] ?? 'Gagal.');
-    return ['ok' => false, 'pesan' => 'Fonnte: ' . $alasan, 'id' => null];
+    $alasan = wa_teks($j['reason'] ?? ($j['message'] ?? null));
+    return ['ok' => false, 'pesan' => 'Fonnte: ' . ($alasan !== '' ? $alasan : 'Gagal.'), 'id' => null];
+}
+
+/** Fonnte ada yang mengirim field sebagai array (mis. "id":[123]) — ratakan ke satu teks. */
+function wa_teks($v)
+{
+    if (is_array($v)) {
+        $v = $v ? reset($v) : '';
+    }
+    return is_scalar($v) ? trim((string) $v) : '';
 }
 
 /**
