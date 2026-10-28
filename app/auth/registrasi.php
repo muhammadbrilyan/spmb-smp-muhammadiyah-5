@@ -58,10 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $galat[] = 'Permintaan ditolak.';
         }
 
-        /* Rate limit: maks 5 registrasi per jam per IP. */
-        if (!$galat && !rate_limit_cek('registrasi', 5, 60)) {
-            $galat[] = 'Terlalu banyak percobaan. Silakan coba lagi dalam beberapa menit.';
-        }
+        /* [2026-10-28] Rate limit IP (5/jam) dilepas atas permintaan pemilik sistem —
+         * mengganggu pengujian dari satu IP yang sama. Anti-spam tetap: honeypot,
+         * CSRF, dan batas 3 registrasi per nomor WA / 24 jam. */
 
         $f['nama']  = trim((string) ($_POST['nama'] ?? ''));
         $f['wa']    = trim((string) ($_POST['wa'] ?? ''));
@@ -107,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$galat) {
-            rate_limit_catat('registrasi');
             $r = registrasi_baru($f['nama'], $f['wa'], $f['jalur'], $f['asal'], $regToken, $setujuSk);
             if ($r['ok']) {
                 $hasil = $r;

@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/../../includes/config.php';
 
-/* Hak akses: bendahara + operator (admin penuh). */
-require_role(['bendahara', 'operator']);
+/* Hak akses: KHUSUS bendahara (keputusan 2026-10-28 — verifikasi
+ * pembayaran adalah kewenangan bendahara, operator hanya melihat status). */
+require_role(['bendahara']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -202,10 +203,18 @@ $stat       = stat_bendahara();
                 <td class="td">
                   <div class="font-bold text-ink-900"><?= rupiah($p['nominal']) ?></div>
                   <?php if ($p['bukti']): ?>
-                    <a class="mt-1 inline-flex items-center gap-1 text-[12px] text-primary hover:underline"
-                       href="<?= url('app/api/dokumen.php?f=' . rawurlencode(basename($p['bukti']))) ?>" target="_blank" rel="noopener">
+                    <?php
+                    $namaBukti = basename((string) $p['bukti']);
+                    $tipeBukti = strtolower(pathinfo($namaBukti, PATHINFO_EXTENSION)) === 'pdf' ? 'pdf' : 'gambar';
+                    ?>
+                    <button type="button"
+                            class="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:underline"
+                            data-pratinjau-url="<?= e(url('app/api/dokumen.php?f=' . rawurlencode($namaBukti))) ?>"
+                            data-pratinjau-nama="Bukti Transfer <?= e($p['reg']) ?>"
+                            data-pratinjau-tipe="<?= e($tipeBukti) ?>"
+                            data-pratinjau-meta="<?= e(($tipeBukti === 'pdf' ? 'PDF' : 'Gambar') . ' · ' . $p['jenis'] . ' · ' . rupiah($p['nominal']) . ' · dikirim ' . bulan($p['waktu'])) ?>">
                       <?= icon('receipt', 'text-[15px]') ?> Lihat Bukti
-                    </a>
+                    </button>
                   <?php else: ?>
                     <span class="mt-1 inline-flex items-center gap-1 text-[12px] text-ink-400">
                       <?= icon('receipt', 'text-[15px]') ?> Bukti Belum Ada
@@ -352,7 +361,7 @@ $stat       = stat_bendahara();
             <span class="icon-box bg-white border border-line text-ink-400"><?= icon('image') ?></span>
             <div class="text-sm">
               <p class="font-medium text-ink-900">Pratinjau bukti transfer</p>
-              <p class="text-xs text-ink-400">Tahap UI — penyimpanan berkas (maks. 2MB) menyusul pada tahap integrasi upload.</p>
+              <p class="text-xs text-ink-400">Buka bukti ukuran penuh lewat tombol "Lihat Bukti" pada kolom Nominal &amp; Bukti.</p>
             </div>
           </div>
           <dl class="mt-3 space-y-2 text-sm">
@@ -408,10 +417,95 @@ $stat       = stat_bendahara();
   </div>
 </div>
 
+<!-- ====================== MODAL PRATINJAU BUKTI ====================== -->
+<div id="modal-pratinjau-bukti" class="modal-root hidden fixed inset-0 pratinjau-modal" role="dialog" aria-modal="true" aria-labelledby="bukti-judul">
+  <div class="absolute inset-0 bg-ink-900/50 backdrop-blur-sm animate-fade" data-modal-close></div>
+  <div class="pratinjau-lapis">
+    <div class="pratinjau-panel card shadow-modal animate-pop">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 id="bukti-judul" class="font-bold text-sm text-ink-900 truncate">Bukti Pembayaran</h3>
+          <p id="bukti-meta" class="mt-0.5 text-[11px] text-ink-500 truncate"></p>
+        </div>
+        <button type="button" class="icon-box border border-line text-ink-500 hover:text-red-600 shrink-0"
+                data-modal-close aria-label="Tutup pratinjau"><?= icon('close') ?></button>
+      </div>
+      <div id="bukti-isi" class="pratinjau-isi"></div>
+      <div class="pratinjau-kaki">
+        <a id="bukti-unduh" class="btn btn-sm btn-outline mr-2" target="_blank" rel="noopener"><?= icon('open_in_new', 'text-[16px]') ?> Buka Tab Baru</a>
+        <button type="button" class="btn btn-sm btn-outline" data-modal-close>Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>
 <?php if ($flash): ?>
 <script>window.APP_FLASH = <?= json_encode(['tipe' => $flash['tipe'], 'pesan' => $flash['pesan']], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php endif; ?>
 <script src="<?= asset('assets/js/app.js') ?>"></script>
+<script>
+  (function () {
+    var modal = document.getElementById('modal-pratinjau-bukti');
+    if (!modal) return;
+
+    var judul = document.getElementById('bukti-judul');
+    var meta  = document.getElementById('bukti-meta');
+    var isi   = document.getElementById('bukti-isi');
+    var unduh = document.getElementById('bukti-unduh');
+    var tombolTutup = modal.querySelector('.icon-box[data-modal-close]');
+
+    function tutup() {
+      modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+      isi.innerHTML = '';
+    }
+
+    function buka(url, nama, tipe, keterangan) {
+      if (!url) return;
+
+      judul.textContent  = nama || 'Bukti Pembayaran';
+      meta.textContent   = keterangan || '';
+      isi.innerHTML      = '';
+
+      if (tipe === 'pdf') {
+        var bingkai = document.createElement('iframe');
+        bingkai.src = url;
+        bingkai.title = nama || 'Bukti Pembayaran';
+        bingkai.className = 'pratinjau-pdf';
+        isi.appendChild(bingkai);
+      } else {
+        var gambar = document.createElement('img');
+        gambar.src = url;
+        gambar.alt = nama || 'Bukti Pembayaran';
+        gambar.className = 'pratinjau-gambar';
+        isi.appendChild(gambar);
+      }
+
+      if (unduh) unduh.href = url;
+
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+      if (tombolTutup) tombolTutup.focus();
+    }
+
+    document.querySelectorAll('[data-pratinjau-url]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        buka(btn.getAttribute('data-pratinjau-url'),
+             btn.getAttribute('data-pratinjau-nama'),
+             btn.getAttribute('data-pratinjau-tipe'),
+             btn.getAttribute('data-pratinjau-meta'));
+      });
+    });
+
+    modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
+      el.addEventListener('click', tutup);
+    });
+
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && !modal.classList.contains('hidden')) tutup();
+    });
+  })();
+</script>
 </body>
 </html>

@@ -1,0 +1,13 @@
+{
+  "name": "spmb-smp-muhammadiyah-5",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SPMB SMP Muhammadiyah 5 Kota Tangerang — pipeline build CSS Tailwind",
+  "scripts": {
+    "build:css": "tailwindcss -i ./assets/css/tailwind.src.css -o ./assets/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./assets/css/tailwind.src.css -o ./assets/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

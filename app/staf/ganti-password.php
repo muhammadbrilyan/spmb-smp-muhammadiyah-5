@@ -84,21 +84,30 @@ $flash = flash();
 
     <div>
       <label class="block text-sm font-medium mb-1">Password Lama</label>
-      <input type="password" name="password_lama" required minlength="1"
-             class="w-full border rounded-lg px-3 py-2 dark:bg-slate-900 dark:border-slate-700">
+      <div class="relative">
+        <input type="password" name="password_lama" required minlength="1"
+               class="w-full border rounded-lg px-3 py-2 pr-11 dark:bg-slate-900 dark:border-slate-700">
+        <button type="button" data-pass-toggle class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Lihat password" title="Lihat / sembunyikan password"><span class="ms text-[20px]">visibility</span></button>
+      </div>
     </div>
 
     <div>
       <label class="block text-sm font-medium mb-1">Password Baru</label>
-      <input type="password" name="password_baru" required minlength="10"
-             class="w-full border rounded-lg px-3 py-2 dark:bg-slate-900 dark:border-slate-700">
+      <div class="relative">
+        <input type="password" name="password_baru" required minlength="10"
+               class="w-full border rounded-lg px-3 py-2 pr-11 dark:bg-slate-900 dark:border-slate-700">
+        <button type="button" data-pass-toggle class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Lihat password" title="Lihat / sembunyikan password"><span class="ms text-[20px]">visibility</span></button>
+      </div>
       <p class="text-xs text-slate-500 mt-1">Minimal 10 karakter, tidak boleh sama dengan username.</p>
     </div>
 
     <div>
       <label class="block text-sm font-medium mb-1">Ulangi Password Baru</label>
-      <input type="password" name="password_ulangi" required minlength="10"
-             class="w-full border rounded-lg px-3 py-2 dark:bg-slate-900 dark:border-slate-700">
+      <div class="relative">
+        <input type="password" name="password_ulangi" required minlength="10"
+               class="w-full border rounded-lg px-3 py-2 pr-11 dark:bg-slate-900 dark:border-slate-700">
+        <button type="button" data-pass-toggle class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Lihat password" title="Lihat / sembunyikan password"><span class="ms text-[20px]">visibility</span></button>
+      </div>
     </div>
 
     <button type="submit"
@@ -113,6 +122,18 @@ $flash = flash();
 <?php if ($flash): ?>
 <script>window.APP_FLASH = <?= json_encode(['tipe' => $flash['tipe'], 'pesan' => $flash['pesan']], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php endif; ?>
+<script>
+  /* Toggle lihat/sembunyi password. */
+  document.querySelectorAll('[data-pass-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var inp = btn.parentElement.querySelector('input');
+      var shown = inp.type === 'text';
+      inp.type = shown ? 'password' : 'text';
+      btn.querySelector('.ms').textContent = shown ? 'visibility' : 'visibility_off';
+      btn.setAttribute('aria-label', shown ? 'Lihat password' : 'Sembunyikan password');
+    });
+  });
+</script>
 <script src="<?= asset('assets/js/app.js') ?>"></script>
 </body>
 </html>

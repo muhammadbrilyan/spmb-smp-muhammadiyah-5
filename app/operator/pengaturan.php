@@ -950,8 +950,15 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <section class="card p-5 sm:p-6">
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <h2 class="font-bold text-ink-900">WhatsApp Gateway (Fonnte)</h2>
-          <?php if (!empty($f['fonnte_token'])): ?>
-            <span class="badge badge-green"><?= dot('green') ?> Token tersimpan</span>
+          <?php
+          /* [PERBAIKAN] Badge semula hanya membaca kolom DB, sehingga token
+           * yang diisi di .env (FONNTE_TOKEN) tetap dianggap "Belum diatur"
+           * padahal wa_kirim() sudah memakainya. */
+          $fonnteAktif = fonnte_token() !== null;
+          $dariEnv     = env_val('FONNTE_TOKEN', '') !== '';
+          ?>
+          <?php if ($fonnteAktif): ?>
+            <span class="badge badge-green"><?= dot('green') ?> <?= $dariEnv ? 'Token aktif (dari .env)' : 'Token tersimpan' ?></span>
           <?php else: ?>
             <span class="badge badge-amber"><?= dot('amber') ?> Belum diatur</span>
           <?php endif; ?>

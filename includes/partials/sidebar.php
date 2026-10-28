@@ -14,8 +14,12 @@ $activeMenu = $activeMenu ?? 'dashboard';
 $role       = user_role();
 $badgeRole  = $badgeRole ?? strtoupper((string) $role);
 
-$boleh_notif = in_array($role, ['operator', 'bendahara', 'kepsek', 'admin'], true);
-$notifBadge  = $boleh_notif ? notif_belum_dibaca() : 0;
+/* [PERBAIKAN] $notifBadge tidak lagi dihitung di sini — dulu ia dipakai oleh
+ * badge menu "Notifikasi" di sidebar, dan menu itu kini sudah dihapus untuk
+ * operator (aksesnya lewat ikon notifikasi di topbar). Perhitungannya dipindah
+ * ke bawah, tepat setelah $navGrup terbentuk, sehingga HANYA dijalankan bila
+ * role itu benar-benar punya menu notifikasi (bendahara/kepsek).
+ * Polling pembaruan jumlahnya juga pindah ke topbar. */
 
 /** Helper satu baris menu. */
 $menuItem = function ($key, $icon, $label, $href, $badge = '') {
@@ -48,15 +52,23 @@ if ($role === 'siswa') {
         ],
     ];
 } elseif ($role === 'operator') {
+    /* [PERBAIKAN] Sidebar semula 18 menu sehingga terkesan padat. Empat menu
+     * dihapus karena AKSESNYA TETAP ADA di tempat lain (tidak ada halaman yang
+     * jadi tak terjangkau):
+     *   1. Notifikasi          -> ikon notifikasi di topbar (dengan badge jumlah)
+     *   2. Panduan & SOP       -> ikon bantuan "?" di topbar
+     *   3. Pendaftaran Manual  -> tombol CTA tepat di atas daftar menu ini
+     *   4. Ganti Password      -> link di bagian bawah sidebar
+     * Hasil: 18 -> 14 menu dalam 4 grup; kartu profil & link bantuan di footer
+     * ikut dihapus agar sidebar lebih ringkas (keduanya sudah ada di topbar). */
     $navGrup = [
         [
             'judul' => 'Operasional SPMB',
             'menu'  => [
                 $menuItem('dashboard', 'dashboard', 'Dashboard Operasional', url('app/operator/index.php')),
                 $menuItem('pendaftar', 'group', 'Data Pendaftar', url('app/operator/pendaftar.php')),
-                $menuItem('berkas', 'folder_shared', 'Verifikasi Kelengkapan Formulir', url('app/operator/berkas.php')),
-                $menuItem('verifikasi-data', 'fact_check', 'Verifikasi Data Calon Siswa', url('app/operator/verifikasi-data.php')),
-                $menuItem('notifikasi', 'notifications', 'Notifikasi', url('app/operator/notifikasi.php')),
+                $menuItem('berkas', 'folder_shared', 'Verifikasi Berkas', url('app/operator/berkas.php')),
+                $menuItem('verifikasi-data', 'fact_check', 'Verifikasi Data Siswa', url('app/operator/verifikasi-data.php')),
             ],
         ],
         [
@@ -65,7 +77,7 @@ if ($role === 'siswa') {
                 $menuItem('jadwal', 'event', 'Jadwal Ujian', url('app/operator/jadwal.php')),
                 $menuItem('peserta', 'event_seat', 'Peserta Ujian', url('app/operator/peserta-ujian.php')),
                 $menuItem('seleksi', 'assignment', 'Data & Status Tes', url('app/operator/seleksi.php')),
-                $menuItem('pengumuman', 'campaign', 'Pengumuman & Status Penerimaan', url('app/operator/pengumuman.php')),
+                $menuItem('pengumuman', 'campaign', 'Pengumuman Hasil', url('app/operator/pengumuman.php')),
             ],
         ],
         [
@@ -78,13 +90,10 @@ if ($role === 'siswa') {
         [
             'judul' => 'Pengaturan Sistem',
             'menu'  => [
-                $menuItem('pendaftaran', 'person_add', 'Pendaftaran Manual', url('app/operator/pendaftar-baru.php')),
-                $menuItem('jenis-dokumen', 'description', 'Jenis Dokumen', url('app/operator/jenis-dokumen.php')),
                 $menuItem('pengaturan', 'settings', 'Pengaturan Sistem', url('app/operator/pengaturan.php')),
+                $menuItem('jenis-dokumen', 'description', 'Jenis Dokumen', url('app/operator/jenis-dokumen.php')),
                 $menuItem('retensi', 'inventory_2', 'Retensi Data', url('app/operator/retensi.php')),
                 $menuItem('kesiapan', 'task_alt', 'Kesiapan Rilis', url('app/operator/kesiapan.php')),
-                $menuItem('panduan', 'support_agent', 'Panduan & SOP', url('app/operator/panduan.php')),
-                $menuItem('ganti-pass', 'lock', 'Ganti Password', url('app/staf/ganti-password.php')),
             ],
         ],
     ];
@@ -120,6 +129,20 @@ if ($role === 'siswa') {
         ],
     ]];
 }
+
+/* [PERBAIKAN] Hitung jumlah notifikasi BELUM DIBACA hanya bila role itu punya
+ * menu Notifikasi di sidebar (bendahara/kepsek/admin). Untuk operator, menu
+ * itu sudah dihapus — aksesnya lewat ikon notifikasi di topbar, jadi query ini
+ * tidak perlu dijalankan di sini. */
+$notifBadge = 0;
+foreach ($navGrup as $gNav) {
+    foreach ($gNav['menu'] as $mNav) {
+        if ($mNav['key'] === 'notifikasi') {
+            $notifBadge = notif_belum_dibaca();
+            break 2;
+        }
+    }
+}
 ?>
 <aside id="sidebar"
        class="fixed inset-y-0 left-0 z-50 w-[264px] bg-white border-r border-line flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200">
@@ -152,60 +175,65 @@ if ($role === 'siswa') {
 
   <!-- Navigasi berkelompok -->
   <nav class="flex-1 overflow-y-auto scroll-thin px-4 py-4 space-y-4">
-    <?php foreach ($navGrup as $grup): ?>
-      <div>
-        <p class="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400"><?= e($grup['judul']) ?></p>
-        <div class="space-y-1">
+    <?php foreach ($navGrup as $gi => $grup):
+      /* [PERBAIKAN] Grup dibuat bisa dilipat agar sidebar tidak terlihat
+       * menumpuk. Dua aturan agar tidak pernah membingungkan:
+       *   - grup yang BERISI menu aktif SELALU terbuka (pengguna tahu dirinya
+       *     ada di mana), dan
+       *   - grup pertama terbuka sebagai pintu masuk.
+       * Grup lain mulai tertutup; preferensi lipatan disimpan di localStorage. */
+      $adaAktifGrup = false;
+      foreach ($grup['menu'] as $mg) {
+          if ($mg['key'] === $activeMenu) {
+              $adaAktifGrup = true;
+              break;
+          }
+      }
+      $bukaAwal = $adaAktifGrup || $gi === 0;
+      ?>
+      <details class="nav-grup" data-grup="<?= (int) $gi ?>"<?= $bukaAwal ? ' open' : '' ?>>
+        <summary>
+          <span><?= e($grup['judul']) ?></span>
+          <span class="ms text-[16px] nav-grup-tanda" aria-hidden="true">expand_more</span>
+        </summary>
+        <div class="space-y-1 mt-1">
           <?php foreach ($grup['menu'] as $m): $isActive = $m['key'] === $activeMenu; ?>
             <a href="<?= e($m['href']) ?>"
                class="nav-link <?= $isActive ? 'nav-link-active' : '' ?>"
                <?= $isActive ? 'aria-current="page"' : '' ?>>
               <span class="ms text-[20px] <?= $isActive ? 'text-primary' : 'text-ink-400' ?>"><?= e($m['icon']) ?></span>
               <span class="flex-1"><?= e($m['label']) ?></span>
-              <?php if ($m['key'] === 'notifikasi' && $notifBadge > 0): ?>
-                <span id="notif-badge" class="badge h-[19px] min-w-[19px] px-1.5 justify-center text-[10px] bg-red-600 text-white"><?= $notifBadge > 99 ? '99+' : (int) $notifBadge ?></span>
-              <?php elseif ($m['key'] === 'notifikasi'): ?>
-                <span id="notif-badge" class="badge h-[19px] min-w-[19px] px-1.5 justify-center text-[10px] <?= $isActive ? 'badge-blue' : 'badge-gray' ?> hidden"></span>
+              <?php if ($m['key'] === 'notifikasi'): ?>
+                <?php /* Penanda .notif-badge-count dipakai bersama oleh polling di
+                        topbar — elemennya tetap dirender walau tersembunyi, agar
+                        pembaruan jumlah selalu menemukannya. */ ?>
+                <span class="notif-badge-count badge h-[19px] min-w-[19px] px-1.5 justify-center text-[10px] <?= $notifBadge > 0 ? 'bg-red-600 text-white' : (($isActive ? 'badge-blue' : 'badge-gray') . ' hidden') ?>"><?= $notifBadge > 0 ? ($notifBadge > 99 ? '99+' : (int) $notifBadge) : '' ?></span>
               <?php elseif ($m['badge']): ?>
                 <span class="badge h-[19px] px-2 text-[10px] <?= $isActive ? 'badge-blue' : 'badge-gray' ?>"><?= e($m['badge']) ?></span>
               <?php endif; ?>
             </a>
           <?php endforeach; ?>
         </div>
-      </div>
+      </details>
     <?php endforeach; ?>
   </nav>
 
-  <!-- Bantuan -->
-  <div class="px-4 pb-3">
-    <?php if ($role === 'siswa'): ?>
-      <a href="<?= url('app/spmb/index.php') ?>" class="nav-link" target="_blank" rel="noopener">
-        <span class="ms text-[20px] text-ink-400">help</span> Bantuan &amp; Info SPMB
-      </a>
-    <?php else: ?>
-      <a href="<?= url('app/operator/panduan.php') ?>" class="nav-link">
-        <span class="ms text-[20px] text-ink-400">help</span> Bantuan &amp; Panduan
-      </a>
-    <?php endif; ?>
-  </div>
+  <!-- [PERBAIKAN] Blok "Bantuan & Panduan" dihapus — sudah digantikan ikon "?"
+       di topbar (ke kanan atas) yang untuk semua peran sudah menunjuk ke
+       halaman yang benar: siswa ke Info SPMB, staf ke Panduan & SOP. -->
 
-  <!-- Profil user -->
+  <!-- Aksi akun -->
+  <!-- [PERBAIKAN] Kartu profil (avatar + nama + jabatan) dihapus — informasi
+       yang sama sudah tampil di topbar, dan kartu itu hanya memakan tinggi
+       sidebar. Yang tersisa: dua aksi yang benar-benar dipakai. -->
   <div class="px-4 pb-4 pt-3 border-t border-line">
-    <div class="flex items-center gap-3 rounded-xl bg-canvas border border-line px-3 py-2.5">
-      <span class="w-9 h-9 rounded-lg bg-primary text-white grid place-items-center text-xs font-bold shrink-0"><?= e($USER_LOGIN['inisial']) ?></span>
-      <div class="min-w-0 flex-1 leading-tight">
-        <div class="text-[13px] font-semibold text-ink-900 truncate"><?= e($USER_LOGIN['nama']) ?></div>
-        <div class="text-[11px] text-ink-500"><?= e($USER_LOGIN['jabatan']) ?></div>
-      </div>
-      <form method="post" action="<?= url('app/auth/logout.php') ?>" class="shrink-0">
-        <?= csrf_field() ?>
-        <button type="submit" class="text-ink-400 hover:text-red-600" title="Keluar"><?= icon('logout', 'text-[19px]') ?></button>
-      </form>
-    </div>
+    <a href="<?= url('app/staf/ganti-password.php') ?>" class="nav-link">
+      <span class="ms text-[20px] text-ink-400">lock</span> Ganti Password
+    </a>
     <form method="post" action="<?= url('app/auth/logout.php') ?>">
       <?= csrf_field() ?>
-      <button type="submit" class="mt-2 flex items-center gap-2 px-1 text-sm text-red-600 hover:underline">
-        <?= icon('logout', 'text-[18px]') ?> Keluar
+      <button type="submit" class="nav-link w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+        <span class="ms text-[20px]">logout</span> Keluar
       </button>
     </form>
   </div>
@@ -213,30 +241,27 @@ if ($role === 'siswa') {
 
 <div id="sidebar-overlay" class="fixed inset-0 bg-ink-900/40 z-40 hidden lg:hidden"></div>
 
-<?php if ($boleh_notif): ?>
 <script>
-/* Polling ringan jumlah notifikasi belum dibaca — tiap 60 detik, tanpa library. */
+/* Simpan & pulihkan status lipatan grup sidebar (per grup, per pengguna).
+ * Grup yang berisi menu aktif SELALU terbuka — tidak ikut disimpan, agar
+ * pengguna tak pernah kehilangan petunjuk "saya ada di halaman mana". */
 (function () {
-  var endpoint = <?= json_encode(url('app/api/notif-count.php')) ?>;
-  function perbarui() {
-    fetch(endpoint, { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        if (!j || !j.ok) return;
-        var el = document.getElementById('notif-badge');
-        if (!el) return;
-        if (j.jumlah > 0) {
-          el.textContent = j.jumlah > 99 ? '99+' : String(j.jumlah);
-          el.classList.remove('hidden', 'badge-blue', 'badge-gray');
-          el.classList.add('bg-red-600', 'text-white');
-        } else {
-          el.classList.add('hidden');
-          el.classList.remove('bg-red-600', 'text-white');
-        }
-      })
-      .catch(function () { /* jaringan mati — abaikan */ });
-  }
-  setInterval(perbarui, 60000);
+  var grup = document.querySelectorAll('.nav-grup');
+  if (!grup.length) return;
+  Array.prototype.forEach.call(grup, function (d) {
+    var adaAktif = d.querySelector('.nav-link-active');
+    if (adaAktif) { d.open = true; return; }
+
+    var kunci = 'nav-grup-' + (d.getAttribute('data-grup') || '0');
+    try {
+      var s = localStorage.getItem(kunci);
+      if (s !== null) d.open = (s === '1');
+    } catch (e) { /* storage diblokir — pakai nilai default */ }
+
+    d.addEventListener('toggle', function () {
+      try { localStorage.setItem(kunci, d.open ? '1' : '0'); } catch (e) {}
+    });
+  });
 })();
 </script>
-<?php endif; ?>
+

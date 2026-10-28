@@ -1,7 +1,8 @@
 <?php
 /**
  * POST — verifikasi / penolakan pembayaran & "Verifikasi & Kirim Akun" (Fase 4).
- * Hak akses: bendahara + operator (admin penuh mengikuti role operator).
+ * Hak akses: KHUSUS bendahara (keputusan 2026-10-28 — operator tidak lagi
+ * boleh memverifikasi pembayaran).
  *
  * Aksi:
  *   verifikasi          → VERIFIED + tahap BAYAR_TERVERIFIKASI

@@ -32,7 +32,7 @@ function daftar_hasil_seleksi()
         ];
     }
 
-    return $keluar ?: $HASIL_SELEKSI;
+    return $keluar; /* kosong = memang belum ada hasil (bukan fallback dummy) */
 }
 
 /* ==================================================================

@@ -65,12 +65,10 @@ $FAQ = [
 
 /* ------------------------------------------------------------------ *
  * 4. Statistik ringkas landing
+ *    [Demo dihapus] Nomor contoh "345+ pendaftar" dll. menyesatkan —
+ *    landing page memakai $STATISTIK per-halaman, bukan nilai di sini.
  * ------------------------------------------------------------------ */
-$STATISTIK = [
-    ['angka' => '345+', 'label' => 'Pendaftar saat ini', 'icon' => 'groups', 'tone' => 'blue'],
-    ['angka' => '98%',  'label' => 'Lolos seleksi & CBT', 'icon' => 'trending_up', 'tone' => 'green'],
-    ['angka' => '15+',  'label' => 'Prestasi akademik & BTQ', 'icon' => 'emoji_events', 'tone' => 'amber'],
-];
+$STATISTIK = [];
 
 /* ------------------------------------------------------------------ *
  * 5. Rombel / kelas (tabel `kelas`)
@@ -83,15 +81,11 @@ $ROMBEL = [
 
 /* ------------------------------------------------------------------ *
  * 6. Tabel pendaftar untuk dashboard operator
+ *    [Demo dihapus 2026-10-28] Enam pendaftar contoh dikosongkan —
+ *    fallback hanya dipakai saat DB mati; data kosong lebih jujur
+ *    daripada menampilkan pendaftar fiktif.
  * ------------------------------------------------------------------ */
-$PENDAFTAR = [
-    ['reg' => 'REG-2025-0101', 'nama' => 'Aisyah Nur Salsabila',        'sekolah' => 'SD Muhammadiyah 01 Tangerang', 'jalur' => 'Tahfidz',  'wa' => '+62 812-9943-1102', 'akun' => 'Aktif',        'kred' => 'Terkirim (08:30 WIB)', 'kred_tone' => 'green', 'nisn' => '0129482099', 'asal' => 'MI Nurul Huda Karawaci'],
-    ['reg' => 'REG-2025-0102', 'nama' => 'Muhammad Farhan Al-Ghidari',  'sekolah' => 'MI Negeri 1 Tangerang',      'jalur' => 'Reguler',  'wa' => '+62 813-8821-4099', 'akun' => 'Aktif',        'kred' => 'Terkirim (08:35 WIB)', 'kred_tone' => 'green', 'nisn' => '0118492041', 'asal' => 'MI Negeri 1 Tangerang'],
-    ['reg' => 'REG-2025-0103', 'nama' => 'Zahra Annisa Khairunnisa',    'sekolah' => 'SDIT As-Syifa Karawaci',     'jalur' => 'Prestasi', 'wa' => '+62 857-1940-2391', 'akun' => 'Belum Dibuat',  'kred' => 'Menunggu Operator',     'kred_tone' => 'amber', 'nisn' => '0123910245', 'asal' => 'SDIT As-Syifa Karawaci'],
-    ['reg' => 'REG-2025-0104', 'nama' => 'Bilal Dwi Kurniawan',        'sekolah' => 'SD Negeri Cikokol 3',        'jalur' => 'Reguler',  'wa' => '+62 821-4478-9012', 'akun' => 'Belum Dibuat',  'kred' => 'Menunggu Operator',     'kred_tone' => 'amber', 'nisn' => '0117392812', 'asal' => 'SD Negeri Cikokol 3'],
-    ['reg' => 'REG-2025-0105', 'nama' => 'Nadira Putri Az-Zahra',      'sekolah' => 'SDN Poris Pelawad 1',        'jalur' => 'Reguler',  'wa' => '+62 856-7712-3380', 'akun' => 'Aktif',        'kred' => 'Terkirim (09:12 WIB)', 'kred_tone' => 'green', 'nisn' => '0128841029', 'asal' => 'SDN Poris Pelawad 1'],
-    ['reg' => 'REG-2025-0106', 'nama' => 'Rizky Maulana Alamsyah',     'sekolah' => 'SD Muhammadiyah 2 Batusari', 'jalur' => 'Afirmasi', 'wa' => '+62 838-2210-4477', 'akun' => 'Gagal',        'kred' => 'Nomor Tidak Aktif',     'kred_tone' => 'red',   'nisn' => '0115598101', 'asal' => 'SD Muhammadiyah 2 Batusari'],
-];
+$PENDAFTAR = [];
 
 /* ------------------------------------------------------------------ *
  * 7. Tab 2 — Penjadwalan tes
@@ -105,14 +99,9 @@ $JADWAL_TES = [
 
 /* ------------------------------------------------------------------ *
  * 8. Tab 3 — Input hasil seleksi
+ *    [Demo dihapus 2026-10-28] Ikut dikosongkan bersama $PENDAFTAR.
  * ------------------------------------------------------------------ */
-$HASIL_SELEKSI = [
-    ['reg' => 'REG-2025-0101', 'nama' => 'Aisyah Nur Salsabila',       'cbt' => 94, 'btq' => 92, 'waw' => 90, 'nilai' => 94.5, 'status' => 'LULUS'],
-    ['reg' => 'REG-2025-0102', 'nama' => 'Muhammad Farhan Al-Ghidari', 'cbt' => 88, 'btq' => 95, 'waw' => 92, 'nilai' => 91.8, 'status' => 'LULUS'],
-    ['reg' => 'REG-2025-0103', 'nama' => 'Zahra Annisa Khairunnisa',   'cbt' => 85, 'btq' => 87, 'waw' => 86, 'nilai' => 86.2, 'status' => 'PROSES'],
-    ['reg' => 'REG-2025-0104', 'nama' => 'Bilal Dwi Kurniawan',        'cbt' => 90, 'btq' => 88, 'waw' => 87, 'nilai' => 88.7, 'status' => 'LULUS'],
-    ['reg' => 'REG-2025-0106', 'nama' => 'Rizky Maulana Alamsyah',     'cbt' => 62, 'btq' => 70, 'waw' => 74, 'nilai' => 68.4, 'status' => 'TIDAK_LULUS'],
-];
+$HASIL_SELEKSI = [];
 
 /* ------------------------------------------------------------------ *
  * 9. HAK AKSES — sumber kredensial

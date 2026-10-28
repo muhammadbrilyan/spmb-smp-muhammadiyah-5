@@ -34,6 +34,11 @@
   .icon-box { @apply inline-flex items-center justify-center w-9 h-9 rounded-lg shrink-0; }
   .nav-link { @apply flex items-center gap-3 px-2.5 h-11 rounded-xl text-[15px] text-ink-700 whitespace-nowrap hover:bg-line-soft transition-colors; }
   .nav-link-active { @apply bg-primary-light text-primary font-semibold; }
+  /* Grup sidebar yang bisa dilipat (details/summary). */
+  .nav-grup > summary { @apply list-none cursor-pointer select-none flex items-center justify-between gap-2 px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink-400 hover:text-ink-600 transition-colors; }
+  .nav-grup > summary::-webkit-details-marker { display: none; }
+  .nav-grup-tanda { @apply transition-transform duration-200; }
+  .nav-grup[open] > summary .nav-grup-tanda { @apply rotate-180; }
   .thead { @apply bg-canvas text-ink-500 text-[11px] font-semibold uppercase tracking-[0.05em]; }
   .th { @apply px-4 py-3 text-left; }
   .td { @apply px-4 py-3.5 align-middle text-sm text-ink-700 border-t border-line-soft; }

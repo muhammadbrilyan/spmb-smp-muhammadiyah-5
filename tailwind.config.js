@@ -8,7 +8,7 @@ module.exports = {
       fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
       colors: {
         primary: { DEFAULT: '#0056B3', dark: '#00448f', darker: '#00337a', light: '#cce0f5' },
-        ink: { 900: '#0F172A', 700: '#334155', 500: '#64748B', 400: '#94A3B8' },
+        ink: { 900: '#0F172A', 800: '#1E293B', 700: '#334155', 600: '#475569', 500: '#64748B', 400: '#94A3B8' },
         canvas: '#F8FAFC',
         line: { DEFAULT: '#E2E8F0', soft: '#F1F5F9', mid: '#CBD5E1' },
         accent: '#10B981',

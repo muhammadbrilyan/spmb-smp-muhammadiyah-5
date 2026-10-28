@@ -36,7 +36,7 @@ function daftar_jadwal_tes()
         ];
     }
 
-    return $keluar ?: $JADWAL_TES;
+    return $keluar; /* kosong = memang belum ada jadwal (bukan fallback dummy) */
 }
 
 /** Jadwal lengkap (untuk halaman kelola & dropdown seleksi). */

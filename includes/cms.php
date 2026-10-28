@@ -151,7 +151,9 @@ function rombel()
                   WHERE k.is_aktif = 1
                   ORDER BY k.kode'
             )->fetchAll();
-            if ($baris) {
+            /* [PERBAIKAN] is_array (bukan truthy): bila query sukses tetapi tabel kelas
+             * memang kosong, tampilkan kosong — bukan 3 rombel contoh dari dummy.php. */
+            if (is_array($baris)) {
                 $hasil = [];
                 foreach ($baris as $b) {
                     $hasil[] = [
