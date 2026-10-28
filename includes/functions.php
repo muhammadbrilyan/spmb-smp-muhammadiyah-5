@@ -46,6 +46,17 @@ function rupiah($angka, $prefix = 'Rp ')
     return $prefix . number_format((float) $angka, 0, ',', '.');
 }
 
+/**
+ * Nama biaya besar yang dulu disebut "uang pangkal gedung" / "uang masuk"
+ * (kolom DB & konstanta internal UANG_MASUK tidak ikut berubah). Operator
+ * bisa mengganti namanya di Pengaturan Sistem → Struktur Tarif.
+ */
+function label_biaya_pendaftaran()
+{
+    $l = trim((string) ($GLOBALS['PENGATURAN']['label_uang_pangkal'] ?? ''));
+    return $l !== '' ? $l : 'Biaya Pendaftaran';
+}
+
 /** Nama bulan panjang Bahasa Indonesia. */
 function bulan($tanggal)
 {

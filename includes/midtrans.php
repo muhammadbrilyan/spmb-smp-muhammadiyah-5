@@ -117,7 +117,8 @@ function midtrans_buat_transaksi(array $info)
             'id'       => $info['jenis'] ?? 'FORMULIR',
             'price'    => (int) round($jumlah),
             'quantity' => 1,
-            'name'     => 'Biaya ' . ($info['jenis'] === 'UANG_MASUK' ? 'Uang Masuk' : 'Formulir') . ' SPMB',
+            'name'     => ($info['jenis'] === 'UANG_MASUK'
+                ? label_biaya_pendaftaran() : 'Biaya Formulir') . ' SPMB',
         ]],
         'customer_details' => [
             'first_name' => (string) ($info['nama_siswa'] ?? '-'),

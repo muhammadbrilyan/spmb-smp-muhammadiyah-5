@@ -41,7 +41,7 @@ function op_bayar_ringkas(?array $bayar)
         return ['Belum Ada Pembayaran', 'text-ink-400', 'receipt_long'];
     }
 
-    $jenis = ['FORMULIR' => 'Formulir', 'UANG_MASUK' => 'Uang Masuk'][$bayar['jenis_pembayaran']] ?? 'Biaya';
+    $jenis = ['FORMULIR' => 'Formulir', 'UANG_MASUK' => label_biaya_pendaftaran()][$bayar['jenis_pembayaran']] ?? 'Biaya';
     $peta  = [
         'PENDING'    => ['Menunggu Verifikasi Bendahara', 'text-[#92400E]', 'pending'],
         'REJECTED'   => ['Ditolak Bendahara', 'text-[#991B1B]', 'error'],
@@ -107,18 +107,20 @@ function op_detail_html(array $p, ?array $bayar): string
 
     if ($bayar) {
         $s = $bayar['status'];
+        $labelJenisBayar = ['FORMULIR' => 'Biaya formulir',
+            'UANG_MASUK' => label_biaya_pendaftaran()][$bayar['jenis_pembayaran']] ?? 'Biaya';
         $bayarTeks = in_array($s, ['VERIFIED', 'LUNAS'], true) ? ['Lunas', 'green']
             : ($s === 'PENDING' ? ['Menunggu Verifikasi', 'amber']
             : ($s === 'REJECTED' ? ['Bukti Ditolak', 'red']
             : [str_replace('_', ' ', $s), 'blue']));
         $bayarHtml = '<div class="mt-4 rounded-lg bg-canvas border border-line p-3">'
-            . '<p class="text-[12px] text-ink-500">Uang masuk (' . e(str_replace('_', ' ', (string) ($bayar['metode'] ?: 'Transfer'))) . ')</p>'
+            . '<p class="text-[12px] text-ink-500">' . e($labelJenisBayar) . ' (' . e(str_replace('_', ' ', (string) ($bayar['metode'] ?: 'Transfer'))) . ')</p>'
             . '<p class="font-bold text-ink-900">' . rupiah((float) $bayar['nominal'])
             . ' <span class="badge badge-' . $bayarTeks[1] . ' align-middle ml-1">' . e($bayarTeks[0]) . '</span></p>'
             . '</div>';
     } else {
         $bayarHtml = '<div class="mt-4 rounded-lg bg-canvas border border-line p-3">'
-            . '<p class="text-[12px] text-ink-500">Uang masuk</p>'
+            . '<p class="text-[12px] text-ink-500">Pembayaran</p>'
             . '<p class="font-bold text-ink-400">Belum ada pembayaran tercatat</p></div>';
     }
 

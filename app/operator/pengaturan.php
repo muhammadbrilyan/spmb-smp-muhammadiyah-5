@@ -6,7 +6,7 @@
  * YANG SERING DIUBAH (cari komentar [BAGIAN: ...] di bawah):
  *   - Identitas Sekolah   → nama, alamat, WA, email, logo, banner
  *   - Warna Tema          → warna utama website
- *   - Biaya & Rekening    → biaya formulir, SPP, uang masuk, bank
+ *   - Biaya & Rekening    → biaya formulir, SPP, biaya pendaftaran, bank
  *   - Jadwal Gelombang    → tahun ajaran, gelombang, tanggal buka/tutup
  *   - Jalur Pendaftaran   → centang jalur yang aktif
  *   - WhatsApp Fonnte     → token API untuk kirim WA otomatis
@@ -557,7 +557,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 (float) $f['biaya_formulir'],
                 (float) $f['biaya_spp'],
                 (float) $f['estimasi_uang_masuk'],
-                $f['label_uang_pangkal'] !== '' ? $f['label_uang_pangkal'] : 'Uang Pangkal Gedung',
+                $f['label_uang_pangkal'] !== '' ? $f['label_uang_pangkal'] : 'Biaya Pendaftaran',
                 $f['label_spp'] !== '' ? $f['label_spp'] : 'SPP Bulanan',
                 $f['nama_bank'],
                 $f['no_rekening'],
@@ -882,7 +882,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <h2 class="font-bold text-ink-900">Struktur Tarif &amp; Biaya SPMB</h2>
         <div class="mt-5 grid gap-4 sm:grid-cols-3">
           <div>
-            <label class="label" for="biaya_formulir">Biaya Formulir Pendaftaran <span class="text-red-600">*</span></label>
+            <label class="label" for="biaya_formulir">Biaya Formulir <span class="text-red-600">*</span></label>
             <input id="biaya_formulir" name="biaya_formulir" type="number" min="0" step="1000" class="input font-semibold" value="<?= e($f['biaya_formulir']) ?>">
           </div>
           <div>
@@ -890,7 +890,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <input id="biaya_spp" name="biaya_spp" type="number" min="0" step="1000" class="input font-semibold" value="<?= e($f['biaya_spp']) ?>">
           </div>
           <div>
-            <label class="label" for="estimasi_uang_masuk">Estimasi Uang Masuk / Pangkal</label>
+            <label class="label" for="estimasi_uang_masuk">Estimasi Biaya Pendaftaran</label>
             <input id="estimasi_uang_masuk" name="estimasi_uang_masuk" type="number" min="0" step="1000" class="input font-semibold" value="<?= e($f['estimasi_uang_masuk']) ?>">
           </div>
         </div>
@@ -898,9 +898,9 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <!-- LABEL BIAYA — ubah nama tampilan tanpa mengubah nominal -->
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="label" for="label_uang_pangkal">Nama Label Uang Pangkal</label>
-            <input id="label_uang_pangkal" name="label_uang_pangkal" class="input" value="<?= e($f['label_uang_pangkal']) ?>" placeholder="Uang Pangkal Gedung">
-            <p class="hint">Nama yang tampil di kartu biaya landing page, misal: "Uang Pangkal Gedung".</p>
+            <label class="label" for="label_uang_pangkal">Nama Label Biaya Pendaftaran</label>
+            <input id="label_uang_pangkal" name="label_uang_pangkal" class="input" value="<?= e($f['label_uang_pangkal']) ?>" placeholder="Biaya Pendaftaran">
+            <p class="hint">Nama yang tampil di kartu biaya landing page, portal siswa, dan dashboard staf — misal: "Biaya Pendaftaran". (Kolom lama tetap <code>label_uang_pangkal</code>; mengganti teks di sini langsung mengubah seluruh aplikasi.)</p>
           </div>
           <div>
             <label class="label" for="label_spp">Nama Label SPP</label>

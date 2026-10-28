@@ -296,7 +296,7 @@ $nav = [
           <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Bank Aktif</span>
           <span class="badge badge-gray">Saldo Rekening</span>
         </div>
-        <h3 class="mt-4 font-bold text-ink-900 text-lg">Biaya Formulir Pendaftaran</h3>
+        <h3 class="mt-4 font-bold text-ink-900 text-lg">Biaya Formulir</h3>
         <div class="mt-5 rounded-xl bg-canvas border border-line p-5">
           <div class="text-xs text-ink-500">Nominal Tagihan Formulir</div>
           <div class="mt-1 text-3xl font-extrabold text-primary"><?= rupiah($PENGATURAN['biaya_formulir']) ?></div>
@@ -316,24 +316,24 @@ $nav = [
         </p>
       </div>
 
-      <!-- Kartu 2: Rincian uang masuk -->
+      <!-- Kartu 2: Rincian biaya pendaftaran -->
       <div class="card p-6 flex flex-col relative ring-2 ring-accent/40">
         <span class="absolute -top-3 left-6 badge badge-green bg-[#0E9F6E]! text-white! border-[#0E9F6E]!">Gratis Beasiswa Musyawarah</span>
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Investasi Pendidikan</span>
           <span class="badge badge-amber"><?= icon('schedule', 'text-[13px]') ?> T.A. 2025/2026</span>
         </div>
-        <h3 class="mt-4 font-bold text-ink-900 text-lg">Rincian SOP &amp; Uang Masuk</h3>
+        <h3 class="mt-4 font-bold text-ink-900 text-lg">Rincian SOP &amp; <?= e(label_biaya_pendaftaran()) ?></h3>
 
         <div class="mt-4 space-y-3">
           <div class="rounded-xl border border-line p-4">
             <div class="flex items-center justify-between">
               <!-- Label bisa diganti operator di CMS Pengaturan → Struktur Tarif -->
-              <span class="text-sm font-medium text-ink-700"><?= e($PENGATURAN['label_uang_pangkal'] ?? 'Uang Pangkal Gedung') ?></span>
+              <span class="text-sm font-medium text-ink-700"><?= e(label_biaya_pendaftaran()) ?></span>
               <button class="text-ink-400 hover:text-primary" title="Estimasi dari CMS (pengaturan_sekolah)"><?= icon('info', 'text-[17px]') ?></button>
             </div>
             <div class="mt-1 font-bold text-ink-900"><?= rupiah($PENGATURAN['estimasi_uang_masuk']) ?></div>
-            <div class="text-[11px] text-ink-400">Estimasi total uang masuk/pangkal sesuai pengaturan CMS.</div>
+            <div class="text-[11px] text-ink-400">Estimasi <?= e(label_biaya_pendaftaran()) ?> sesuai pengaturan CMS.</div>
           </div>
           <div class="rounded-xl border border-line p-4">
             <div class="flex items-center justify-between">

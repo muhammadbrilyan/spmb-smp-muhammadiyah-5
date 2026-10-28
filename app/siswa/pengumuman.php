@@ -102,7 +102,7 @@ if ($siswa) {
     }
 }
 
-foreach ([[$bayarFormulir, 'Biaya formulir'], [$bayarUangMasuk, 'Uang masuk PPDB']] as $pasangan) {
+foreach ([[$bayarFormulir, 'Biaya formulir'], [$bayarUangMasuk, label_biaya_pendaftaran()]] as $pasangan) {
     $b    = $pasangan[0];
     $nama = $pasangan[1];
     if ($b['rejected'] > 0) {

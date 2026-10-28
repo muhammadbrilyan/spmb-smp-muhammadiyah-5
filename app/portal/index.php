@@ -10,7 +10,7 @@ $flash = flash();
 $HAK_AKSES = [
     'siswa'     => ['Biodata lengkap', 'Unggah berkas (maks. 2MB)', 'Status verifikasi bayar', 'Jadwal tes & hasil seleksi', 'Penempatan kelas'],
     'operator'  => ['Akses penuh CMS', 'Pengaturan branding & biaya', 'Manajemen kelas/kuota', 'Generate akun & kirim WA', 'Penjadwalan tes & input seleksi'],
-    'bendahara' => ['Verifikasi bukti bayar formulir', 'Penetapan status uang masuk', 'Skema angsuran (Lunas / Angsuran 1 & 2)'],
+    'bendahara' => ['Verifikasi bukti bayar formulir', 'Penetapan status ' . label_biaya_pendaftaran(), 'Skema angsuran (Lunas / Angsuran 1 & 2)'],
     'kepsek'    => ['Dashboard analitik (read-only)', 'Keterisian kuota rombel', 'Rekapitulasi finansial'],
 ];
 

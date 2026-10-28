@@ -76,7 +76,7 @@ function pengaturan()
     $nilai['deskripsi_sekolah'] = $nilai['deskripsi_sekolah']
         ?? 'Membentuk generasi muda yang unggul dalam ilmu pengetahuan, berkarakter Islam, dan berdaya saing global di wilayah Kota Tangerang.';
     $nilai['tagline']           = $nilai['tagline'] ?? 'Berakhlak & Berprestasi';
-    $nilai['label_uang_pangkal'] = $nilai['label_uang_pangkal'] ?? 'Uang Pangkal Gedung';
+    $nilai['label_uang_pangkal'] = $nilai['label_uang_pangkal'] ?? 'Biaya Pendaftaran';
     $nilai['label_spp']         = $nilai['label_spp'] ?? 'SPP Bulanan';
     $cache = $nilai;
     return $cache;

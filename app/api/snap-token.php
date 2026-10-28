@@ -95,7 +95,7 @@ if ($payToken !== '') {
      * (urutan tahap resmi — tahap_minimal()) dan belum pernah VERIFIED/LUNAS. */
     if ($jenis === 'UANG_MASUK') {
         if (!tahap_minimal($profil['tahap'] ?? '', 'BERKAS_TERVERIFIKASI')) {
-            echo json_encode(['ok' => false, 'pesan' => 'Uang masuk dapat dibayar setelah berkas terverifikasi panitia.']);
+            echo json_encode(['ok' => false, 'pesan' => label_biaya_pendaftaran() . ' dapat dibayar setelah berkas terverifikasi panitia.']);
             exit;
         }
         $sudahUm = (int) (q_col(
@@ -105,7 +105,7 @@ if ($payToken !== '') {
             [$pendaftarId]
         ) ?? 0);
         if ($sudahUm > 0) {
-            echo json_encode(['ok' => false, 'pesan' => 'Uang masuk untuk pendaftar ini sudah terverifikasi/lunas.']);
+            echo json_encode(['ok' => false, 'pesan' => label_biaya_pendaftaran() . ' untuk pendaftar ini sudah terverifikasi/lunas.']);
             exit;
         }
     }

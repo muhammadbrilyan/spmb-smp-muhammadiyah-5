@@ -180,7 +180,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <section class="card p-5 sm:p-6">
             <h2 class="font-bold text-ink-900">Ringkasan Pembayaran</h2>
             <div class="mt-4 space-y-3">
-              <?php foreach ([['Biaya formulir', $bayarFormulir], ['Uang masuk PPDB', $bayarUangMasuk]] as $item): ?>
+              <?php foreach ([['Biaya formulir', $bayarFormulir], [label_biaya_pendaftaran(), $bayarUangMasuk]] as $item): ?>
                 <?php $b = $item[1]; ?>
                 <div class="rounded-xl border border-line p-3">
                   <div class="flex items-start justify-between gap-2">

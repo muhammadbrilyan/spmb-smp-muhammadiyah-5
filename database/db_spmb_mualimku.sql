@@ -54,7 +54,7 @@ CREATE TABLE pengaturan_sekolah (
   biaya_formulir DECIMAL(12,2) DEFAULT 200000.00,
   biaya_spp DECIMAL(12,2) DEFAULT 0.00,              -- [TAMBAHAN]
   estimasi_uang_masuk DECIMAL(12,2) DEFAULT 0.00,    -- [TAMBAHAN]
-  label_uang_pangkal VARCHAR(100) DEFAULT 'Uang Pangkal Gedung', -- [TAMBAHAN] label bisa diganti
+  label_uang_pangkal VARCHAR(100) DEFAULT 'Biaya Pendaftaran', -- [TAMBAHAN] label bisa diganti
   label_spp VARCHAR(100) DEFAULT 'SPP Bulanan',       -- [TAMBAHAN] label bisa diganti
   nama_bank VARCHAR(50) DEFAULT 'Bank Syariah Indonesia (BSI)',
   no_rekening VARCHAR(50) DEFAULT '1234567890',
@@ -112,7 +112,7 @@ VALUES
    200000.00,
    350000.00,
    4500000.00,
-   'Uang Pangkal Gedung',
+   'Biaya Pendaftaran',
    'SPP Bulanan',
    'Bank Syariah Indonesia (BSI)',
    '714-239-5501',

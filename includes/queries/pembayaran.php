@@ -28,7 +28,7 @@ function daftar_pembayaran()
         return [];
     }
 
-    $labelJenis = ['FORMULIR' => 'Biaya Formulir', 'UANG_MASUK' => 'Uang Masuk'];
+    $labelJenis = ['FORMULIR' => 'Biaya Formulir', 'UANG_MASUK' => label_biaya_pendaftaran()];
     $labelStat  = [
         'PENDING'    => 'Menunggu',
         'VERIFIED'   => 'Terverifikasi',

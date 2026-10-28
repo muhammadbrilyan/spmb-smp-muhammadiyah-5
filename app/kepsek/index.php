@@ -111,7 +111,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <div class="card p-5">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="text-[13px] text-ink-500">Uang Masuk (Terverifikasi)</p>
+            <p class="text-[13px] text-ink-500">Dana Terverifikasi</p>
             <p class="mt-2 text-3xl font-extrabold text-ink-900"><?= rupiah($stat['dana_masuk']) ?></p>
           </div>
           <span class="icon-box bg-[#EFF6FF] text-[#1D4ED8]"><?= icon('account_balance_wallet') ?></span>

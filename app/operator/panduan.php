@@ -87,7 +87,7 @@ $panduan = [
             'Login sebagai Bendahara → buka <strong>Verifikasi Pembayaran</strong>.',
             'Daftar tagihan PENDING tampil dengan unggahan bukti transfer.',
             'Klik <em>Verifikasi</em> untuk menyetujui atau <em>Tolak</em> bila bukti tidak valid.',
-            'Nominal tagihan diambil dari Pengaturan (biaya formulir & uang masuk).',
+            'Nominal tagihan diambil dari Pengaturan (biaya formulir & ' . e(label_biaya_pendaftaran()) . ').',
             'Rekap pembayaran bisa diekspor CSV dari dashboard operator.',
         ],
     ],

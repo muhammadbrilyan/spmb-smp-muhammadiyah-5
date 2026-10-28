@@ -13,8 +13,8 @@ $USER_LOGIN = [
     'inisial' => $me['inisial'],
 ];
 
-$title = 'Verifikasi Pembayaran & Uang Masuk SPMB';
-$desc  = 'Dashboard bendahara: verifikasi pembayaran formulir, status uang masuk, dan rekap keuangan SPMB.';
+$title = 'Verifikasi Pembayaran & ' . label_biaya_pendaftaran() . ' SPMB';
+$desc  = 'Dashboard bendahara: verifikasi pembayaran formulir, status ' . label_biaya_pendaftaran() . ', dan rekap keuangan SPMB.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 require_once __DIR__ . '/../../includes/partials/head.php';
@@ -45,7 +45,7 @@ $stat       = stat_bendahara();
           <span class="badge badge-green"><?= dot('green') ?> Rekening Aktif: <?= e($PENGATURAN['nama_bank']) ?></span>
           <span class="badge badge-gray"><?= e($PENGATURAN['gelombang']) ?> · <?= e($PENGATURAN['tahun_ajaran']) ?></span>
         </div>
-        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Verifikasi Pembayaran &amp; Uang Masuk SPMB</h1>
+        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Verifikasi Pembayaran &amp; <?= e(label_biaya_pendaftaran()) ?> SPMB</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
           Periksa bukti transfer biaya formulir, tetapkan status <strong>TERVERIFIKASI</strong> /
           <strong>DITOLAK</strong>, dan pantau rekap keuangan <?= e($PENGATURAN['gelombang']) ?>.
@@ -82,7 +82,7 @@ $stat       = stat_bendahara();
       <article class="card p-5">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-[13px] font-medium text-ink-500">Total Uang Masuk</p>
+            <p class="text-[13px] font-medium text-ink-500">Total Dana Terverifikasi</p>
             <p class="mt-2 text-3xl font-extrabold text-ink-900"><?= rupiah($stat['dana_masuk']) ?></p>
           </div>
           <span class="icon-box bg-[#ECFDF5] text-[#0E9F6E]"><?= icon('account_balance', 'text-[20px]') ?></span>

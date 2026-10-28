@@ -211,7 +211,7 @@ $labelBayar = [
               <ul class="mt-2.5 space-y-2">
                 <?php foreach ($r['bayar'] as $b): $lb = $labelBayar[$b['status']] ?? [$b['status'], 'gray']; ?>
                   <li class="flex items-center justify-between gap-2 text-[13px]">
-                    <span class="text-ink-700"><?= e($b['jenis_pembayaran'] === 'FORMULIR' ? 'Biaya Formulir' : 'Uang Masuk') ?> · <?= rupiah($b['nominal']) ?></span>
+                    <span class="text-ink-700"><?= e($b['jenis_pembayaran'] === 'FORMULIR' ? 'Biaya Formulir' : label_biaya_pendaftaran()) ?> · <?= rupiah($b['nominal']) ?></span>
                     <?= badge($lb[0], $lb[1]) ?>
                   </li>
                 <?php endforeach; ?>

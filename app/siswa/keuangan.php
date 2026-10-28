@@ -8,8 +8,10 @@
  * bendahara — unggah bukti hanya menghasilkan "Menunggu Verifikasi".
  */
 $title = 'Keuangan';
-$desc  = 'Biaya formulir, uang masuk PPDB, status verifikasi pembayaran, rincian tagihan, dan riwayat.';
 require __DIR__ . '/_bootstrap.php';
+
+/* Label biaya mengikuti Pengaturan Sistem — baru bisa dibaca setelah bootstrap. */
+$desc  = 'Biaya formulir, ' . label_biaya_pendaftaran() . ', status verifikasi pembayaran, rincian tagihan, dan riwayat.';
 
 $tabs = [
     'tagihan' => ['Tagihan', 'receipt_long'],
@@ -53,7 +55,7 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $galat[] = 'Formulir kedaluwarsa. Muat ulang halaman lalu coba lagi.';
     }
     if ($ringkas['tagihan'] <= 0) {
-        $galat[] = 'Nominal ' . ($jenis === 'UANG_MASUK' ? 'uang masuk' : 'biaya formulir') . ' belum ditetapkan panitia.';
+        $galat[] = 'Nominal ' . ($jenis === 'UANG_MASUK' ? label_biaya_pendaftaran() : 'Biaya Formulir') . ' belum ditetapkan panitia.';
     }
     if ($ringkas['sisa'] <= 0) {
         $galat[] = 'Tagihan ini sudah lunas / terverifikasi.';
@@ -62,7 +64,7 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $galat[] = 'Bukti pembayaran sebelumnya masih menunggu verifikasi bendahara.';
     }
     if ($jenis === 'UANG_MASUK' && !tahap_minimal((string) ($siswa['tahap'] ?? ''), 'BERKAS_TERVERIFIKASI')) {
-        $galat[] = 'Uang masuk dapat dibayar setelah berkas persyaratan terverifikasi panitia.';
+        $galat[] = label_biaya_pendaftaran() . ' dapat dibayar setelah berkas persyaratan terverifikasi panitia.';
     }
     if ($nominal <= 0) {
         $galat[] = 'Nominal transfer harus lebih besar dari 0.';
@@ -145,7 +147,7 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     notif_operator(
         'BUKTI_BAYAR_MASUK',
         $siswa['id'],
-        'Bukti pembayaran ' . ($jenis === 'UANG_MASUK' ? 'uang masuk' : 'biaya formulir')
+        'Bukti pembayaran ' . ($jenis === 'UANG_MASUK' ? label_biaya_pendaftaran() : 'biaya formulir')
         . ' diunggah via portal siswa.'
         . "\nNama : {$siswa['nama_siswa']}"
         . "\nNo. Pendaftaran : {$siswa['no_pendaftaran']}"
@@ -264,7 +266,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               ],
               [
                   'jenis' => 'UANG_MASUK',
-                  'judul' => $PENGATURAN['label_uang_pangkal'] ?? 'Uang Masuk PPDB',
+                  'judul' => label_biaya_pendaftaran(),
                   'ket'   => 'Dapat dibayar penuh atau dua tahap. Status angsuran ditetapkan bendahara setelah verifikasi.',
                   'data'  => $bayarUangMasuk,
                   'boleh' => $bolehUangMasuk,
@@ -314,7 +316,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 </div>
               <?php elseif ($k['jenis'] === 'UANG_MASUK' && !tahap_minimal((string) $siswa['tahap'], 'BERKAS_TERVERIFIKASI')): ?>
                 <div class="mt-3 rounded-xl bg-canvas border border-line px-3.5 py-2.5 text-[13px] text-ink-500">
-                  Pembayaran uang masuk dibuka setelah berkas persyaratan terverifikasi panitia.
+                  Pembayaran <?= e(label_biaya_pendaftaran()) ?> dibuka setelah berkas persyaratan terverifikasi panitia.
                 </div>
               <?php elseif ($b['tagihan'] > 0 && $b['verified'] > 0 && $b['sisa'] > 0): ?>
                 <div class="mt-3 rounded-xl bg-blue-50 border border-blue-200 px-3.5 py-2.5 text-[13px] text-blue-800">
@@ -413,7 +415,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 <?php foreach ($pembayaran as $b): ?>
                   <?php
                   $jenisLabel = $b['jenis_pembayaran'] === 'FORMULIR' ? 'Biaya Formulir'
-                      : ($b['jenis_pembayaran'] === 'UANG_MASUK' ? 'Uang Masuk' : $b['jenis_pembayaran']);
+                      : ($b['jenis_pembayaran'] === 'UANG_MASUK' ? label_biaya_pendaftaran() : $b['jenis_pembayaran']);
                   $statusLabel = $labelBayar[$b['status']] ?? $b['status'];
                   $statusTone  = $toneBayar[$b['status']] ?? 'gray';
                   $metodeLabel = ['GATEWAY' => 'Online', 'TRANSFER' => 'Transfer', 'QRIS' => 'QRIS'][$b['metode'] ?? ''] ?? '—';
@@ -469,7 +471,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <label class="label" for="m-jenis">Jenis Pembayaran</label>
         <select id="m-jenis" name="jenis_pembayaran" class="select">
           <option value="FORMULIR">Biaya Formulir</option>
-          <option value="UANG_MASUK">Uang Masuk</option>
+          <option value="UANG_MASUK"><?= e(label_biaya_pendaftaran()) ?></option>
         </select>
       </div>
       <div>
