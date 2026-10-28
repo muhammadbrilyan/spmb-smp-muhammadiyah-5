@@ -267,7 +267,7 @@ $terkunci  = in_array($detail['pend']['tahap'] ?? '', ['BERKAS_TERVERIFIKASI', '
 </div>
 
 <!-- Modal: tolak berkas (alasan wajib) -->
-<div id="modal-tolak-berkas" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true">
+<div id="modal-tolak-berkas" class="modal-root fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true">
   <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px] animate-fade" data-modal-close></div>
   <div class="relative h-full flex items-center justify-center p-4 sm:p-6">
     <form method="post" action="berkas.php"

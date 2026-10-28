@@ -187,7 +187,7 @@ $semua = jenis_dokumen_semua();
 </div>
 
 <!-- Modal isi (edit) -->
-<div id="modal-isi-jenis" class="fixed inset-0 z-[60] hidden" role="dialog" aria-modal="true">
+<div id="modal-isi-jenis" class="modal-root hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true">
   <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px] animate-fade" data-modal-close></div>
   <div class="relative h-full flex items-center justify-center p-4 sm:p-6">
     <form method="post" action="jenis-dokumen.php"

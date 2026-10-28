@@ -456,7 +456,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
 <?php if ($siswa): ?>
 <!-- Modal unggah bukti transfer -->
-<div id="modal-bukti" class="fixed inset-0 z-[60] hidden">
+<div id="modal-bukti" class="modal-root fixed inset-0 z-[60] hidden">
   <div class="absolute inset-0 bg-ink-900/50 backdrop-blur-[2px]" data-modal-close></div>
   <div class="relative mx-auto mt-[10vh] w-[min(440px,92vw)] card p-5 sm:p-6 shadow-modal animate-pop">
     <div class="flex items-start justify-between gap-3">

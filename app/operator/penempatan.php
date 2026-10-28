@@ -236,7 +236,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 </div>
 
 <!-- Modal pindah kelas -->
-<div id="modal-pindah" class="fixed inset-0 z-[60] hidden">
+<div id="modal-pindah" class="modal-root fixed inset-0 z-[60] hidden">
   <div class="absolute inset-0 bg-ink-900/50 backdrop-blur-[2px]" data-modal-close></div>
   <div class="relative mx-auto mt-[12vh] w-[min(420px,92vw)] card p-5 sm:p-6 shadow-modal animate-pop">
     <div class="flex items-start justify-between gap-3">
