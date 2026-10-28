@@ -142,6 +142,18 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | H11 | Tautan bayar publik (`bayar.php?t=<token>` milik terarsip) | Tidak aktif — `pendaftar_by_pay_token()` menyaring `arsip_at IS NULL` |
 | H12 | POST arsip/pulihkan tanpa `_csrf` valid | Ditolak, redirect tanpa perubahan data |
 
+## I. WhatsApp Gateway (Fonnte) — token & uji koneksi
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| I1 | Pengaturan Sistem → simpan formulir **tanpa mengetik token** | Token lama **tidak terhapus**; flash berbunyi "token … teruji: Token aktif — Device …, kuota …, kedaluwarsa …" |
+| I2 | Tempel token **salah** → simpan | Nilai tersimpan, flash **error**: "Token ditolak Fonnte (token invalid)" — bukan sukses hening |
+| I3 | `FONNTE_TOKEN` terisi di `.env` | Kotak hijau "Mode .env aktif" + sidik jari `••••xxxx (n karakter)`; badge "Token aktif (dari .env)" |
+| I4 | Centang **Hapus token dari database** → simpan (dengan `.env` kosong) | `pengaturan_sekolah.fonnte_token` = NULL; badge jadi "Belum diatur"; kirim WA menolak "Token Fonnte belum diatur" |
+| I5 | Intip `view-source` halaman pengaturan | Input `fonnte_token` / `midtrans_server_key` / `midtrans_client_key` **tanpa atribut `value`** (rahasia tidak tercetak ke HTML) |
+| I6 | Kirim kredensial akun siswa (`app/operator/akun.php`) | Terkirim; `wa_log.respons` tidak lagi berisi `invalid/empty body value` (penyebab lama: `typing=off`) |
+| I7 | Uji manual tanpa mengirim WA: `POST https://api.fonnte.com/device` header `Authorization: <token>` | `{"status":true,…}` utk token benar; `{"reason":"token invalid","status":false}` utk token salah |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |

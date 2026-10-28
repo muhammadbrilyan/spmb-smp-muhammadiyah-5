@@ -182,12 +182,23 @@ Satu `<form>` berisi **11 section** — semuanya **tersimpan & terpakai**:
 | 4 | Tarif / Biaya Formulir | ✅ dipakai saat registrasi |
 | 5 | Rekening Bank | ✅ dipakai di footer & halaman bayar |
 | 6 | Gelombang Pendaftaran | ✅ |
-| 7 | Kredensial WhatsApp Fonnte | ⚠️ Tidak ada tombol **uji-coba kirim** |
+| 7 | Kredensial WhatsApp Fonnte | ✅ Token diuji otomatis ke Fonnte (`/device`, tanpa kirim WA) saat form disimpan + badge sumber token (`.env`/DB) — lihat catatan di bawah |
 | 8 | Midtrans | ✅ |
 | 9 | Metode Bayar + S&K | ✅ |
 | 10 | Notifikasi | ⚠️ Notifikasi **email** = stub, selalu gagal (field juga `disabled`) |
 | 11 | Field "tulis-saja" (`profil_singkat`, `deskripsi_sekolah`, `tagline`, `deskripsi_gelombang`) | ⚠️ Tersimpan tapi **tak pernah dibaca** |
 | — | **Unggah favicon** | 🚧 `favicon_url` dipakai `head.php` tapi tidak ada input-nya |
+
+Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
+- Prioritas baca token: **`.env` (FONNTE_TOKEN) → DB**. Karena itu nilai yang diketik di CMS
+  tidak terlihat pengaruhnya bila `.env` sudah terisi; halaman kini menampilkan kotak
+  "Mode .env aktif" + sidik jari token efektif (`••••xxxx`, 4 karakter terakhir).
+- Setiap submit formulir melakukan uji token ke `https://api.fonnte.com/device` — respons
+  success/error flash berisi device, nama, kuota, dan tanggal kedaluwarsa (atau alasan penolakan).
+  Endpoint ini **tidak** mengirim pesan WhatsApp.
+- Input rahasia (token Fonnte, Server/Client Key Midtrans) tidak lagi dicetak ke atribut `value=`
+  dan **kosong = jangan ubah**; penghapusan harus eksplisit lewat checkbox *Hapus token*.
+  Sebelumnya submit mana pun dengan field tersebut kosong menghapus token yang tersimpan.
 
 ### 15. Retensi Data — `app/operator/retensi.php`
 
@@ -248,6 +259,8 @@ Satu `<form>` berisi **11 section** — semuanya **tersimpan & terpakai**:
 | 9 | **Sub-baris status pembayaran** di kolom "Status Akun & Kredensial" dashboard | Ditolak/diterima bendahara sebelumnya tidak terlihat operator; kini `op_bayar_ringkas()` menampilkan jenis + status bayar per pendaftar |
 | 10 | **Alur Arsipkan Pendaftaran** (soft archive) | `pendaftar_arsip()`/`pendaftar_pulih()` + kolom `arsip_at/alasan/oleh`; 12 modul query & halaman disaring `arsip_at IS NULL`; akun siswa nonaktif sementara |
 | 11 | **Migrasi Fase 13 tertunda di DB lokal** | `20261026_fase13_koreksi_data.sql` dijalankan 2026-10-28 (setelah `mysqldump` ke `database/backup/`) — tabel `pengajuan_koreksi` + kolom verifikasi data kini ada |
+| 12 | **Semua kirim WA gagal** ("Fonnte: invalid/empty body value") | Penyebabnya field `typing=off` pada payload `wa_kirim()` — Fonnte menolak nilai itu (teruji field-per-field dengan target tidak valid, 0 pesan terkirim). Kini `typing=false`; `id`/`reason` respons yang berupa array diratakan lewat `wa_teks()` |
+| 13 | **Input token Fonnte di CMS terasa "tidak terjadi apa-apa"** | Token diuji otomatis ke `/device` tiap simpan + badge/sidik jari sumber token; input kosong tidak lagi menghapus token tersimpan (sebelumnya `'' → NULL`), penghapusan kini eksplisit lewat checkbox |
 
 ---
 
@@ -274,14 +287,15 @@ Satu `<form>` berisi **11 section** — semuanya **tersimpan & terpakai**:
 9. Export `pembayaran` — tanpa tombol
 10. Kartu Peserta — tak ada di halaman operator
 
-### 🚧 Belum diimplementasi (6)
+### 🚧 Belum diimplementasi (4)
 
-1. Pagination & sorting (`pendaftar`, `verifikasi-data`, `berkas`)
+1. Pagination & sorting server-side (`pendaftar`, `verifikasi-data`, `berkas`) — yang tersedia sekarang paginasi sisi-klien di `app.js`
 2. Filter/pencarian notifikasi
-3. Unggah favicon di CMS (field-nya sudah dipakai)
-4. Uji-coba token Fonnte
-5. Tombol notifikasi & bantuan di topbar → link per-role
-6. 2 kelas penanda JS (`row-check`, `modal-root`) — sengaja dibiarkan tanpa CSS
+3. Unggah favicon di CMS (field-nya sudah dipakai `head.php`, input-nya belum ada)
+4. 2 kelas penanda JS (`row-check`, `modal-root`) — sengaja dibiarkan tanpa CSS
+
+> Sudah dituntaskan setelah audit: **uji-coba token Fonnte** (otomatis setiap simpan,
+> lihat Section 14) dan **tombol notifikasi & bantuan di topbar** (tautan per-role).
 
 ---
 

@@ -94,6 +94,58 @@ function wa_teks($v)
 }
 
 /**
+ * Uji sebuah token ke Fonnte lewat endpoint /device.
+ * TIDAK mengirim pesan WhatsApp apa pun — dipakai untuk memberi umpan balik
+ * langsung di Pengaturan Sistem (operator tidak bisa menebak apakah token benar).
+ *
+ * @param string|null $token token spesifik; null = token efektif (.env lalu DB)
+ * @return array{ok:bool,pesan:string,data:array}
+ */
+function fonnte_cek_token($token = null)
+{
+    $token = is_string($token) && trim($token) !== '' ? trim($token) : fonnte_token();
+    if ($token === null) {
+        return ['ok' => false, 'pesan' => 'Token belum diisi.', 'data' => []];
+    }
+
+    $ch = curl_init('https://api.fonnte.com/device');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => ['Authorization: ' . $token],
+    ]);
+    $body = curl_exec($ch);
+    $err  = curl_error($ch);
+    curl_close($ch);
+
+    if ($body === false) {
+        return ['ok' => false, 'pesan' => 'Gateway tidak terjangkau: ' . $err, 'data' => []];
+    }
+    $j = json_decode((string) $body, true);
+    if (!is_array($j)) {
+        return ['ok' => false, 'pesan' => 'Respons gateway tidak valid.', 'data' => []];
+    }
+    if (empty($j['status'])) {
+        return ['ok' => false, 'pesan' => 'Token ditolak Fonnte (' . (wa_teks($j['reason'] ?? '') ?: 'tanpa alasan') . ').', 'data' => []];
+    }
+
+    $dev    = wa_teks($j['device'] ?? '');
+    $status = wa_teks($j['device_status'] ?? '');
+    $nama   = wa_teks($j['name'] ?? '');
+    $kuota  = wa_teks($j['quota'] ?? '');
+    $kadrsa = wa_teks($j['expired'] ?? '');
+    $info   = 'Device ' . ($dev !== '' ? $dev : '—')
+        . ($nama !== '' ? ' ("' . $nama . '")' : '')
+        . ', kuota ' . ($kuota !== '' ? $kuota : '?')
+        . ($kadrsa !== '' ? ', kedaluwarsa ' . $kadrsa : '');
+    if ($status !== '' && $status !== 'connect') {
+        return ['ok' => false, 'pesan' => 'Token benar, tetapi perangkat ' . $status . ' — WA tidak akan terkirim sampai nomor Fonnte ter-connect. ' . $info, 'data' => $j];
+    }
+    return ['ok' => true, 'pesan' => 'Token aktif — ' . $info, 'data' => $j];
+}
+
+/**
  * Susun pesan kredensial akun siswa.
  * @param array $data nama, reg, username, password, tahun, spp
  */

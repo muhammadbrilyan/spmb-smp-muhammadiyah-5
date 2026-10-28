@@ -163,6 +163,26 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
     }
 
+    /* Kolom rahasia (token Fonnte & API key Midtrans).
+     * [PERBAIKAN 2026-10-28] Semula input type=password selalu ikut terkirim
+     * kosong bila operator tidak mengetik ulang nilainya (browser mengosongkan
+     * field password saat form di-submit ulang / autofill ditolak), dan
+     * `!== '' ? ... : null` membuat token tersimpan terhapus diam-diam.
+     * Aturan baru: kosong = jangan ubah; hapus hanya bila dicentang eksplisit. */
+    $rahasia = [
+        'fonnte_token'        => 'fonnte_hapus',
+        'midtrans_server_key' => 'midtrans_hapus',
+        'midtrans_client_key' => 'midtrans_hapus',
+    ];
+    foreach ($rahasia as $kunci => $flagHapus) {
+        if ($f[$kunci] !== '') {
+            continue; /* operator mengetik nilai baru */
+        }
+        $f[$kunci] = !empty($_POST[$flagHapus])
+            ? ''
+            : (string) ($PENGATURAN[$kunci] ?? '');
+    }
+
     /* Jalur aktif: checkbox[] jalur_aktif[] — wajib minimal 1. */
     $jalurDipilih = array_values(array_intersect(
         (array) ($_POST['jalur_aktif'] ?? []),
@@ -605,7 +625,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             }
 
-            flash('sukses', 'Pengaturan sekolah berhasil disimpan — halaman publik langsung diperbarui.');
+            /* Umpan balik langsung: token diuji ke Fonnte lewat endpoint /device
+             * (tidak mengirim pesan WA). Sebelumnya operator tidak pernah tahu
+             * apakah token yang baru disimpan benar — kegagalan baru terlihat
+             * berjam kemudian saat kirim kredensial siswa gagal. */
+            $tokenBaru   = trim((string) ($_POST['fonnte_token'] ?? '')) !== '';
+            $tokenDariEnv = env_val('FONNTE_TOKEN', '') !== '';
+            $cekWa = ($f['fonnte_token'] !== '' || $tokenDariEnv)
+                ? fonnte_cek_token($tokenBaru ? $f['fonnte_token'] : null)
+                : ['ok' => false, 'pesan' => 'token masih kosong — kirim WA kredensial/notifikasi tidak akan jalan.'];
+            $sumberWa = $tokenBaru
+                ? ('token yang baru disimpan' . ($tokenDariEnv ? ' (catatan: .env tetap lebih utama saat kirim)' : ''))
+                : ($tokenDariEnv ? 'token dari .env' : 'token tersimpan');
+            if ($cekWa['ok']) {
+                flash('sukses', 'Pengaturan tersimpan — ' . $sumberWa . ' teruji: ' . $cekWa['pesan'] . '.');
+            } else {
+                flash('error', 'Pengaturan tersimpan, TETAPI ' . $sumberWa . ' belum bisa dipakai: ' . $cekWa['pesan']);
+            }
         } catch (Throwable $e) {
             flash('error', 'Gagal menyimpan ke database.');
         }
@@ -963,17 +999,31 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <span class="badge badge-amber"><?= dot('amber') ?> Belum diatur</span>
           <?php endif; ?>
         </div>
-        <p class="hint mt-2">Token API Fonnte dipakai untuk mengirim kredensial akun siswa. Dapatkan token di dasbor Fonnte, menu Settings, lalu Token.</p>
-        <?php if (env_val('FONNTE_TOKEN', '') !== ''): ?>
+        <p class="hint mt-2">Token API Fonnte dipakai untuk mengirim kredensial akun siswa. Dapatkan token di dasbor Fonnte, menu Settings, lalu Token. Setiap kali formulir ini disimpan, token diperiksa ke Fonnte lewat endpoint <code>/device</code> (tidak ada pesan WA yang dikirim).</p>
+        <?php
+        /* Sidik jari token efektif (.env lalu DB) supaya operator tahu token mana
+         * yang sebenarnya dipakai — 4 karakter terakhir aman untuk ditampilkan. */
+        $tokEfektif = fonnte_token();
+        $sidik      = $tokEfektif ? '••••' . substr($tokEfektif, -4) . ' (' . strlen($tokEfektif) . ' karakter)' : 'kosong';
+        ?>
+        <?php if ($dariEnv): ?>
           <div class="mt-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-[12px] text-green-800">
-            <strong>Mode .env aktif:</strong> token Fonnte dibaca dari file <code>.env</code> (FONNTE_TOKEN). Nilai di bawah hanya dipakai bila .env kosong.
+            <strong>Mode .env aktif:</strong> token Fonnte dibaca dari file <code>.env</code> (FONNTE_TOKEN) — <?= e($sidik) ?>. Nilai yang diketik di bawah hanya dipakai bila .env dikosongkan.
           </div>
         <?php endif; ?>
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <label class="label" for="fonnte_token">API Token Fonnte</label>
-            <input id="fonnte_token" name="fonnte_token" type="password" autocomplete="off" class="input font-mono" placeholder="tempel token Fonnte di sini" value="<?= e($f['fonnte_token']) ?>">
-            <p class="hint">Disimpan sebagai rahasia — jangan bagikan token ini. Untuk production, isi di <code>.env</code> (FONNTE_TOKEN).</p>
+            <input id="fonnte_token" name="fonnte_token" type="password" autocomplete="new-password" class="input font-mono"
+                   placeholder="<?= $f['fonnte_token'] !== '' ? 'tersimpan ' . e('••••' . substr($f['fonnte_token'], -4) . ' (' . strlen($f['fonnte_token']) . ' karakter) — kosongkan bila tidak diubah') : 'tempel token Fonnte di sini' ?>">
+            <p class="hint">
+              Sumber token efektif saat ini: <strong><?= $dariEnv ? '.env' : ($tokEfektif ? 'database' : 'belum ada') ?></strong> · <?= e($sidik) ?>.
+              Ketik/tempel hanya bila ingin mengganti; nilai kosong berarti tidak mengubah. Jangan bagikan token ini.
+            </p>
+            <label class="mt-2 flex items-center gap-2 text-[13px] text-ink-600">
+              <input type="checkbox" name="fonnte_hapus" value="1" class="w-4 h-4 accent-primary">
+              Hapus token dari database (hanya berlaku bila .env kosong)
+            </label>
           </div>
         </div>
       </section>
@@ -1008,14 +1058,22 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <label class="label" for="midtrans_server_key">Server Key <span class="text-red-600">*</span></label>
-            <input id="midtrans_server_key" name="midtrans_server_key" type="password" autocomplete="off" class="input font-mono" placeholder="Mid-server-xxxxxxxx" value="<?= e($f['midtrans_server_key']) ?>">
+            <input id="midtrans_server_key" name="midtrans_server_key" type="password" autocomplete="new-password" class="input font-mono"
+                   placeholder="<?= $f['midtrans_server_key'] !== '' ? 'tersimpan ••••' . e(substr($f['midtrans_server_key'], -4)) . ' — kosongkan bila tidak diubah' : 'Mid-server-xxxxxxxx' ?>">
             <p class="hint">Rahasia server — jangan dibagikan. Format: <code>Mid-server-…</code>. Untuk production, isi di <code>.env</code>.</p>
           </div>
           <div>
             <label class="label" for="midtrans_client_key">Client Key <span class="text-red-600">*</span></label>
-            <input id="midtrans_client_key" name="midtrans_client_key" type="password" autocomplete="off" class="input font-mono" placeholder="Mid-client-xxxxxxxx" value="<?= e($f['midtrans_client_key']) ?>">
+            <input id="midtrans_client_key" name="midtrans_client_key" type="password" autocomplete="new-password" class="input font-mono"
+                   placeholder="<?= $f['midtrans_client_key'] !== '' ? 'tersimpan ••••' . e(substr($f['midtrans_client_key'], -4)) . ' — kosongkan bila tidak diubah' : 'Mid-client-xxxxxxxx' ?>">
             <p class="hint">Dipakai browser siswa (Snap.js). Format: <code>Mid-client-…</code></p>
           </div>
+          <?php if ($f['midtrans_server_key'] !== '' || $f['midtrans_client_key'] !== ''): ?>
+            <label class="sm:col-span-2 flex items-center gap-2 text-[13px] text-ink-600">
+              <input type="checkbox" name="midtrans_hapus" value="1" class="w-4 h-4 accent-primary">
+              Hapus kedua API key Midtrans dari database
+            </label>
+          <?php endif; ?>
           <div class="sm:col-span-2 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-canvas border border-line px-4 py-3">
             <div>
               <p class="text-sm font-semibold text-ink-900">Mode Environment</p>
