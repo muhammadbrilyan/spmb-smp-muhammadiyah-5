@@ -10,13 +10,14 @@ function daftar_pendaftar()
 
     $baris = q_all(
         'SELECT p.id, p.user_id, p.no_pendaftaran, p.nama_siswa, p.nisn, p.asal_sekolah, p.jalur,
-                p.status_verifikasi, p.status_seleksi, p.status_akun, p.kred_sent_at,
+                p.status_verifikasi, p.status_seleksi, p.status_akun, p.kred_sent_at, p.tahap,
                 p.created_at, u.username, o.no_whatsapp, o.nama_orang_tua, k.kode AS kelas_kode
            FROM pendaftar p
       LEFT JOIN users u ON u.id = p.user_id
       LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
       LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
       LEFT JOIN kelas k ON k.id = pk.kelas_id
+          WHERE p.arsip_at IS NULL
        ORDER BY p.created_at, p.no_pendaftaran'
     );
     if ($baris === null) {
@@ -45,13 +46,14 @@ function daftar_pendaftar()
             'sekolah'   => $r['asal_sekolah'],
             'asal'      => $r['asal_sekolah'],
             'jalur'     => $r['jalur'] ?: 'Reguler',
-            'wa'        => $r['no_whatsapp'] ?: ($r['username'] ? 'Belum ada WA' : '"”'),
-            'wali'      => $r['nama_orang_tua'] ?: '"”',
+            'wa'        => $r['no_whatsapp'] ?: ($r['username'] ? 'Belum ada WA' : '—'),
+            'wali'      => $r['nama_orang_tua'] ?: '—',
             'akun'      => $label,
             'akun_tone' => $tone,
             'kred'      => $kred,
             'kred_tone' => $tone,
-            'nisn'      => $r['nisn'] ?: '"”',
+            'nisn'      => $r['nisn'] ?: '—',
+            'tahap'     => $r['tahap'] ?? '',
             'verifikasi'=> $r['status_verifikasi'],
             'seleksi'   => $r['status_seleksi'],
             'kelas'     => $r['kelas_kode'] ?: '',
@@ -59,7 +61,7 @@ function daftar_pendaftar()
         ];
     }
 
-    return $keluar ?: $PENDAFTAR;
+    return $keluar; /* kosong = memang belum ada pendaftar (bukan fallback dummy) */
 }
 
 /* ==================================================================
@@ -77,8 +79,8 @@ function stat_operator()
     ];
 
     $dihitung = [
-        'akun_total'  => q_col('SELECT COUNT(*) FROM pendaftar'),
-        'akun_aktif'  => q_col("SELECT COUNT(*) FROM pendaftar WHERE status_akun = 'AKTIF'"),
+        'akun_total'  => q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL'),
+        'akun_aktif'  => q_col("SELECT COUNT(*) FROM pendaftar WHERE status_akun = 'AKTIF' AND arsip_at IS NULL"),
         'peserta'     => q_col("SELECT COALESCE(SUM(peserta_dijadwalkan),0) FROM jadwal_tes WHERE status = 'TERJADWAL'"),
         'offline'     => q_col("SELECT COALESCE(SUM(peserta_dijadwalkan),0) FROM jadwal_tes WHERE status = 'TERJADWAL' AND mode = 'OFFLINE'"),
         'daring'      => q_col("SELECT COALESCE(SUM(peserta_dijadwalkan),0) FROM jadwal_tes WHERE status = 'TERJADWAL' AND mode IN ('DARING','VIDEO_CALL')"),
@@ -156,10 +158,12 @@ function registrasi_baru($nama, $wa, $jalur, $asal_sekolah, $regToken = null, $s
             }
         }
 
-        /* Maksimal 1 pendaftaran per nomor WA + nama (di bawah kunci). */
+        /* Maksimal 1 pendaftaran per nomor WA + nama (di bawah kunci).
+         * Baris terarsip diabaikan: pendaftar yang diarsip karena salah
+         * input / ganda memang boleh mendaftar ulang. */
         $duplikat = $db->prepare(
             'SELECT COUNT(*) FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id
-              WHERE o.no_whatsapp = ? AND p.nama_siswa = ?'
+              WHERE o.no_whatsapp = ? AND p.nama_siswa = ? AND p.arsip_at IS NULL'
         );
         $duplikat->execute([$waNorm, $nama]);
         if ((int) $duplikat->fetchColumn() > 0) {
@@ -248,6 +252,7 @@ function pendaftar_by_pay_token($payToken)
            FROM pendaftar p
       LEFT JOIN pembayaran b ON b.pendaftar_id = p.id AND b.jenis_pembayaran = "FORMULIR"
           WHERE p.pay_token_hash = SHA2(?, 256)
+            AND p.arsip_at IS NULL
        LIMIT 1'
     );
     $stmt->execute([$payToken]);
@@ -372,21 +377,23 @@ function lulus_belum_ditempatkan_jumlah()
 
 /**
  * Daftar pendaftar untuk halaman Data Pendaftar / Verifikasi Data.
- * @param string $status filter status_verifikasi ('' = semua)
- * @param string $cari   pencarian nama / no. pendaftaran / NISN / WA
- * @param string $id     ambil satu pendaftar saja (dipakai halaman detail)
+ * @param string $status    filter status_verifikasi ('' = semua)
+ * @param string $cari      pencarian nama / no. pendaftaran / NISN / WA
+ * @param string $id        ambil satu pendaftar saja (dipakai halaman detail)
+ * @param string $tampilkan 'aktif' (default, tanpa terarsip) | 'arsip' | 'semua'
  * @return array<int,array>
  */
-function pendaftar_data_antrean($status = '', $cari = '', $id = '')
+function pendaftar_data_antrean($status = '', $cari = '', $id = '', $tampilkan = 'aktif')
 {
     $sql = "SELECT p.id, p.user_id, p.no_pendaftaran, p.nama_siswa, p.nisn, p.jenis_kelamin,
                    p.tempat_lahir, p.tanggal_lahir, p.alamat, p.asal_sekolah, p.jalur,
                    p.is_luar_daerah, p.kelas_id, p.status_verifikasi, p.status_seleksi,
                    p.status_akun, p.tahap, p.catatan_verifikasi_data, p.data_verified_at,
-                   p.data_verified_by, p.created_at, p.updated_at,
+                   p.data_verified_by, p.arsip_at, p.arsip_alasan, p.arsip_oleh, p.created_at, p.updated_at,
                    u.username, o.nama_orang_tua, o.no_whatsapp, o.pekerjaan,
                    o.penghasilan_bulanan, o.alamat AS alamat_orang_tua,
                    k.kode AS kelas_kode, k.nama_kelas, vu.nama_lengkap AS data_verifier,
+                   au.nama_lengkap AS arsip_petugas,
                    (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.file_url IS NOT NULL) AS dok_terisi,
                    (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.status_verifikasi = 'VERIFIED') AS dok_verifikasi,
                    (SELECT COUNT(*) FROM jenis_dokumen j WHERE j.aktif = 1 AND j.wajib = 1) AS dok_wajib,
@@ -399,11 +406,19 @@ function pendaftar_data_antrean($status = '', $cari = '', $id = '')
               FROM pendaftar p
          LEFT JOIN users u ON u.id = p.user_id
          LEFT JOIN users vu ON vu.id = p.data_verified_by
+         LEFT JOIN users au ON au.id = p.arsip_oleh
          LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
          LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
          LEFT JOIN kelas k ON k.id = pk.kelas_id
              WHERE 1 = 1";
     $params = [];
+
+    $tampilkan = strtolower(trim((string) $tampilkan));
+    if ($tampilkan === 'arsip') {
+        $sql .= ' AND p.arsip_at IS NOT NULL';
+    } elseif ($tampilkan !== 'semua') {
+        $sql .= ' AND p.arsip_at IS NULL';
+    }
 
     $status = strtoupper(trim((string) $status));
     if (in_array($status, ['DRAFT', 'MENUNGGU_VERIFIKASI', 'TERVERIFIKASI', 'DITOLAK'], true)) {
@@ -427,7 +442,9 @@ function pendaftar_data_antrean($status = '', $cari = '', $id = '')
         $params[] = $like;
     }
 
-    $sql .= " ORDER BY FIELD(p.status_verifikasi, 'MENUNGGU_VERIFIKASI', 'DRAFT', 'TERVERIFIKASI', 'DITOLAK'),
+    $sql .= $tampilkan === 'arsip'
+        ? ' ORDER BY p.arsip_at DESC, p.no_pendaftaran'
+        : " ORDER BY FIELD(p.status_verifikasi, 'MENUNGGU_VERIFIKASI', 'DRAFT', 'TERVERIFIKASI', 'DITOLAK'),
                       p.updated_at DESC, p.no_pendaftaran";
     return q_all($sql, $params) ?: [];
 }
@@ -495,9 +512,12 @@ function verifikasi_data_set($pendaftar_id, $status, $catatan, $verifier_id)
         return ['ok' => false, 'pesan' => 'Tuliskan bagian yang perlu diperbaiki agar siswa dapat menindaklanjuti.'];
     }
 
-    $ada = q_col('SELECT id FROM pendaftar WHERE id = ?', [$pendaftar_id]);
-    if ($ada === null) {
+    $arsip = q_col('SELECT IFNULL(arsip_at, "") FROM pendaftar WHERE id = ?', [$pendaftar_id]);
+    if ($arsip === null) {
         return ['ok' => false, 'pesan' => 'Pendaftar tidak ditemukan.'];
+    }
+    if ($arsip !== '') {
+        return ['ok' => false, 'pesan' => 'Pendaftar ini sudah diarsipkan — pulihkan dulu dari halaman Data Pendaftar.'];
     }
 
     if ($status === 'TERVERIFIKASI') {
@@ -531,5 +551,120 @@ function verifikasi_data_set($pendaftar_id, $status, $catatan, $verifier_id)
     return $ok
         ? ['ok' => true, 'pesan' => 'Status verifikasi data diperbarui.']
         : ['ok' => false, 'pesan' => 'Gagal memperbarui status verifikasi data.'];
+}
+
+/* ==================================================================
+ * 15. ARSIP PENDAFTARAN (soft archive)
+ * ================================================================== */
+
+/**
+ * Arsipkan pendaftar: ganda / salah input / mengundurkan diri.
+ * Baris pendaftar, pembayaran, dan berkas TETAP ada (hapus permanen memakai
+ * ON DELETE CASCADE ke 7 tabel dan tanpa audit-log, jadi tidak disediakan).
+ * Efek: hilang dari antrean kerja & statistik (filter arsip_at IS NULL) dan
+ * akun portal siswa ikut dinonaktifkan sementara.
+ *
+ * @return array{ok:bool,pesan:string}
+ */
+function pendaftar_arsip($pendaftar_id, $alasan, $oleh = null)
+{
+    $alasan = trim((string) $alasan);
+    if (mb_strlen($alasan) < 5) {
+        return ['ok' => false, 'pesan' => 'Alasan pengarsipan wajib diisi (minimal 5 karakter).'];
+    }
+    $alasan = mb_substr($alasan, 0, 255);
+
+    $baris = q_all(
+        'SELECT id, no_pendaftaran, user_id, arsip_at FROM pendaftar WHERE id = ? LIMIT 1',
+        [$pendaftar_id]
+    );
+    $pend = $baris ? $baris[0] : null;
+    if (!$pend) {
+        return ['ok' => false, 'pesan' => 'Pendaftar tidak ditemukan.'];
+    }
+    if (!empty($pend['arsip_at'])) {
+        return ['ok' => false, 'pesan' => 'Pendaftar ini sudah terarsip.'];
+    }
+
+    $db = db();
+    if ($db === null) {
+        return ['ok' => false, 'pesan' => 'Database tidak aktif.'];
+    }
+
+    try {
+        $db->beginTransaction();
+        $u = $db->prepare(
+            'UPDATE pendaftar SET arsip_at = NOW(), arsip_alasan = ?, arsip_oleh = ?
+              WHERE id = ? AND arsip_at IS NULL'
+        );
+        $u->execute([$alasan, $oleh !== null && $oleh !== '' ? $oleh : null, $pendaftar_id]);
+        if ($u->rowCount() === 0) {
+            $db->rollBack();
+            return ['ok' => false, 'pesan' => 'Gagal mengarsipkan — pendaftar sudah terarsip.'];
+        }
+        if (!empty($pend['user_id'])) {
+            $db->prepare('UPDATE users SET is_active = 0 WHERE id = ?')
+               ->execute([$pend['user_id']]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if (method_exists($db, 'rollBack')) {
+            try { $db->rollBack(); } catch (Throwable $x) { /* abaikan */ }
+        }
+        return ['ok' => false, 'pesan' => 'Gagal mengarsipkan pendaftar.'];
+    }
+
+    return ['ok' => true, 'pesan' => 'Pendaftaran ' . $pend['no_pendaftaran'] . ' diarsipkan.'];
+}
+
+/**
+ * Pulihkan pendaftar terarsip: kembali ke antrean kerja dan akun portal
+ * siswa diaktifkan lagi.
+ *
+ * @return array{ok:bool,pesan:string}
+ */
+function pendaftar_pulih($pendaftar_id)
+{
+    $baris = q_all(
+        'SELECT id, no_pendaftaran, user_id, arsip_at FROM pendaftar WHERE id = ? LIMIT 1',
+        [$pendaftar_id]
+    );
+    $pend = $baris ? $baris[0] : null;
+    if (!$pend) {
+        return ['ok' => false, 'pesan' => 'Pendaftar tidak ditemukan.'];
+    }
+    if (empty($pend['arsip_at'])) {
+        return ['ok' => false, 'pesan' => 'Pendaftar ini tidak sedang terarsip.'];
+    }
+
+    $db = db();
+    if ($db === null) {
+        return ['ok' => false, 'pesan' => 'Database tidak aktif.'];
+    }
+
+    try {
+        $db->beginTransaction();
+        $u = $db->prepare(
+            'UPDATE pendaftar SET arsip_at = NULL, arsip_alasan = NULL, arsip_oleh = NULL
+              WHERE id = ? AND arsip_at IS NOT NULL'
+        );
+        $u->execute([$pendaftar_id]);
+        if ($u->rowCount() === 0) {
+            $db->rollBack();
+            return ['ok' => false, 'pesan' => 'Gagal memulihkan pendaftar.'];
+        }
+        if (!empty($pend['user_id'])) {
+            $db->prepare('UPDATE users SET is_active = 1 WHERE id = ?')
+               ->execute([$pend['user_id']]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if (method_exists($db, 'rollBack')) {
+            try { $db->rollBack(); } catch (Throwable $x) { /* abaikan */ }
+        }
+        return ['ok' => false, 'pesan' => 'Gagal memulihkan pendaftar.'];
+    }
+
+    return ['ok' => true, 'pesan' => 'Pendaftaran ' . $pend['no_pendaftaran'] . ' dipulihkan ke antrean aktif.'];
 }
 

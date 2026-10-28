@@ -247,6 +247,9 @@ CREATE TABLE pendaftar (
   catatan_verifikasi_data TEXT,                         -- [Fase 13] catatan panitia untuk siswa
   data_verified_at DATETIME,                            -- [Fase 13] waktu verifikasi DATA (bukan berkas)
   data_verified_by VARCHAR(36),                         -- [Fase 13] users.id petugas verifikator data
+  arsip_at DATETIME NULL,                               -- [Arsip 2026-10-28] soft archive; NULL = aktif
+  arsip_alasan VARCHAR(255) NULL,                       -- [Arsip] alasan operator mengarsipkan
+  arsip_oleh VARCHAR(36) NULL,                          -- [Arsip] users.id operator yang mengarsipkan
   kred_sent_at DATETIME,                                -- [TAMBAHAN] waktu kirim WA
   setuju_sk_at DATETIME,                                -- [TAMBAHAN] bukti persetujuan S&K
   setuju_sk_versi INT,                                  -- [TAMBAHAN] versi S&K yang disetujui
@@ -260,9 +263,12 @@ CREATE TABLE pendaftar (
   UNIQUE KEY uq_pendaftar_pay_token (pay_token),
   UNIQUE KEY uq_pendaftar_pay_token_hash (pay_token_hash),
   KEY idx_pendaftar_verifikasi_data (status_verifikasi, updated_at),
+  KEY idx_pendaftar_arsip (arsip_at),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (kelas_id) REFERENCES kelas(id) ON DELETE SET NULL,
   CONSTRAINT fk_pendaftar_data_verifier FOREIGN KEY (data_verified_by)
+      REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_pendaftar_arsip_oleh FOREIGN KEY (arsip_oleh)
       REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 

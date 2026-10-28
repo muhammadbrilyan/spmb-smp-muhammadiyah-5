@@ -26,7 +26,10 @@ function catat($status, $judul, $detail = '')
 }
 
 /* Kumpulkan file teks source (kecuali vendor/biner). */
+/* 'database/backup' = hasil mysqldump pre-migrasi (CRLF, data sensitif) — sama
+   seperti 'storage', bukan source yang ikut diperiksa. */
 $KECUALI_DIR = ['.git', 'node_modules', 'vendor', 'dist', 'stitch_mualimku', 'storage'];
+$KECUALI_PREFIX = ['database/backup/'];
 $daftar = [];
 $riak = new RecursiveIteratorIterator(
     new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
@@ -36,6 +39,11 @@ foreach ($riak as $f) {
         continue;
     }
     $rel = str_replace('\\', '/', substr($f->getPathname(), strlen($root) + 1));
+    foreach ($KECUALI_PREFIX as $pref) {
+        if (strpos($rel, $pref) === 0) {
+            continue 2;
+        }
+    }
     $bagian = explode('/', $rel);
     $lewat = false;
     foreach ($bagian as $b) {

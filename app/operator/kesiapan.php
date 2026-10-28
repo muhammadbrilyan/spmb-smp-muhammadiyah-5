@@ -77,11 +77,11 @@ if ($cadanganFile) {
 
 /* Antrean operasional (angka murni — untuk kartu info). */
 $antre = [
-    'berkas'      => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'BERKAS_DISUBMIT'") ?? 0),
-    'revisi'      => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'BERKAS_REVISI'") ?? 0),
-    'bayar'       => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'MENUNGGU_VERIFIKASI_BAYAR'") ?? 0),
-    'kirim_akun'  => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'BAYAR_TERVERIFIKASI'") ?? 0),
-    'total'       => (int) (q_col('SELECT COUNT(*) FROM pendaftar') ?? 0),
+    'berkas'      => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'BERKAS_DISUBMIT' AND arsip_at IS NULL") ?? 0),
+    'revisi'      => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'BERKAS_REVISI' AND arsip_at IS NULL") ?? 0),
+    'bayar'       => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'MENUNGGU_VERIFIKASI_BAYAR' AND arsip_at IS NULL") ?? 0),
+    'kirim_akun'  => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE tahap = 'BAYAR_TERVERIFIKASI' AND arsip_at IS NULL") ?? 0),
+    'total'       => (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL') ?? 0),
 ];
 
 /* ==================================================================
@@ -192,13 +192,18 @@ $items[] = [
         : 'Nonaktif (boleh) — pendaftar memakai transfer manual/QRIS.',
 ];
 
-$fonnteAda = trim((string) ($P['fonnte_token'] ?? '')) !== '';
+/* [PERBAIKAN] Semula hanya membaca kolom DB ($P['fonnte_token']), padahal
+ * urutan baca aplikasi adalah .env (FONNTE_TOKEN) lalu fallback DB. Akibatnya
+ * token yang hanya diisi di .env dianggap "belum diisi" padahal gateway
+ * sebenarnya jalan. Kini memakai fonnte_token() — sumber yang sama dengan
+ * wa_kirim(). */
+$fonnteAda = fonnte_token() !== null;
 $items[] = [
     'grup' => 'Kanal', 'status' => $fonnteAda ? 'ok' : 'hati',
     'judul' => 'Gateway WhatsApp (Fonnte)',
     'ket'   => $fonnteAda
         ? 'Token Fonnte terisi — kirim kredensial & notifikasi WA siap.'
-        : 'Token Fonnte belum diisi — kirim WA kredensial/notifikasi tidak berjalan.',
+        : 'Token Fonnte belum diisi — kirim WA kredensial/notifikasi tidak berjalan. Isi di Pengaturan Sistem → WhatsApp Gateway.',
 ];
 
 $izinDetail = $izinOk

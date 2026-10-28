@@ -21,6 +21,7 @@ function daftar_pembayaran()
            JOIN pendaftar p ON p.id = b.pendaftar_id
       LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
       LEFT JOIN users v ON v.id = b.verified_by
+        WHERE p.arsip_at IS NULL
        ORDER BY FIELD(b.status,'PENDING','REJECTED','VERIFIED','LUNAS','ANGSURAN_1','ANGSURAN_2'), b.created_at DESC"
     );
     if ($baris === null) {
@@ -56,9 +57,9 @@ function daftar_pembayaran()
             'waktu'     => $r['created_at'],
             'nama'      => $r['nama_siswa'],
             'sekolah'   => $r['asal_sekolah'],
-            'nisn'      => $r['nisn'] ?: '"”',
-            'wa'        => $r['no_whatsapp'] ?: '"”',
-            'wali'      => $r['nama_orang_tua'] ?: '"”',
+            'nisn'      => $r['nisn'] ?: '—',
+            'wa'        => $r['no_whatsapp'] ?: '—',
+            'wali'      => $r['nama_orang_tua'] ?: '—',
             'jenis'     => $labelJenis[$r['jenis_pembayaran']] ?? $r['jenis_pembayaran'],
             'nominal'   => (float) $r['nominal'],
             'status'    => $labelStat[$r['status']] ?? $r['status'],
@@ -100,7 +101,7 @@ function stat_bendahara()
         'ditolak'    => (int) (q_col("SELECT COUNT(*) FROM pembayaran WHERE status = 'REJECTED'") ?? 0),
         'rp_ditolak' => (float) (q_col("SELECT COALESCE(SUM(nominal),0) FROM pembayaran WHERE status = 'REJECTED'") ?? 0),
         'total_bayar'=> (int) (q_col('SELECT COUNT(*) FROM pembayaran') ?? 0),
-        'total_pendaftar' => (int) (q_col('SELECT COUNT(*) FROM pendaftar') ?? 0),
+        'total_pendaftar' => (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL') ?? 0),
     ];
 
     $s['persen'] = $s['total_bayar'] > 0

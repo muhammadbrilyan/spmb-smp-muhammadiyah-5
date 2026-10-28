@@ -1,10 +1,11 @@
 <?php
 /**
- * DATA PENDAFTAR — operator SPMB (Fase 13).
+ * DATA PENDAFTAR — operator SPMB (Fase 13 + arsip pendaftaran).
  *
  * Daftar seluruh pendaftar dengan pencarian, filter status verifikasi data,
- * ringkasan antrean, dan tautan ke halaman Verifikasi Data Calon Siswa.
- * Halaman ini tidak mengubah data apa pun.
+ * filter aktif/terarsip, ringkasan antrean, dan tautan ke halaman Verifikasi
+ * Data Calon Siswa. Aksi tulis hanya arsip/pulih (soft) — penghapusan permanen
+ * sengaja tidak disediakan karena merambat ke 7 tabel lewat ON DELETE CASCADE.
  */
 require_once __DIR__ . '/../../includes/config.php';
 require_role(['operator']);
@@ -18,7 +19,7 @@ $USER_LOGIN = [
 ];
 
 $title     = 'Data Pendaftar';
-$desc      = 'Daftar pendaftar SPMB: pencarian, status verifikasi data, kelengkapan berkas, dan tindak lanjut koreksi.';
+$desc      = 'Daftar pendaftar SPMB: pencarian, status verifikasi data, kelengkapan berkas, pengarsipan, dan tindak lanjut koreksi.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 $statusLabel = [
@@ -28,25 +29,83 @@ $statusLabel = [
     'DITOLAK'             => ['Perlu Perbaikan', 'red'],
 ];
 
+$tampilkanLabel = [
+    'aktif'  => 'Pendaftar aktif',
+    'arsip'  => 'Terarsip',
+    'semua'  => 'Semua (termasuk terarsip)',
+];
+
 $status = strtoupper(trim((string) ($_GET['status'] ?? '')));
 if (!array_key_exists($status, $statusLabel)) {
     $status = '';
 }
 $cari = trim((string) ($_GET['q'] ?? ''));
 
-$daftar = pendaftar_data_antrean($status, $cari);
+$tampilkan = strtolower(trim((string) ($_GET['tampilkan'] ?? 'aktif')));
+if (!array_key_exists($tampilkan, $tampilkanLabel)) {
+    $tampilkan = 'aktif';
+}
+
+/** URL daftar kembali dengan filter yang sedang dipakai. */
+$tautanDaftar = function ($tambah = []) use ($status, $cari, $tampilkan) {
+    $q = array_merge(
+        array_filter(['status' => $status, 'q' => $cari, 'tampilkan' => $tampilkan]),
+        $tambah
+    );
+    return 'pendaftar.php' . ($q ? '?' . http_build_query($q) : '');
+};
+
+/* --- Proses POST: arsipkan / pulihkan --- */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_cek($_POST['_csrf'] ?? '')) {
+        flash('error', 'Sesi kedaluwarsa. Silakan muat ulang halaman lalu coba lagi.');
+        header('Location: ' . $tautanDaftar());
+        exit;
+    }
+
+    $aksi  = (string) ($_POST['aksi'] ?? '');
+    $pend  = (string) ($_POST['pendaftar_id'] ?? '');
+    $kunci = 'arsip:' . (string) ($me['id'] ?? '-');
+
+    if ($pend === '') {
+        flash('error', 'Pendaftar tidak ditentukan.');
+        header('Location: ' . $tautanDaftar());
+        exit;
+    }
+    if (!rate_limit_cek('arsip_pendaftar', 10, 60, $kunci)) {
+        flash('error', 'Terlalu banyak aksi arsip/pulih. Batas 10 per jam, coba lagi beberapa menit lagi.');
+        header('Location: ' . $tautanDaftar());
+        exit;
+    }
+
+    if ($aksi === 'arsip') {
+        $hasil = pendaftar_arsip($pend, (string) ($_POST['alasan'] ?? ''), $me['id'] ?? null);
+    } elseif ($aksi === 'pulihkan') {
+        $hasil = pendaftar_pulih($pend);
+    } else {
+        $hasil = ['ok' => false, 'pesan' => 'Aksi tidak dikenal.'];
+    }
+
+    rate_limit_catat('arsip_pendaftar', $kunci);
+    flash($hasil['ok'] ? 'sukses' : 'error', $hasil['pesan']);
+    header('Location: ' . $tautanDaftar());
+    exit;
+}
+
+$daftar = pendaftar_data_antrean($status, $cari, '', $tampilkan);
 
 $ringkas = [
-    'total'      => (int) (q_col('SELECT COUNT(*) FROM pendaftar') ?? 0),
-    'menunggu'   => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'MENUNGGU_VERIFIKASI'") ?? 0),
-    'terverifikasi' => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'TERVERIFIKASI'") ?? 0),
-    'perbaikan'  => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'DITOLAK'") ?? 0),
+    'total'      => (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL') ?? 0),
+    'menunggu'   => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'MENUNGGU_VERIFIKASI' AND arsip_at IS NULL") ?? 0),
+    'terverifikasi' => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'TERVERIFIKASI' AND arsip_at IS NULL") ?? 0),
+    'perbaikan'  => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'DITOLAK' AND arsip_at IS NULL") ?? 0),
     'koreksi'    => (int) (q_col("SELECT COUNT(*) FROM pengajuan_koreksi WHERE status IN ('MENUNGGU','DIPROSES')") ?? 0),
+    'arsip'      => (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NOT NULL') ?? 0),
 ];
 
-/* Tautan filter yang mempertahankan kata kunci pencarian. */
-$tautanFilter = function ($nilai) use ($cari) {
-    $q = ['status' => $nilai];
+/* Tautan filter yang mempertahankan kata kunci pencarian + mode tampilan. */
+$tautanFilter = function ($nilai) use ($cari, $tampilkan) {
+    $q = ['status' => $nilai, 'tampilkan' => $tampilkan];
     if ($cari !== '') {
         $q['q'] = $cari;
     }
@@ -98,7 +157,11 @@ $flash = flash();
           </div>
           <span class="icon-box bg-primary-light text-primary"><?= icon('group', 'text-[20px]') ?></span>
         </div>
-        <p class="mt-3 pt-3 border-t border-line-soft text-[12px] text-ink-500">Seluruh data pendaftar pada sistem.</p>
+        <p class="mt-3 pt-3 border-t border-line-soft text-[12px] text-ink-500">
+          <a href="<?= e(url('app/operator/pendaftar.php?' . http_build_query(array_merge(['tampilkan' => 'arsip'], $cari !== '' ? ['q' => $cari] : [])))) ?>"
+             class="font-semibold text-primary hover:underline"><?= (int) $ringkas['arsip'] ?> pendaftar terarsip</a>
+          — tidak dihitung pada antrean kerja.
+        </p>
       </article>
 
       <article class="card p-5">
@@ -161,9 +224,17 @@ $flash = flash();
             <?php endforeach; ?>
           </select>
         </div>
+        <div class="lg:w-56">
+          <label class="label" for="tampilkan">Tampilkan</label>
+          <select id="tampilkan" name="tampilkan" class="select">
+            <?php foreach ($tampilkanLabel as $k => $v): ?>
+              <option value="<?= e($k) ?>" <?= $tampilkan === $k ? 'selected' : '' ?>><?= e($v) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
         <div class="flex gap-2.5 shrink-0">
           <button type="submit" class="btn btn-primary"><?= icon('search') ?> Terapkan</button>
-          <?php if ($cari !== '' || $status !== ''): ?>
+          <?php if ($cari !== '' || $status !== '' || $tampilkan !== 'aktif'): ?>
             <a href="<?= url('app/operator/pendaftar.php') ?>" class="btn btn-outline">Reset</a>
           <?php endif; ?>
         </div>
@@ -179,7 +250,7 @@ $flash = flash();
             <?= count($daftar) ?> data ditampilkan<?= $cari !== '' ? ' untuk pencarian “' . e($cari) . '”' : '' ?>.
           </p>
         </div>
-        <span class="badge badge-gray">Urut antrean verifikasi</span>
+        <span class="badge badge-gray"><?= $tampilkan === 'arsip' ? 'Urut waktu pengarsipan' : ($tampilkan === 'semua' ? 'Termasuk pendaftar terarsip' : 'Urut antrean verifikasi') ?></span>
       </div>
 
       <div class="mt-4 overflow-x-auto scroll-thin">
@@ -199,7 +270,11 @@ $flash = flash();
             <?php if (!$daftar): ?>
               <tr>
                 <td class="td text-center text-ink-400" colspan="7">
-                  Tidak ada pendaftar yang cocok dengan pencarian / filter.
+                  <?php if ($tampilkan === 'arsip'): ?>
+                    Belum ada pendaftar yang diarsipkan.
+                  <?php else: ?>
+                    Tidak ada pendaftar yang cocok dengan pencarian / filter.
+                  <?php endif; ?>
                 </td>
               </tr>
             <?php endif; ?>
@@ -207,11 +282,13 @@ $flash = flash();
               <?php
               $lv = $statusLabel[$p['status_verifikasi']] ?? [$p['status_verifikasi'], 'gray'];
               $lt = label_tahap($p['tahap']);
-              $berubahSetelahVerifikasi = !empty($p['data_verified_at'])
+              $terarsip = !empty($p['arsip_at']);
+              $berubahSetelahVerifikasi = !$terarsip
+                  && !empty($p['data_verified_at'])
                   && !empty($p['updated_at'])
                   && strtotime((string) $p['updated_at']) > strtotime((string) $p['data_verified_at']) + 1;
               ?>
-              <tr class="tr-hover align-top">
+              <tr class="tr-hover align-top <?= $terarsip ? 'opacity-70' : '' ?>">
                 <td class="td">
                   <a href="<?= url('app/operator/verifikasi-data.php?id=' . rawurlencode($p['id'])) ?>" class="font-semibold text-ink-900 hover:text-primary">
                     <?= e($p['nama_siswa']) ?>
@@ -221,6 +298,17 @@ $flash = flash();
                     <?= e($p['asal_sekolah'] ?: '—') ?>
                     <?php if (!empty($p['nisn'])): ?> · NISN <?= e($p['nisn']) ?><?php endif; ?>
                   </p>
+                  <?php if ($terarsip): ?>
+                    <p class="mt-1.5 inline-flex items-center gap-1 badge badge-gray">
+                      <?= icon('inventory_2', 'text-[13px]') ?> Terarsip
+                    </p>
+                    <p class="mt-1 text-[11px] text-ink-500 max-w-[240px]">
+                      <?= e($p['arsip_alasan'] ?: 'Tanpa catatan') ?>
+                      <span class="block text-ink-400">
+                        oleh <?= e($p['arsip_petugas'] ?: 'petugas') ?> · <?= e(bulan($p['arsip_at'])) ?>
+                      </span>
+                    </p>
+                  <?php endif; ?>
                 </td>
                 <td class="td text-[13px]">
                   <p class="font-semibold text-ink-900"><?= e($p['no_whatsapp'] ?: '—') ?></p>
@@ -257,9 +345,30 @@ $flash = flash();
                   <?php endif; ?>
                 </td>
                 <td class="td text-right">
-                  <a href="<?= url('app/operator/verifikasi-data.php?id=' . rawurlencode($p['id'])) ?>" class="btn btn-sm btn-outline">
-                    <?= icon('fact_check', 'text-[15px]') ?> Periksa
-                  </a>
+                  <div class="inline-flex items-center gap-2 justify-end">
+                    <?php if ($terarsip): ?>
+                      <form method="post" action="<?= e($tautanDaftar()) ?>">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="aksi" value="pulihkan">
+                        <input type="hidden" name="pendaftar_id" value="<?= e($p['id']) ?>">
+                        <button type="submit" class="btn btn-sm btn-green"
+                                onclick="return confirm('Pulihkan <?= e($p['no_pendaftaran']) ?> ke antrean aktif? Akun portal siswa diaktifkan kembali.')">
+                          <?= icon('restore', 'text-[15px]') ?> Pulihkan
+                        </button>
+                      </form>
+                    <?php else: ?>
+                      <a href="<?= url('app/operator/verifikasi-data.php?id=' . rawurlencode($p['id'])) ?>" class="btn btn-sm btn-outline">
+                        <?= icon('fact_check', 'text-[15px]') ?> Periksa
+                      </a>
+                      <button type="button" class="btn btn-sm btn-outline"
+                              data-modal-open="modal-arsip"
+                              data-md-id="<?= e($p['id']) ?>"
+                              data-md-reg="<?= e($p['no_pendaftaran']) ?>"
+                              data-md-nama="<?= e($p['nama_siswa']) ?>">
+                        <?= icon('inventory_2', 'text-[15px]') ?> Arsipkan
+                      </button>
+                    <?php endif; ?>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -269,10 +378,55 @@ $flash = flash();
     </section>
 
     <p class="mt-4 text-[12px] text-ink-400">
-      Catatan: daftar ini hanya untuk pemantauan. Perubahan status verifikasi data dilakukan pada halaman detail agar catatan panitia tercatat.
+      Catatan: perubahan status verifikasi data dilakukan pada halaman detail agar catatan panitia tercatat.
+      Pengarsipan bersifat <strong>tidak menghapus apa pun</strong> — data pendaftar, pembayaran, dan berkas tetap utuh
+      dan dapat dipulihkan; hanya barisnya dikeluarkan dari antrean kerja, statistik, export, dan akun portal siswa
+      dinonaktifkan sementara.
     </p>
 
   </main>
+</div>
+
+<!-- ====================== MODAL ARSIPKAN PENDAFTAR ====================== -->
+<div id="modal-arsip" class="modal-root hidden fixed inset-0 z-[60]">
+  <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px] animate-fade" data-modal-close></div>
+  <div class="relative h-full flex items-center justify-center p-4 sm:p-6">
+    <form method="post" action="<?= e($tautanDaftar()) ?>"
+          class="animate-pop w-full max-w-lg bg-white rounded-2xl border border-line-mid shadow-modal overflow-hidden">
+      <?= csrf_field() ?>
+      <input type="hidden" name="aksi" value="arsip">
+      <input type="hidden" name="pendaftar_id" data-md-fill="id" value="">
+
+      <div class="flex items-start justify-between gap-4 px-5 py-4 border-b border-line">
+        <div class="flex items-start gap-3">
+          <span class="icon-box bg-[#FFFBEB] text-[#B45309] shrink-0"><?= icon('inventory_2') ?></span>
+          <div>
+            <h3 class="font-bold text-ink-900 text-lg leading-tight">Arsipkan Pendaftaran</h3>
+            <p class="text-[13px] text-ink-500">
+              <span data-md-fill="reg" class="font-mono text-primary">#REG</span> — <span data-md-fill="nama">—</span>
+            </p>
+          </div>
+        </div>
+        <button type="button" class="icon-box border border-line text-ink-500 hover:text-red-600 shrink-0" data-modal-close aria-label="Tutup"><?= icon('close') ?></button>
+      </div>
+
+      <div class="p-5">
+        <label class="label" for="alasan">Alasan pengarsipan <span class="text-red-600">*</span></label>
+        <textarea id="alasan" name="alasan" class="textarea" rows="3" required minlength="5"
+                  placeholder="Contoh: pendaftaran ganda — yang sah REG-2026-0001."></textarea>
+        <ul class="mt-3 space-y-1 text-[12px] text-ink-500 list-disc list-inside">
+          <li>Pendaftar hilang dari antrean kerja, statistik, export, dan halaman cek status publik.</li>
+          <li>Akun portal siswa ikut dinonaktifkan sementara; pembayaran &amp; berkas tetap tersimpan.</li>
+          <li>Bisa dibatalkan kapan saja lewat tombol "Pulihkan" pada filter Terarsip.</li>
+        </ul>
+      </div>
+
+      <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end">
+        <button type="button" class="btn btn-outline" data-modal-close>Batal</button>
+        <button type="submit" class="btn btn-primary"><?= icon('inventory_2') ?> Arsipkan Pendaftaran</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>

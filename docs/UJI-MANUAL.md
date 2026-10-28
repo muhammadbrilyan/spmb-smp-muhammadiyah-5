@@ -6,7 +6,8 @@ Server uji: `php -S localhost:8099 -t <root proyek>` — ganti host/port sesuai 
 > **Sebelum mulai**: migrasi Fase 10 harus sudah dieksekusi
 > (`database/migrations/20261015_fase10_gateway_opsional.sql` +
 > `20261015_fase10_keamanan.sql`) **dan migrasi Fase 11**
-> (`database/migrations/20261016_fase11_pay_token_hash.sql`), serta seed diimpor
+> (`database/migrations/20261016_fase11_pay_token_hash.sql`) serta Fase 13
+> (`20261026_fase13_koreksi_data.sql`) + arsip (`20261028_arsip_pendaftar.sql`), serta seed diimpor
 > ulang bila DB masih mentah. Data demo opsional (11 tahap, berkas, ujian):
 > `mysql -u root db_spmb_mualimku < database/seed_demo.sql`.
 
@@ -123,6 +124,23 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | G5 | Jadikan kolom `fonnte_token` kosong sementara → reload | Item Fonnte jadi Perhatian; tanpa token kirim WA mati |
 | G6 | Periksa angka antrean vs SQL | Kartu antrean = jumlah `COUNT(*)` per tahap (BERKAS_DISUBMIT, BERKAS_REVISI, MENUNGGU_VERIFIKASI_BAYAR, BAYAR_TERVERIFIKASI) |
 | G7 | Halaman ini | **Read-only** — tidak ada POST/tombol yang mengubah data |
+
+## H. Fase 13 — Arsip Pendaftaran (soft archive)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| H1 | Operator → Data Pendaftar → tombol **Arsipkan** pada sebuah baris | Modal konfirmasi muncul di halaman yang sama; **alasan wajib diisi** (min. 5 karakter) sebelum tombol bisa dipakai |
+| H2 | Arsipkan pendaftar, cek SQL | `arsip_at = NOW()`, `arsip_alasan` & `arsip_oleh` terisi; baris **tidak** dihapus — pembayaran, dokumen, koreksi tetap utuh |
+| H3 | Cek `users.is_active` akun siswa pendaftar itu | **0** (login portal siswa ditolak sementara) |
+| H4 | Reload dashboard operator, antrean berkas & verifikasi data, daftar bendahara, kartu statistik, halaman kesiapan | Pendaftar terarsip **hilang** dari semua antrean dan angka; statistik tidak menghitungnya |
+| H5 | Export CSV pendaftar + counter publik (`app/spmb/index.php`) + `cek-status.php` dengan nomor terarsip | Terarsip tidak ikut ekspor/tidak ditemukan publik |
+| H6 | Filter **Tampilkan = Terarsip** pada Data Pendaftar | Hanya baris terarsip (badge "Terarsip" + alasan + petugas + waktu), urut waktu pengarsipan; tombol jadi **Pulihkan** |
+| H7 | Buka `verifikasi-data.php?id=<pendaftar terarsip>` lalu coba ubah status | Ditolak: "Pendaftar ini sudah diarsipkan — pulihkan dulu…" |
+| H8 | Klik **Pulihkan** (konfirmasi) | `arsip_at/alasan/oleh` kembali NULL, `is_active = 1`, pendaftar muncul lagi di semua antrean |
+| H9 | Registrasi baru dengan data Identik pendaftar terarsip | Allowed — cek duplikat mengabaikan baris terarsip (`arsip_at IS NULL`) |
+| H10 | Arsipkan/pulihkan 11× dalam 1 jam oleh operator sama | Rate limit **10/jam per user** aktif (pesan flash error) |
+| H11 | Tautan bayar publik (`bayar.php?t=<token>` milik terarsip) | Tidak aktif — `pendaftar_by_pay_token()` menyaring `arsip_at IS NULL` |
+| H12 | POST arsip/pulihkan tanpa `_csrf` valid | Ditolak, redirect tanpa perubahan data |
 
 ## Skenario Penyalahgunaan (wajib lolos)
 

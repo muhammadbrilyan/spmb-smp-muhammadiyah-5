@@ -44,7 +44,8 @@ function cek_status_cari($no_pendaftaran = '', $wa = '', $nama = '')
                 p.tahap, o.no_whatsapp, o.nama_orang_tua
            FROM pendaftar p
            JOIN orang_tua o ON o.pendaftar_id = p.id
-          WHERE " . implode(' AND ', $where) . "
+          WHERE p.arsip_at IS NULL
+            AND " . implode(' AND ', $where) . "
        ORDER BY p.created_at DESC
        LIMIT 10",
         $params
@@ -84,6 +85,7 @@ function pulihkan_pay_token($no_pendaftaran, $wa4)
            FROM pendaftar p
            JOIN orang_tua o ON o.pendaftar_id = p.id
           WHERE p.no_pendaftaran = ?
+            AND p.arsip_at IS NULL
           LIMIT 1',
         [$no]
     );

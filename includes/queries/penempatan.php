@@ -49,6 +49,7 @@ function penempatan_belum()
            JOIN seleksi s ON s.pendaftar_id = p.id
       LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
           WHERE s.hasil = 'LULUS' AND pk.id IS NULL
+            AND p.arsip_at IS NULL
        ORDER BY s.nilai_akhir DESC"
     );
     return $baris ?: [];

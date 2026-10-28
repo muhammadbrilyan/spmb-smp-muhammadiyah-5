@@ -77,6 +77,7 @@ function peserta_atur_otomatis($jadwal_id)
             "SELECT p.id, p.no_pendaftaran
                FROM pendaftar p
               WHERE p.tahap = 'BERKAS_TERVERIFIKASI'
+                AND p.arsip_at IS NULL
                 AND NOT EXISTS (SELECT 1 FROM peserta_ujian pu WHERE pu.pendaftar_id = p.id)
            ORDER BY p.no_pendaftaran
               LIMIT " . ($sisaKapas === PHP_INT_MAX ? '100000' : (int) $sisaKapas)

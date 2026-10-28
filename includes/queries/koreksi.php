@@ -121,10 +121,11 @@ function koreksi_antrean($status = '')
                    p.status_verifikasi, u.nama_lengkap AS reviewer
               FROM pengajuan_koreksi k
               JOIN pendaftar p ON p.id = k.pendaftar_id
-         LEFT JOIN users u ON u.id = k.reviewed_by';
+         LEFT JOIN users u ON u.id = k.reviewed_by
+          WHERE p.arsip_at IS NULL';
     $params = [];
     if ($status !== '' && array_key_exists($status, koreksi_status_label($status))) {
-        $sql .= ' WHERE k.status = ?';
+        $sql .= ' AND k.status = ?';
         $params[] = $status;
     }
     $sql .= ' ORDER BY FIELD(k.status, "MENUNGGU", "DIPROSES", "DISETUJUI", "DITOLAK"), k.created_at DESC LIMIT 100';

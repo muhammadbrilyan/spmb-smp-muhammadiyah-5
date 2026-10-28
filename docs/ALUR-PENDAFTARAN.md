@@ -232,6 +232,12 @@ kartu antrean operasional — read-only.
   `.env`/rahasia; cadangan DB & berkas otomatis rotasi 14 hari.
 - **Kesiapan produksi**: `app/operator/kesiapan.php` (operator/admin) — checklist read-only 13 item
   + skor + antrean operasional; pemeriksaan teknis lanjutan via `php tools/cek-proyek.php`.
+- **Arsip pendaftaran (soft archive)**: operator/admin menandai pendaftar selesai/batal lewat
+  `pendaftar_arsip()` (`arsip_at`/`arsip_alasan`/`arsip_oleh`) — **tidak ada hapus permanen** karena
+  7 FK cascade ke pembayaran, dokumen, koreksi, peserta ujian, seleksi & penempatan kelas.
+  Akun siswa ikut `is_active=0` sementara dan dipulihkan oleh `pendaftar_pulih()`. Semua antrean kerja,
+  statistik, export CSV, counter publik, cek-status, dan tautan bayar menyaring `arsip_at IS NULL`;
+  data lama tetap terbaca lewat filter **Tampilkan = Terarsip**. Rate limit 10/jam per operator.
 
 ## Kredensial Default (GANTI SEBELUM GO-LIVE!)
 
@@ -269,6 +275,9 @@ Lihat `.env.example`. Variabel: `DB_*`, `FONNTE_TOKEN`, `MIDTRANS_SERVER_KEY`, `
 | 10 | `database/migrations/20261015_fase10_gateway_opsional.sql` |
 | 10 | `database/migrations/20261015_fase10_keamanan.sql` |
 | 11 | `database/migrations/20261016_fase11_pay_token_hash.sql` |
+| 12 | `database/migrations/20261017_fase12_retensi.sql` |
+| 13 | `database/migrations/20261026_fase13_koreksi_data.sql` |
+| — | `database/migrations/20261028_arsip_pendaftar.sql` (kolom `arsip_at`/`arsip_alasan`/`arsip_oleh` — pengarsipan soft-delete pendaftar) |
 
 Seed lengkap: `database/db_spmb_mualimku.sql` (gabungan semua fase).
 Dokumentasi uji: `docs/UJI-MANUAL.md`.

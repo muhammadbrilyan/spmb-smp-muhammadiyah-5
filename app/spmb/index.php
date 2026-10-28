@@ -20,6 +20,18 @@ $desc  = 'Sistem Penerimaan Murid Baru (SPMB) SMP Muhammadiyah 5 Kota Tangerang 
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 
+/* [PERBAIKAN] Statistik hero kini dihitung dari database. Semula angka karangan
+ * dari dummy.php ("345+ pendaftar", "98% lolos", "15+ prestasi"). */
+$stDaftar = (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL') ?? 0);
+$stKuota  = (int) (q_col('SELECT COALESCE(SUM(kuota),0) FROM kelas WHERE is_aktif = 1') ?? 0);
+$stTerisi = (int) (q_col('SELECT COUNT(*) FROM penempatan_kelas') ?? 0);
+$stRombel = (int) (q_col('SELECT COUNT(*) FROM kelas WHERE is_aktif = 1') ?? 0);
+$STATISTIK = [
+    ['angka' => number_format($stDaftar, 0, ',', '.'),                'label' => 'Pendaftar saat ini', 'icon' => 'groups',       'tone' => 'blue'],
+    ['angka' => number_format(max(0, $stKuota - $stTerisi), 0, ',', '.'), 'label' => 'Kursi masih tersedia', 'icon' => 'event_seat',   'tone' => 'green'],
+    ['angka' => number_format($stRombel, 0, ',', '.'),                'label' => 'Rombel kelas VII',   'icon' => 'meeting_room', 'tone' => 'amber'],
+];
+
 /* MENU NAVIGASI ATAS — tambah/hapus baris untuk ubah menu.
  * '#beranda' = anchor section di halaman ini sendiri. */
 $nav = [

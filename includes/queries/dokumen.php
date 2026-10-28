@@ -304,6 +304,7 @@ function berkas_antrean()
            FROM pendaftar p
       LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
           WHERE p.tahap IN ('BERKAS_DISUBMIT', 'BERKAS_REVISI')
+            AND p.arsip_at IS NULL
        ORDER BY FIELD(p.tahap,'BERKAS_DISUBMIT','BERKAS_REVISI'), p.no_pendaftaran"
     );
     return $baris ?: [];

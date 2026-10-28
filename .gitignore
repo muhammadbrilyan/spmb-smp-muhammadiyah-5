@@ -17,6 +17,10 @@ storage/dokumen/*
 storage/backup/*
 !storage/backup/.gitkeep
 
+# Cadangan mysqldump manual sebelum migrasi DB — data sensitif, tidak untuk repo
+database/backup/*
+!database/backup/.gitkeep
+
 # Backup / file sementara
 *.bak
 *.old
@@ -31,3 +35,6 @@ dist/
 # OS
 Thumbs.db
 .DS_Store
+
+# Dependensi build CSS (npm install)
+node_modules/

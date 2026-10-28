@@ -174,7 +174,7 @@ function pengumuman_wa_batch($offset = 0, $mode = 'kirim')
         return ['ok' => false, 'terkirim' => 0, 'gagal' => 0, 'sisa' => 0, 'total' => 0, 'selesai' => true, 'pesan' => 'Database tidak aktif.'];
     }
 
-    $where = "p.status_seleksi IN ('LULUS','TIDAK_LULUS')";
+    $where = "p.status_seleksi IN ('LULUS','TIDAK_LULUS') AND p.arsip_at IS NULL";
     if ($mode === 'ulang_gagal') {
         $where .= " AND EXISTS (SELECT 1 FROM wa_log wl2 WHERE wl2.tipe = 'PENGUMUMAN' AND wl2.status = 'GAGAL' AND wl2.tujuan = o.no_whatsapp) ";
     }
@@ -231,6 +231,6 @@ function pengumuman_target_wa_jumlah()
 {
     return (int) (q_col(
         "SELECT COUNT(*) FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id
-          WHERE p.status_seleksi IN ('LULUS','TIDAK_LULUS') AND o.no_whatsapp <> ''"
+          WHERE p.status_seleksi IN ('LULUS','TIDAK_LULUS') AND p.arsip_at IS NULL AND o.no_whatsapp <> ''"
     ) ?: 0);
 }

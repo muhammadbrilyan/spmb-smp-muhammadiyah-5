@@ -15,6 +15,7 @@ function export_rekap($jenis)
           LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
           LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
           LEFT JOIN kelas k ON k.id = pk.kelas_id
+              WHERE p.arsip_at IS NULL
            ORDER BY p.no_pendaftaran"
         ) ?: [];
         $header = ['No. Pendaftaran', 'Nama', 'NISN', 'JK', 'Jalur', 'Asal Sekolah', 'Alamat',
