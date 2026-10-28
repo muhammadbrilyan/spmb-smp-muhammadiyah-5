@@ -56,6 +56,7 @@ CREATE TABLE pengaturan_sekolah (
   estimasi_uang_masuk DECIMAL(12,2) DEFAULT 0.00,    -- [TAMBAHAN]
   label_uang_pangkal VARCHAR(100) DEFAULT 'Biaya Pendaftaran', -- [TAMBAHAN] label bisa diganti
   label_spp VARCHAR(100) DEFAULT 'SPP Bulanan',       -- [TAMBAHAN] label bisa diganti
+  teks_beasiswa VARCHAR(300) DEFAULT NULL,            -- [TAMBAHAN] kosong = program beasiswa tidak tampil
   nama_bank VARCHAR(50) DEFAULT 'Bank Syariah Indonesia (BSI)',
   no_rekening VARCHAR(50) DEFAULT '1234567890',
   atas_nama_rekening VARCHAR(100) DEFAULT 'SMP Muhammadiyah 5',

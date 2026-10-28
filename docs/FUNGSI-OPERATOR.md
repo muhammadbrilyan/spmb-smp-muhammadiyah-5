@@ -179,7 +179,7 @@ Satu `<form>` berisi **11 section** — semuanya **tersimpan & terpakai**:
 | 1 | Identitas & Kontak Institusi | ✅ |
 | 2 | Aset Visual & Warna Tema (unggah logo, banner, **color picker**) | ✅ warna → `head.php` |
 | 3 | Running Text / Ticker | ⚠️ Salah kunci baca: `ticker_header` vs `ticker` → selalu kosong di 2 halaman |
-| 4 | Tarif / Biaya Formulir | ✅ dipakai saat registrasi |
+| 4 | Tarif / Biaya: biaya formulir, SPP, estimasi **Biaya Pendaftaran** (+ nama labelnya) & **teks program beasiswa** | ✅ label biaya dipakai seluruh aplikasi lewat `label_biaya_pendaftaran()`; `teks_beasiswa` kosong = kartu beasiswa tidak tampil di halaman publik |
 | 5 | Rekening Bank | ✅ dipakai di footer & halaman bayar |
 | 6 | Gelombang Pendaftaran | ✅ |
 | 7 | Kredensial WhatsApp Fonnte | ✅ Token diuji otomatis ke Fonnte (`/device`, tanpa kirim WA) saat form disimpan + badge sumber token (`.env`/DB) — lihat catatan di bawah |

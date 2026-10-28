@@ -317,8 +317,13 @@ $nav = [
       </div>
 
       <!-- Kartu 2: Rincian biaya pendaftaran -->
+      <?php /* Program beasiswa hanya tampil bila operator mengisi teksnya di
+              * Pengaturan Sistem → Struktur Tarif (kolom teks_beasiswa). */ ?>
+      <?php $beasiswa = trim((string) ($PENGATURAN['teks_beasiswa'] ?? '')); ?>
       <div class="card p-6 flex flex-col relative ring-2 ring-accent/40">
-        <span class="absolute -top-3 left-6 badge badge-green bg-[#0E9F6E]! text-white! border-[#0E9F6E]!">Gratis Beasiswa Musyawarah</span>
+        <?php if ($beasiswa !== ''): ?>
+          <span class="absolute -top-3 left-6 badge badge-green bg-[#0E9F6E]! text-white! border-[#0E9F6E]!">Beasiswa Tersedia</span>
+        <?php endif; ?>
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Investasi Pendidikan</span>
           <span class="badge badge-amber"><?= icon('schedule', 'text-[13px]') ?> T.A. 2025/2026</span>
@@ -344,17 +349,17 @@ $nav = [
             <div class="mt-1 font-bold text-ink-900"><?= rupiah($PENGATURAN['biaya_spp']) ?></div>
             <div class="text-[11px] text-ink-400">Sesuai kebijakan yayasan &amp; pengaturan CMS.</div>
           </div>
-          <div class="rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] p-4">
-            <div class="flex items-center gap-2 text-[#065F46] font-semibold text-sm">
-              <?= icon('volunteer_activism', 'text-[18px]') ?> Program Beasiswa Muhammadiyah
+          <?php if ($beasiswa !== ''): ?>
+            <div class="rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] p-4">
+              <div class="flex items-center gap-2 text-[#065F46] font-semibold text-sm">
+                <?= icon('volunteer_activism', 'text-[18px]') ?> Program Beasiswa
+              </div>
+              <p class="mt-1 text-[11px] leading-relaxed text-[#065F46]/90"><?= nl2br(e($beasiswa)) ?></p>
             </div>
-            <p class="mt-1 text-[11px] leading-relaxed text-[#065F46]/90">
-              Potongan hingga 100% bagi Penerimaan Rumah Tangga (Dhuafa/fa&rsquo;ir) — sertifikat kelayakan KUA/Majelis Ulama setempat. Tidak di biaya pendaftaran.
-            </p>
-          </div>
+          <?php endif; ?>
         </div>
 
-        <a href="#faq" class="btn btn-primary btn-block mt-5">Ajukan Skema &amp; Beasiswa</a>
+        <a href="#faq" class="btn btn-primary btn-block mt-5">Ajukan Skema Angsuran</a>
       </div>
 
       <!-- Kartu 3: Agenda -->

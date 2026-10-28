@@ -140,6 +140,7 @@ $f = [
     'tagline'              => $PENGATURAN['tagline'] ?? '',
     'label_uang_pangkal'   => $PENGATURAN['label_uang_pangkal'] ?? '',
     'label_spp'            => $PENGATURAN['label_spp'] ?? '',
+    'teks_beasiswa'        => $PENGATURAN['teks_beasiswa'] ?? '',
     'jalur_aktif'          => $PENGATURAN['jalur_aktif'] ?? '',
 ];
 
@@ -252,6 +253,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     /* Validasi */
     if ($f['nama_sekolah'] === '') {
         $galat[] = 'Nama sekolah wajib diisi.';
+    }
+    if (mb_strlen($f['teks_beasiswa']) > 300) {
+        $galat[] = 'Teks program beasiswa maksimal 300 karakter (saat ini '
+            . mb_strlen($f['teks_beasiswa']) . ').';
     }
     if (!warna_valid($f['warna_utama'])) {
         $galat[] = 'Warna utama harus berupa kode hex seperti #0056B3.';
@@ -530,7 +535,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     ticker_header = ?, profil_singkat = ?, deskripsi_sekolah = ?, tagline = ?,
                     warna_utama = ?,
                     biaya_formulir = ?, biaya_spp = ?, estimasi_uang_masuk = ?,
-                    label_uang_pangkal = ?, label_spp = ?,
+                    label_uang_pangkal = ?, label_spp = ?, teks_beasiswa = ?,
                     nama_bank = ?, no_rekening = ?, atas_nama_rekening = ?,
                     tahun_ajaran = ?, gelombang = ?,
                     tanggal_buka_ppdb = ?, tanggal_tutup_ppdb = ?, tanggal_pengumuman = ?,
@@ -559,6 +564,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 (float) $f['estimasi_uang_masuk'],
                 $f['label_uang_pangkal'] !== '' ? $f['label_uang_pangkal'] : 'Biaya Pendaftaran',
                 $f['label_spp'] !== '' ? $f['label_spp'] : 'SPP Bulanan',
+                $f['teks_beasiswa'] !== '' ? mb_substr($f['teks_beasiswa'], 0, 300) : null,
                 $f['nama_bank'],
                 $f['no_rekening'],
                 $f['atas_nama_rekening'],
@@ -907,6 +913,14 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <input id="label_spp" name="label_spp" class="input" value="<?= e($f['label_spp']) ?>" placeholder="SPP Bulanan">
             <p class="hint">Nama yang tampil di kartu biaya landing page, misal: "SPP Bulanan".</p>
           </div>
+        </div>
+        <!-- PROGRAM BEASISWA — opsional; kosong = tidak tampil di halaman publik -->
+        <div class="mt-4">
+          <label class="label" for="teks_beasiswa">Teks Program Beasiswa (opsional)</label>
+          <textarea id="teks_beasiswa" name="teks_beasiswa" class="textarea" rows="2"
+            placeholder="Contoh: Potongan SPP 50% bagi hafidz 5 juz — ajukan melalui panitia SPMB."><?= e($f['teks_beasiswa']) ?></textarea>
+          <p class="hint">Bila <strong>dikosongkan</strong>, kartu program beasiswa tidak tampil di halaman pendaftaran.
+            Saat sekolah belum menjalankan program beasiswa, biarkan kosong — jangan promosikan yang belum ada.</p>
         </div>
       </section>
 

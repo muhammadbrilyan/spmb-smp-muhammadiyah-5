@@ -140,7 +140,7 @@ if ($db === null) {
 }
 
 /* ---------------------------------------------------------------
- * 5. Skema Fase 11 (migrasi sudah dijalankan?)
+ * 5. Skema migrasi terbaru (sudah dijalankan?)
  * ------------------------------------------------------------- */
 if ($db !== null) {
     $kolom = [];
@@ -151,7 +151,8 @@ if ($db !== null) {
               WHERE table_schema = DATABASE()
                 AND ((table_name = 'pendaftar' AND column_name = 'pay_token_hash')
                   OR (table_name = 'users' AND column_name = 'wajib_ganti_password')
-                  OR (table_name = 'rate_limit' AND column_name = 'aksi'))"
+                  OR (table_name = 'rate_limit' AND column_name = 'aksi')
+                  OR (table_name = 'pengaturan_sekolah' AND column_name = 'teks_beasiswa'))"
         );
         foreach ($q as $r) {
             $kolom[$r['k']] = true;
@@ -160,15 +161,16 @@ if ($db !== null) {
         $kolom = [];
     }
     $kurang = [];
-    foreach (['pendaftar.pay_token_hash', 'users.wajib_ganti_password', 'rate_limit.aksi'] as $k) {
+    foreach (['pendaftar.pay_token_hash', 'users.wajib_ganti_password', 'rate_limit.aksi',
+        'pengaturan_sekolah.teks_beasiswa'] as $k) {
         if (!isset($kolom[$k])) {
             $kurang[] = $k;
         }
     }
     if ($kurang) {
-        catat('GAGAL', 'Skema Fase 11', 'kolom belum ada: ' . implode(', ', $kurang) . ' — jalankan database/migrations/ berurutan');
+        catat('GAGAL', 'Skema migrasi terbaru', 'kolom belum ada: ' . implode(', ', $kurang) . ' — jalankan database/migrations/ berurutan');
     } else {
-        catat('PASS', 'Skema Fase 11', 'pay_token_hash, wajib_ganti_password, rate_limit.aksi ada');
+        catat('PASS', 'Skema migrasi terbaru', 'pay_token_hash, wajib_ganti_password, rate_limit.aksi, teks_beasiswa ada');
     }
 }
 

@@ -44,12 +44,24 @@ $hashLemah = (int) (q_col(
 ) ?? 0);
 
 $migrasiOk = false;
+$migrasiKurang = [];
 try {
-    $migrasiOk = (int) (q_col(
-        "SELECT COUNT(*) FROM information_schema.columns
-          WHERE table_schema = DATABASE()
-            AND table_name = 'pendaftar' AND column_name = 'pay_token_hash'"
-    ) ?? 0) === 1;
+    /* Penanda migrasi terbaru — kalau salah satu kolom tidak ada,
+     * halaman tertentu error saat simpan/render (bukan cuma tampilan lama). */
+    foreach ([
+        ['pendaftar', 'pay_token_hash'],           /* Fase 11 */
+        ['pengaturan_sekolah', 'teks_beasiswa'],   /* migrasi 20261028 */
+    ] as [$tbl, $col]) {
+        $ada = (int) (q_col(
+            'SELECT COUNT(*) FROM information_schema.columns
+              WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?',
+            [$tbl, $col]
+        ) ?? 0) === 1;
+        if (!$ada) {
+            $migrasiKurang[] = $tbl . '.' . $col;
+        }
+    }
+    $migrasiOk = !$migrasiKurang;
 } catch (Throwable $e) {
     $migrasiOk = false;
 }
@@ -150,8 +162,9 @@ $items[] = [
     'grup' => 'Keamanan', 'status' => $migrasiOk ? 'ok' : 'gagal',
     'judul' => 'Skema & migrasi terbaru',
     'ket'   => $migrasiOk
-        ? 'Kolom Fase 11 (pay_token_hash) ada — migrasi terakhir terjalankan.'
-        : 'Kolom pay_token_hash tidak ditemukan — jalankan berurutan file di database/migrations/.',
+        ? 'Kolom penanda migrasi terbaru (pay_token_hash &amp; teks_beasiswa) ada — migrasi terjalankan.'
+        : 'Kolom tidak ditemukan: ' . e(implode(', ', $migrasiKurang))
+            . ' — jalankan berurutan file di database/migrations/.',
 ];
 
 /* Proxy (Fase 12 C3): header terbawa tapi tidak ada proxy tepercaya = semua
