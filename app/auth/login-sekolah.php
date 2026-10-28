@@ -3,6 +3,9 @@
  * LOGIN STAFF (Operator, Bendahara, Kepala Sekolah)
  * Login siswa/ortu ada di app/auth/login.php (terpisah).
  *
+ * Alamat yang dipakai staf: <root aplikasi>/admin — folder admin/index.php
+ * di root proyek hanya memuat berkas ini (lihat catatan di sana).
+ *
  * YANG SERING DIUBAH:
  *   - Teks judul/deskripsi halaman → bagian HTML setelah blok PHP
  *   - Redirect setelah login       → otomatis via role_home() di includes/auth.php

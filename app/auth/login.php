@@ -188,10 +188,6 @@ require_once __DIR__ . '/../../includes/partials/head.php';
       </div>
       <?php endif; ?>
 
-      <p class="mt-6 text-center text-xs text-ink-400">
-        Pihak sekolah? Login di <a href="<?= url('app/auth/login-sekolah.php') ?>" class="text-primary hover:underline font-medium">Login Pihak Sekolah</a>
-      </p>
-
     </div>
   </main>
 </div>

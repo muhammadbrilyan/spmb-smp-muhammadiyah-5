@@ -225,7 +225,8 @@ function require_login()
         || strpos($uri, '/bendahara/') !== false
         || strpos($uri, '/kepsek/') !== false
         || strpos($uri, '/auth/login-sekolah') !== false) {
-        $tujuanLogin = 'app/auth/login-sekolah.php';
+        /* Alamat pendek pihak sekolah (folder admin/ di root proyek). */
+        $tujuanLogin = 'admin/';
     }
 
     header('Location: ' . url($tujuanLogin) . ($next !== '' ? '?next=' . urlencode($next) : ''));

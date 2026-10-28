@@ -135,6 +135,12 @@ Alternatif bila ada akses SSH/terminal cPanel:
    verifikasi, pengumuman, cek-status, tools CLI bila ada).
 4. Bila ada akses CLI/terminal: jalankan `php tools/cek-proyek.php` dan
    `php tools/cek-statis.php` — keduanya **tanpa GAGAL**.
+5. **Alamat masuk** — pihak sekolah: `https://domain-anda/admin` (folder
+   `admin/index.php` hanya memuat `app/auth/login-sekolah.php`; alamat lama
+   tetap berfungsi). Murid/orang tua: tombol **Login Siswa** di halaman SPMB
+   publik. Bagikan `/admin` hanya ke panitia — alamatnya **tidak** ditautkan
+   dari halaman login murid. Pemisahan alamat bukan pembatas
+   akses, yang menegakkan hak akses tetap `require_role()` di tiap halaman.
 
 ---
 

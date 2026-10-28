@@ -15,7 +15,7 @@ logout();
 
 /* Staf sekolah kembali ke login sekolah, siswa ke portal siswa. */
 if (in_array($roleTerakhir, ['operator', 'admin', 'bendahara', 'kepsek'], true)) {
-    header('Location: ' . url('app/auth/login-sekolah.php'));
+    header('Location: ' . url('admin/'));
 } else {
     header('Location: ' . url('app/auth/login.php'));
 }

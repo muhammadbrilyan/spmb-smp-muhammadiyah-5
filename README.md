@@ -21,6 +21,17 @@ php tools/set-password.php operator
 php -S localhost:8099
 ```
 
+## Alamat masuk
+
+| Pihak | Alamat | Berkas |
+|-------|--------|--------|
+| Sekolah (operator/bendahara/kepsek) | `<root>/admin` | `admin/index.php` → memuat `app/auth/login-sekolah.php` |
+| Murid / orang tua | `<root>/app/auth/login.php` | tautan **Login Siswa** di halaman SPMB |
+| Publik SPMB (pendaftaran) | `<root>/` atau `<root>/app/spmb/index.php` | `index.php` mengalihkan ke halaman publik |
+
+Pemisahan alamat hanya untuk kerapian & memudahkan staf; hak akses ditegakkan
+`require_role()` di setiap halaman, bukan oleh panjang pendeknya URL.
+
 ## Dokumentasi
 
 | Dokumen | Isi |
