@@ -1,6 +1,6 @@
 # Fungsi Role Operator — SPMB SMP Muhammadiyah 5 Kota Tangerang
 
-Dokumen ini memetakan seluruh fungsi yang dimiliki role **operator** (18 menu,
+Dokumen ini memetakan seluruh fungsi yang dimiliki role **operator** (19 menu,
 4 grup) beserta status fungsionalitasnya.
 
 **Tanggal audit:** 28 Okt 2026
@@ -21,7 +21,8 @@ Dokumen ini memetakan seluruh fungsi yang dimiliki role **operator** (18 menu,
 *Sudah Diperbaiki* di bawah) — angkanya lebih baik daripada audit awal
 (13/13/13/7) karena 16 butir sudah tuntas. Penambahan setelah audit
 (sub-baris status pembayaran di dashboard, filter **Terarsip** + alur
-Arsipkan/Pulihkan di Data Pendaftar) belum dihitung ulang pada tabel ringkasan di atas.
+Arsipkan/Pulihkan di Data Pendaftar, menu **Petugas & Hak Akses** yang berfungsi
+penuh) belum dihitung ulang pada tabel ringkasan di atas.
 
 ---
 
@@ -172,7 +173,7 @@ Arsipkan/Pulihkan di Data Pendaftar) belum dihitung ulang pada tabel ringkasan d
 
 ### 14. Pengaturan Sistem (CMS) — `app/operator/pengaturan.php`
 
-Satu `<form>` berisi **11 section** — semuanya **tersimpan & terpakai**:
+Satu `<form>` berisi **11 section isian + 1 kartu tautan** — semua isian **tersimpan & terpakai**:
 
 | # | Section | Status |
 |---|---|---|
@@ -188,6 +189,7 @@ Satu `<form>` berisi **11 section** — semuanya **tersimpan & terpakai**:
 | 10 | Notifikasi | ⚠️ Notifikasi **email** = stub, selalu gagal (field juga `disabled`) |
 | 11 | Field "tulis-saja" (`profil_singkat`, `deskripsi_sekolah`, `tagline`, `deskripsi_gelombang`) | ⚠️ Tersimpan tapi **tak pernah dibaca** |
 | — | **Unggah favicon** | 🚧 `favicon_url` dipakai `head.php` tapi tidak ada input-nya |
+| 12 | Kartu **Petugas & Hak Akses** (tautan saja) | ✅ Nama/username/password petugas tidak ikut form ini — dikelola di halaman `petugas.php` (tabel `users`) |
 
 Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
 - Prioritas baca token: **`.env` (FONNTE_TOKEN) → DB**. Karena itu nilai yang diketik di CMS
@@ -231,6 +233,28 @@ Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
 |---|---|---|
 | 1 | Password lama / baru + konfirmasi | ✅ |
 | 2 | Rate limit + regenerasi sesi | ✅ |
+
+### 19. Petugas & Hak Akses — `app/operator/petugas.php`
+
+Menu grup **Pengaturan Sistem** (kunci `petugas`). Menyimpan di tabel `users`,
+bukan `pengaturan_sekolah` — hanya role `operator`/`admin` yang boleh membuka.
+
+| # | Fungsi | Status |
+|---|---|---|
+| 1 | Daftar akun staf (non-siswa) + status Aktif/Nonaktif & Password Belum disetel/Wajib diganti/Tersetel | ✅ |
+| 2 | Ubah **nama petugas** & jabatan per akun (yang tampil di header, menu, log) | ✅ |
+| 3 | Ubah username petugas (validasi format 4-30 huruf kecil + unik) | ✅ |
+| 4 | Reset password petugas lain → password sementara, `wajib_ganti_password = 1` | ✅ — petugas dipaksa ke `app/staf/ganti-password.php` pada login berikutnya |
+| 5 | Tambah petugas baru (nama, jabatan, role, username, password sementara) | ✅ — beberapa akun per role diperbolehkan |
+| 6 | Nonaktifkan / aktifkan akun (soft, data tetap ada) | ✅ — ditolak bila akun tersebut operator aktif terakhir |
+| 7 | Pengaman akun sendiri | ✅ — hanya nama & jabatan yang bisa diubah; username/password/nonaktif akun sendiri dikunci (UI disembunyikan + divalidasi ulang di server) |
+
+Lapisan query: `includes/queries/petugas.php` (`petugas_semua`, `petugas_buat`,
+`petugas_ubah_identitas`, `petugas_set_password`, `petugas_set_aktif`,
+`petugas_username_valid`, `petugas_password_valid`).
+Untuk kondisi awal di mana **belum ada** akun staf yang bisa login (semua
+`!LOCKED`), pemulihan tetap lewat `php tools/set-password.php` (CLI) atau
+`tools/set-password-web.php`.
 
 ---
 

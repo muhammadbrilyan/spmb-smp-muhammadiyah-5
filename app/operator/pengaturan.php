@@ -1242,6 +1242,23 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
       </section>
 
+      <!-- 12. Petugas & Hak Akses -->
+      <section class="card p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="font-bold text-ink-900">Petugas &amp; Hak Akses</h2>
+          <span class="badge badge-gray">tabel users</span>
+        </div>
+        <p class="mt-1 text-[13px] text-ink-500">
+          Nama, jabatan, username, dan password akun operator/bendahara/kepsek tersimpan di akun masing-masing,
+          bukan pada formulir ini — simpan pengaturan lebih dulu, lalu kelola petugas di halaman khusus.
+        </p>
+        <div class="mt-4">
+          <a href="<?= url('app/operator/petugas.php') ?>" class="btn btn-outline">
+            <?= icon('admin_panel_settings') ?> Kelola Petugas
+          </a>
+        </div>
+      </section>
+
       <div class="sticky bottom-0 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 bg-white/95 backdrop-blur border-t border-line flex flex-wrap items-center gap-3 justify-end">
         <a href="<?= url('app/spmb/index.php') ?>" class="btn btn-outline">Batal</a>
         <button type="submit" class="btn btn-primary shadow-drop"><?= icon('save') ?> Simpan Pengaturan</button>

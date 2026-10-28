@@ -91,6 +91,7 @@ if ($role === 'siswa') {
             'judul' => 'Pengaturan Sistem',
             'menu'  => [
                 $menuItem('pengaturan', 'settings', 'Pengaturan Sistem', url('app/operator/pengaturan.php')),
+                $menuItem('petugas', 'admin_panel_settings', 'Petugas & Hak Akses', url('app/operator/petugas.php')),
                 $menuItem('jenis-dokumen', 'description', 'Jenis Dokumen', url('app/operator/jenis-dokumen.php')),
                 $menuItem('retensi', 'inventory_2', 'Retensi Data', url('app/operator/retensi.php')),
                 $menuItem('kesiapan', 'task_alt', 'Kesiapan Rilis', url('app/operator/kesiapan.php')),

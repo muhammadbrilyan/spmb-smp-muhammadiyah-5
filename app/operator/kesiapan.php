@@ -147,7 +147,9 @@ $items[] = [
     'judul' => 'Akun staf sudah memiliki password',
     'ket'   => $stafKunci === 0
         ? 'Seluruh akun operator/bendahara/kepsek sudah di-set.'
-        : $stafKunci . ' akun staf masih terkunci (!LOCKED) — jalankan: php tools/set-password.php &lt;username&gt;',
+        : $stafKunci . ' akun staf masih terkunci (!LOCKED) — setel password lewat <a href="' . e(url('app/operator/petugas.php'))
+            . '" class="text-primary hover:underline">Petugas &amp; Hak Akses</a>. Bila tidak ada satu pun akun yang bisa login, '
+            . 'jalankan php tools/set-password.php &lt;username&gt;.',
 ];
 
 $items[] = [
@@ -155,7 +157,7 @@ $items[] = [
     'judul' => 'Hash password (bcrypt)',
     'ket'   => $hashLemah === 0
         ? 'Semua akun memakai bcrypt/argon2.'
-        : $hashLemah . ' akun memakai hash lemah — reset segera lewat php tools/set-password.php.',
+        : $hashLemah . ' akun memakai hash lemah — reset segera lewat halaman Petugas &amp; Hak Akses atau php tools/set-password.php.',
 ];
 
 $items[] = [

@@ -112,6 +112,13 @@ Seed mengunci semua akun staf. Lewat browser:
 Alternatif bila ada akses SSH/terminal cPanel:
 `php tools/set-password.php <username>` (CLI-only).
 
+Khusus **setelah** minimal satu akun operator bisa login, semua perubahan
+berikutnya cukup lewat menu **Pengaturan Sistem → Petugas & Hak Akses**
+(nama/jabatan, username, reset password petugas lain, tambah petugas baru,
+nonaktifkan akun) — penanda `.izinkan-set-password` dan alat web tidak
+dibutuhkan lagi. Alat itu tetap jalur pemulihan untuk keadaan genting:
+seluruh akun staf masih `!LOCKED` atau operator kehilangan akses.
+
 ### 1.7 PHP & HTTPS
 
 1. **MultiPHP INI Editor** → pilih domain → PHP **8.1 atau lebih baru**.

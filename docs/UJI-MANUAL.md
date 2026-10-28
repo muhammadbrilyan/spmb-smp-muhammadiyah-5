@@ -154,6 +154,23 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | I6 | Kirim kredensial akun siswa (`app/operator/akun.php`) | Terkirim; `wa_log.respons` tidak lagi berisi `invalid/empty body value` (penyebab lama: `typing=off`) |
 | I7 | Uji manual tanpa mengirim WA: `POST https://api.fonnte.com/device` header `Authorization: <token>` | `{"status":true,…}` utk token benar; `{"reason":"token invalid","status":false}` utk token salah |
 
+## J. Petugas & Hak Akses (`app/operator/petugas.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| J1 | Operator → sidebar **Pengaturan Sistem → Petugas & Hak Akses** | 200; tabel memuat hanya akun non-siswa, baris milik sendiri ber-badge **Anda**, kolom Password menampilkan *Belum disetel* / *Wajib diganti* / *Tersetel* sesuai data |
+| J2 | Ubah **nama** & jabatan bendahara lewat modal Ubah | Flash sukses; nama baru langsung dipakai di header/topbar bendahara setelah ia login (sesi lama tidak ikut berubah) |
+| J3 | Ganti username kepsek menjadi `kepsek-baru` | Flash menyebut username baru; login memakai username lama **ditolak**, `kepsek-baru` diterima |
+| J4 | Username tidak sah: `AB`, `Huruf Besar`, atau sudah dipakai | Ditolak dengan pesan spesifik (format 4-30 huruf kecil / sudah dipakai); data lama tidak berubah |
+| J5 | Reset password akun lain (min 10 karakter, konfirmasi sama) | Hash bcrypt baru tersimpan + `wajib_ganti_password = 1`; password tidak pernah tampil lagi di layar |
+| J6 | Petugas login dengan password sementara | **Dialihkan paksa** ke `app/staf/ganti-password.php` sebelum halaman apa pun terbuka; flag lepas setelah sukses ganti |
+| J7 | Tambah petugas baru (role Bendahara, jabatan dikosongkan) | Akun aktif baru; jabatan otomatis mengikuti label role; `wajib_ganti_password = 1` |
+| J8 | Nonaktifkan akun petugas lain, lalu aktifkan kembali | Yang bersangkutan tidak bisa login (`is_active = 0`, akun tak ditemukan saat login); baris & datanya tetap ada |
+| J9 | Reset password / ganti username akun **sendiri** | Ditolak — tombol tidak ditampilkan dan POST langsung ditolak; arahkan ke halaman Ganti Password |
+| J10 | Nonaktifkan satu-satunya akun operator aktif | Ditolak: "Akun ini satu-satunya operator aktif. Buat atau aktifkan operator lain lebih dulu." |
+| J11 | Role bendahara/kepsek membuka URL `app/operator/petugas.php` | Dialihkan ke portal netral (require_role operator/admin) |
+| J12 | Kesiapan Rilis saat masih ada akun `!LOCKED` | Item "Akun staf sudah memiliki password" berwarna Perhatian dan menautkan halaman Petugas & Hak Akses |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |
