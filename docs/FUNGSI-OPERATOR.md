@@ -213,8 +213,9 @@ Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
 
 | # | Fungsi | Status |
 |---|---|---|
-| 1 | Checklist 17 pemeriksaan nyata (bukan hardcode) + skor % | ✅ **Read-only sungguhan** |
+| 1 | Checklist 18 pemeriksaan nyata (bukan hardcode) + skor % | ✅ **Read-only sungguhan** — tidak mengubah data aplikasi (hasil uji token Fonnte hanya di-cache 10 menit di sesi) |
 | 2 | Antrean operasional | ✅ |
+| 3 | Pemeriksaan **nomor pengirim WA = nomor panitia** (lewat Fonnte `/device`) | ✅ — kuning saat nomor perangkat Fonnte berbeda dari `kontak_wa_panitia`, kosong/belum ter-connect, atau token belum diisi; tautan "periksa ulang WA" (`?segarkan-wa=1`) membuang cache |
 
 ### 17. Panduan & SOP — `app/operator/panduan.php`
 

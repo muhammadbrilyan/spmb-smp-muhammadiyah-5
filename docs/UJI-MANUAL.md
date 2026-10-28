@@ -117,7 +117,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
-| G1 | Operator → sidebar **Kesiapan Rilis** → buka halaman | 200; skor %, status (SIAP/SIAP DENGAN CATATAN/BELUM SIAP), 13 item checklist, kartu antrean |
+| G1 | Operator → sidebar **Kesiapan Rilis** → buka halaman | 200; skor %, status (SIAP/SIAP DENGAN CATATAN/BELUM SIAP), 18 item checklist, kartu antrean |
 | G2 | Tanpa login → `app/operator/kesiapan.php` | 302 ke login (berikut `next=`) |
 | G3 | Role selain operator/admin (mis. kepsek) → halaman sama | 403 / dialihkan (require_role) |
 | G4 | Amati item terkait demo: nomor WA panitia | Badge **Perhatian** bila masih nomor contoh (`628123456789`) — status ikut data, bukan hiasan |

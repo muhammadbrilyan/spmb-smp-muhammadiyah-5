@@ -206,6 +206,52 @@ $items[] = [
         : 'Token Fonnte belum diisi — kirim WA kredensial/notifikasi tidak berjalan. Isi di Pengaturan Sistem → WhatsApp Gateway.',
 ];
 
+/* Sinkronisasi nomor pengirim: sejak ganti nomor admin, perangkat yang
+ * ter-connect di Fonnte bisa berbeda dari "Kontak WA panitia" yang dibaca
+ * calon siswa di halaman bayar/pengumuman — pesan masuk dijawab ke nomor lain.
+ * Hasil /device di-cache 10 menit di sesi (hanya cache waktu; tidak ada
+ * perubahan data aplikasi, dan tidak ada pesan WA terkirim). */
+if (isset($_GET['segarkan-wa'])) {
+    unset($_SESSION['fonnte_dev']); /* paksa periksa ulang setelah ganti nomor admin */
+}
+$devCache = $_SESSION['fonnte_dev'] ?? null;
+if (!is_array($devCache) || (time() - (int) ($devCache['ts'] ?? 0)) > 600) {
+    $cekDev = fonnte_cek_token();
+    $devCache = [
+        'ts'    => time(),
+        'ok'    => (bool) $cekDev['ok'],
+        'pesan' => (string) $cekDev['pesan'],
+        'dev'   => wa_teks($cekDev['data']['device'] ?? ''),
+    ];
+    $_SESSION['fonnte_dev'] = $devCache;
+}
+$devWa    = $devCache['dev'];
+/* Bandingkan dalam format yang sama: panitia bisa disimpan 08xx, Fonnte selalu 628xx. */
+$devBersih   = wa_normalize($devWa);
+$panitiaBersih = wa_normalize($waPanitia);
+if (!$fonnteAda) {
+    $sinkStatus = 'hati';
+    $sinkKet    = 'Belum bisa diperiksa — token Fonnte belum diisi.';
+} elseif ($devBersih === '') {
+    $sinkStatus = 'hati';
+    $sinkKet    = 'Perangkat Fonnte belum terhubung ke nomor mana pun — scan QR nomor admin di dasbor Fonnte. Catatan: ' . $devCache['pesan'];
+} elseif ($panitiaBersih === '') {
+    $sinkStatus = 'hati';
+    $sinkKet    = 'Kontak WA panitia belum diisi — tidak ada nomor pembanding untuk memastikan pengirim dan tujuan balasan sama.';
+} elseif ($devBersih !== $panitiaBersih) {
+    $sinkStatus = 'hati';
+    $sinkKet    = 'Nomor pengirim Fonnte <strong>' . e($devWa) . '</strong> berbeda dari Kontak WA panitia <strong>' . e($P['kontak_wa_panitia'])
+        . '</strong> — calon siswa yang membalas pesan WA sampai ke nomor pengirim, bukan nomor yang tampil di halaman publik. Samakan salah satunya (Pengaturan Sistem → Identitas / WhatsApp Gateway).';
+} else {
+    $sinkStatus = 'ok';
+    $sinkKet    = 'Nomor pengirim = nomor panitia: <strong>' . e($devWa) . '</strong> · ' . e($devCache['pesan']);
+}
+$items[] = [
+    'grup' => 'Kanal', 'status' => $sinkStatus,
+    'judul' => 'Nomor pengirim WA = nomor panitia',
+    'ket'   => $sinkKet,
+];
+
 $izinDetail = $izinOk
     ? 'storage/dokumen & storage/backup bisa ditulis.'
     : 'Tidak bisa ditulis: ' . implode(', ', $izinMasalah) . ' — perbaiki izin folder di server.';
@@ -402,7 +448,10 @@ require __DIR__ . '/../../includes/partials/topbar.php';
     <section class="mt-6">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-base font-bold text-ink-900">Daftar Periksa</h2>
-        <span class="text-xs text-ink-400"><?= $totalItem ?> item • diperbarui otomatis saat halaman dibuka</span>
+        <span class="text-xs text-ink-400">
+          <?= $totalItem ?> item • diperbarui otomatis saat halaman dibuka
+          · <a class="underline hover:text-primary" href="<?= url('app/operator/kesiapan.php?segarkan-wa=1') ?>" title="Periksa ulang perangkat Fonnte tanpa cache 10 menit">periksa ulang WA</a>
+        </span>
       </div>
 
       <?php

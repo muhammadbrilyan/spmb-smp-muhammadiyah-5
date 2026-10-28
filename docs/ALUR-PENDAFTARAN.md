@@ -142,7 +142,7 @@ flowchart TD
   - `database/seed_demo.sql` — 9 pendaftar demo (11/11 tahap tercakup), users siswa
     demo `'!LOCKED'`, orang tua, pembayaran, 26 dokumen, 3 peserta ujian, 2 seleksi;
     idempoten; pasangan `seed_demo_hapus.sql`.
-- **Bagian C (kesiapan)**: `app/operator/kesiapan.php` — checklist kesiapan 13 item
+- **Bagian C (kesiapan)**: `app/operator/kesiapan.php` — checklist kesiapan 18 item
   (read-only): APP_URL, placeholder rekening/WA panitia, jadwal+S&K, akun `!LOCKED`,
   hash lemah, skema `pay_token_hash`, metode bayar, kunci Midtrans, token Fonnte,
   izin storage, umur cadangan DB, notif WA operator; skor % + kartu antrean operasional
@@ -230,7 +230,7 @@ kartu antrean operasional — read-only.
 - **Alat rilis**: `tools/buat-paket.php`, `tools/cek-proyek.php`, `tools/backup-db.php`,
   `tools/backup-berkas.php` — semuanya **CLI-only** (akses web 404); zip rilis diverifikasi bebas
   `.env`/rahasia; cadangan DB & berkas otomatis rotasi 14 hari.
-- **Kesiapan produksi**: `app/operator/kesiapan.php` (operator/admin) — checklist read-only 13 item
+- **Kesiapan produksi**: `app/operator/kesiapan.php` (operator/admin) — checklist read-only 18 item
   + skor + antrean operasional; pemeriksaan teknis lanjutan via `php tools/cek-proyek.php`.
 - **Arsip pendaftaran (soft archive)**: operator/admin menandai pendaftar selesai/batal lewat
   `pendaftar_arsip()` (`arsip_at`/`arsip_alasan`/`arsip_oleh`) — **tidak ada hapus permanen** karena
