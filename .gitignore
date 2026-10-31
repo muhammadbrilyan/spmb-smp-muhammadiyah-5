@@ -17,6 +17,10 @@ storage/dokumen/*
 storage/backup/*
 !storage/backup/.gitkeep
 
+# Dump yang nyasar ke root storage/ — memuat token & data siswa, jangan pernah di-commit
+storage/*.sql
+storage/*.sql.gz
+
 # Cadangan mysqldump manual sebelum migrasi DB — data sensitif, tidak untuk repo
 database/backup/*
 !database/backup/.gitkeep
