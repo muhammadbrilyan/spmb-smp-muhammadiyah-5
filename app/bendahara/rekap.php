@@ -66,7 +66,12 @@ require_once __DIR__ . '/../../includes/partials/head.php';
 $activeMenu = 'keuangan';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 
-$breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Keuangan & Verifikasi' => url('app/bendahara/index.php'), 'Cetak Rekap Keuangan' => null];
+$breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null];
+/* Dashboard bendahara khusus bendahara; tautan itu jadi jalan buntu bagi kepsek/admin. */
+if ($me['role'] === 'bendahara') {
+    $breadcrumbs['Keuangan & Verifikasi'] = url('app/bendahara/index.php');
+}
+$breadcrumbs['Cetak Rekap Keuangan'] = null;
 $pageActions = '<button type="button" class="btn btn-primary shadow-drop" onclick="window.print()">'
     . icon('print') . ' Cetak / Simpan PDF</button>';
 require __DIR__ . '/../../includes/partials/topbar.php';
@@ -117,8 +122,11 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </form>
       <div class="flex-1"></div>
       <div class="flex flex-wrap gap-2">
-        <a href="<?= url('app/operator/export.php?rekap=pembayaran') ?>" class="btn btn-outline"><?= icon('download') ?> Unduh CSV</a>
-        <a href="<?= url('app/bendahara/index.php') ?>" class="btn btn-outline"><?= icon('arrow_back') ?> Kembali</a>
+        <?php /* Ekspor CSV hanya untuk role yang diizinkan export.php; kepsek diarahkan ke laporan cetaknya sendiri. */ ?>
+        <?php if (in_array($me['role'], ['operator', 'admin', 'bendahara'], true)): ?>
+          <a href="<?= url('app/operator/export.php?rekap=pembayaran') ?>" class="btn btn-outline"><?= icon('download') ?> Unduh CSV</a>
+        <?php endif; ?>
+        <a href="<?= role_home($me['role']) ?>" class="btn btn-outline"><?= icon('arrow_back') ?> Kembali</a>
       </div>
     </div>
 

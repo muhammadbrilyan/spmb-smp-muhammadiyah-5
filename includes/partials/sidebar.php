@@ -117,6 +117,8 @@ if ($role === 'siswa') {
             'judul' => 'Monitoring',
             'menu'  => [
                 $menuItem('dashboard', 'dashboard', 'Dashboard Kepala Sekolah', url('app/kepsek/index.php')),
+                $menuItem('keuangan', 'account_balance_wallet', 'Rekap Keuangan', url('app/bendahara/rekap.php')),
+                $menuItem('pembiayaan', 'request_quote', 'Pembiayaan & Tunggakan', url('app/kepsek/keuangan.php')),
                 $menuItem('notifikasi', 'notifications', 'Notifikasi', url('app/operator/notifikasi.php')),
                 $menuItem('panduan', 'support_agent', 'Panduan & SOP', url('app/operator/panduan.php')),
                 $menuItem('ganti-pass', 'lock', 'Ganti Password', url('app/staf/ganti-password.php')),
