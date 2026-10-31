@@ -113,6 +113,55 @@ function stat_operator()
     return $s;
 }
 
+/**
+ * CORONG PPDB untuk laporan Kepala Sekolah — satu query, enam tahap.
+ *
+ * Tiap tahap dihitung BEBAS (bukan selisih tahap sebelumnya) karena jalur
+ * pendaftar tidak selalu berurutan: misalnya akun bisa aktif sebelum biodata
+ * dinyatakan terverifikasi. Karena itu halaman pemanggil menampilkannya
+ * sebagai bar "mencapai tahap" per tahap, bukan corong yang menyempit.
+ * Semua tahap mengecualikan pendaftar terarsip (arsip_at IS NULL).
+ *
+ * @return array<string,int>
+ */
+function corong_ppdb()
+{
+    $kosong = ['masuk' => 0, 'data' => 0, 'bayar' => 0, 'akun' => 0, 'lulus' => 0, 'ditempat' => 0];
+    if (!db_aktif()) {
+        return $kosong;
+    }
+
+    $d = q_all('SELECT
+                  (SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL) masuk,
+                  (SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL
+                     AND status_verifikasi = \'TERVERIFIKASI\') data_sah,
+                  (SELECT COUNT(DISTINCT p.id) FROM pendaftar p
+                     JOIN pembayaran pb ON pb.pendaftar_id = p.id
+                    AND pb.jenis_pembayaran = \'UANG_MASUK\'
+                    AND pb.status IN (\'VERIFIED\',\'LUNAS\',\'ANGSURAN_1\',\'ANGSURAN_2\')
+                   WHERE p.arsip_at IS NULL) bayar,
+                  (SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL
+                     AND status_akun = \'AKTIF\') akun,
+                  (SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL
+                     AND status_seleksi = \'LULUS\') lulus,
+                  (SELECT COUNT(DISTINCT p.id) FROM pendaftar p
+                     JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
+                   WHERE p.arsip_at IS NULL) ditempatkan');
+    if (!$d) {
+        return $kosong;
+    }
+    $r = $d[0];
+
+    return [
+        'masuk'    => (int) ($r['masuk'] ?? 0),
+        'data'     => (int) ($r['data_sah'] ?? 0),
+        'bayar'    => (int) ($r['bayar'] ?? 0),
+        'akun'     => (int) ($r['akun'] ?? 0),
+        'lulus'    => (int) ($r['lulus'] ?? 0),
+        'ditempat' => (int) ($r['ditempatkan'] ?? 0),
+    ];
+}
+
 /* ==================================================================
  * 3. DASHBOARD OPERATOR "” tab 2: jadwal tes
  * ================================================================== */

@@ -210,6 +210,18 @@ html.gelap .rail-pemisah { background-color: #334155; }
   tr { break-inside: avoid; }
 }
 
+/* Laporan siap cetak (rekap keuangan & pembiayaan kepsek): kertas A4 dan
+ * elemen yang hanya boleh muncul di atas kertas. */
+@page { size: A4; margin: 14mm 12mm; }
+.hanya-cetak { display: none; }
+@media print {
+  .hanya-cetak { display: block; }
+  main { font-size: 12px; }
+  /* Tabel laporan dibuat selebar kertas; min-width layar tidak relevan saat dicetak. */
+  table { width: 100% !important; min-width: 0 !important; }
+  .card { break-inside: auto; }
+}
+
 /* Mode cetak kartu peserta: hanya salinan kartu yang tampil. */
 #print-area { display: none; }
 @media print {

@@ -21,6 +21,8 @@ $bodyClass = 'bg-canvas text-ink-700 antialiased';
  * ================================================================== */
 $stat      = stat_bendahara();
 $operator  = stat_operator();
+$corong    = corong_ppdb();
+$umum      = pengumuman_status();
 $pendaftar = daftar_pendaftar();
 $rombel    = rombel();
 $hasil     = daftar_hasil_seleksi();
@@ -52,18 +54,36 @@ foreach ($rombel as $r) {
 }
 $persenKelas = $totalKuota > 0 ? round($totalTerisi / $totalKuota * 100, 1) : 0.0;
 
+/* Corong: label tampilan => jumlah pendaftar yang mencapai tahap itu. */
+$corongTahap = [
+    'Pendaftar masuk'                  => $corong['masuk'],
+    'Biodata terverifikasi'            => $corong['data'],
+    'Biaya pendaftaran terverifikasi'  => $corong['bayar'],
+    'Akun portal aktif'                => $corong['akun'],
+    'Lulus seleksi'                    => $corong['lulus'],
+    'Ditempatkan di rombel'            => $corong['ditempat'],
+];
+$corongDasar = max(1, $corong['masuk']);
+
 require_once __DIR__ . '/../../includes/partials/head.php';
 
 $activeMenu = 'dashboard';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 
 $breadcrumbs = ['Portal Akademik', 'Rekap SPMB', 'Kepala Sekolah'];
-$pageActions = '';
+$pageActions = '<button type="button" class="btn btn-outline shadow-drop" onclick="window.print()">'
+    . icon('print') . ' Cetak Ringkasan</button>';
 require __DIR__ . '/../../includes/partials/topbar.php';
 ?>
 
 <div class="lg:pl-[264px]">
   <main class="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1200px]">
+
+    <!-- Hanya muncul di kertas: identitas laporan -->
+    <div class="hanya-cetak text-center border-b-2 border-ink-900/10 pb-3 mb-4">
+      <p class="text-[15px] font-bold text-ink-900"><?= e($PENGATURAN['nama_sekolah']) ?></p>
+      <p class="text-[12px] text-ink-500">Ringkasan SPMB <?= e($PENGATURAN['gelombang']) ?> · TA <?= e($PENGATURAN['tahun_ajaran']) ?> · dicetak <?= bulan(date('Y-m-d')) ?></p>
+    </div>
 
     <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
       <div>
@@ -129,6 +149,45 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
         <p class="mt-3 text-xs text-ink-400"><?= $totalTerisi ?> / <?= $totalKuota ?> kursi · <?= count($rombel) ?> rombel</p>
       </div>
+    </section>
+
+    <!-- Corong PPDB -->
+    <section class="mt-6 card p-5 sm:p-6">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div class="min-w-0">
+          <h2 class="font-bold text-ink-900">Corong Pendaftaran</h2>
+          <p class="mt-1 text-[13px] text-ink-500">
+            Setiap bar adalah jumlah pendaftar yang <strong>sudah mencapai</strong> tahap tersebut
+            — dihitung lepas per tahap, jadi urutannya tidak selalu menyempit.
+          </p>
+        </div>
+        <?php if ($umum['diumumkan']): ?>
+          <span class="badge badge-green"><?= icon('campaign') ?> Hasil terbit <?= e(bulan($umum['dijadwalkan_pada'] ?? date('Y-m-d'))) ?></span>
+        <?php elseif ($umum['dijadwalkan_pada']): ?>
+          <span class="badge badge-amber"><?= icon('schedule') ?> Hasil dijadwalkan <?= e(bulan($umum['dijadwalkan_pada'])) ?></span>
+        <?php else: ?>
+          <span class="badge badge-gray"><?= icon('schedule') ?> Jadwal pengumuman belum diisi</span>
+        <?php endif; ?>
+      </div>
+
+      <ul class="mt-5 space-y-3">
+        <?php foreach ($corongTahap as $label => $n): $pct = round($n / $corongDasar * 100, 1); ?>
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <span class="w-full sm:w-56 shrink-0 text-[13px] text-ink-700"><?= e($label) ?></span>
+            <div class="flex-1 min-w-[80px] h-2 rounded-full bg-line-soft overflow-hidden">
+              <div class="h-full rounded-full <?= $n >= $corong['masuk'] ? 'bg-[#0E9F6E]' : 'bg-primary' ?>" style="width: <?= min(100, $pct) ?>%"></div>
+            </div>
+            <span class="w-20 shrink-0 text-right text-[13px] font-semibold text-ink-900 whitespace-nowrap">
+              <?= (int) $n ?> <span class="text-ink-400 font-normal">(<?= $pct ?>%)</span>
+            </span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+
+      <p class="mt-4 text-[12px] text-ink-400 border-t border-line-soft pt-3">
+        Tagihan <?= e(label_biaya_pendaftaran()) ?> baru mulai dihitung setelah hasil seleksi diterbitkan,
+        jadi angka tahap pembayaran dapat terlihat lebih kecil daripada tahap di atasnya.
+      </p>
     </section>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-3">
@@ -244,6 +303,14 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </table>
       </div>
     </section>
+
+    <!-- Hanya di kertas: blok tanda tangan -->
+    <div class="hanya-cetak mt-8 text-center text-sm">
+      <p class="text-ink-500"><?= bulan(date('Y-m-d')) ?></p>
+      <p class="mt-1 font-medium text-ink-700"><?= e(trim((string) ($me['jabatan'] ?? '')) ?: 'Kepala Sekolah') ?></p>
+      <div class="h-16"></div>
+      <p class="font-semibold text-ink-900 underline underline-offset-4"><?= e($USER_LOGIN['nama']) ?></p>
+    </div>
 
   </main>
 </div>
