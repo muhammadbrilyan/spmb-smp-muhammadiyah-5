@@ -64,7 +64,7 @@ $nav = [
         <img src="<?= e($PENGATURAN['logo_url']) ?>" alt="Logo <?= e(APP_SHORT) ?>" style="width:40px;height:40px;object-fit:contain;" class="w-10 h-10 object-contain">
         <span class="hidden sm:block leading-tight">
           <span class="block font-bold text-ink-900 text-[15px]"><?= e(APP_SHORT) ?></span>
-          <span class="block text-[11px] text-ink-500">Kota Tangerang · Berakhlak & Berprestasi</span>
+          <span class="hidden lg:block text-[11px] text-ink-500">Kota Tangerang · Berakhlak & Berprestasi</span>
         </span>
       </a>
 
@@ -74,9 +74,10 @@ $nav = [
         <?php endforeach; ?>
       </nav>
 
-      <div class="flex items-center gap-2">
-        <a href="<?= url('app/spmb/cek-status.php') ?>" class="hidden md:inline-flex btn btn-ghost text-sm whitespace-nowrap"><?= icon('search') ?> Cek Status</a>
-        <a href="<?= url('app/auth/login.php') ?>" class="hidden md:inline-flex btn btn-ghost text-sm whitespace-nowrap"><?= icon('school') ?> Login Siswa</a>
+      <div class="flex items-center gap-2 md:gap-1.5 lg:gap-2">
+        <a href="#registrasi" data-sorot="registrasi" class="btn btn-primary btn-sm md:h-10 md:px-3 md:text-sm lg:px-4 whitespace-nowrap"><?= icon('arrow_forward') ?><span class="hidden lg:inline">Daftar Sekarang</span><span class="lg:hidden">Daftar</span></a>
+        <a href="<?= url('app/spmb/cek-status.php') ?>" class="hidden md:inline-flex btn btn-ghost text-sm md:px-3 lg:px-4 whitespace-nowrap"><?= icon('search') ?> Cek Status</a>
+        <a href="<?= url('app/auth/login.php') ?>" class="hidden md:inline-flex btn btn-ghost text-sm md:px-3 lg:px-4 whitespace-nowrap"><?= icon('school') ?> Login Siswa</a>
         <details class="relative hidden md:hidden">
           <summary class="btn btn-ghost text-sm list-none cursor-pointer whitespace-nowrap"><?= icon('login') ?> Masuk</summary>
           <div class="absolute right-0 mt-2 w-56 card p-2 z-50 shadow-drop">
@@ -107,6 +108,7 @@ $nav = [
     <?php endforeach; ?>
   </nav>
   <div class="mt-6 pt-6 border-t border-line space-y-2">
+    <a href="#registrasi" data-sorot="registrasi" data-sidebar-close class="btn btn-primary btn-block"><?= icon('arrow_forward') ?> Daftar Sekarang</a>
     <a href="<?= url('app/auth/login.php') ?>" class="btn btn-outline btn-block"><?= icon('school') ?> Login Siswa</a>
   </div>
 </div>
@@ -171,10 +173,6 @@ $nav = [
           </span>
         </div>
 
-        <div class="mt-7 flex flex-wrap gap-3">
-          <a href="#registrasi" data-sorot="registrasi" class="btn btn-primary btn-lg shadow-drop"><?= icon('arrow_forward') ?> Daftar Sekarang</a>
-        </div>
-
         <!-- statistik -->
         <div class="mt-9 grid grid-cols-3 gap-3 sm:gap-4 max-w-xl">
           <?php foreach ($STATISTIK as $s): ?>
@@ -190,7 +188,7 @@ $nav = [
       </div>
 
       <!-- Kolom kanan: pendaftaran cepat -->
-      <div class="lg:col-span-5 w-full" id="registrasi">
+      <div class="lg:col-span-5 w-full scroll-mt-24" id="registrasi">
         <div class="mb-2 flex justify-center lg:justify-start">
           <span class="badge badge-blue shadow-card"><?= icon('edit_note', 'text-[13px]') ?> Formulir pendaftaran — mulai di sini</span>
         </div>
