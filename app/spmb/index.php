@@ -41,6 +41,13 @@ $nav = [
     '#jadwal'    => 'Jadwal & Agenda',
     '#faq'       => 'FAQ',
 ];
+
+/* WHATSAPP PANITIA — nomornya dari Pengaturan Sistem (kontak_wa_panitia).
+ * Dinormalisasi ke awalan 62 sekali saja; dipakai tombol jadwal dan tombol FAQ. */
+$waPanitia = preg_replace('/\D+/', '', (string) ($PENGATURAN['kontak_wa_panitia'] ?? ''));
+if (strpos($waPanitia, '0') === 0) {
+    $waPanitia = '62' . substr($waPanitia, 1);
+}
 ?>
 
 <!-- ============================ TICKER ============================ -->
@@ -403,12 +410,7 @@ $nav = [
         </div>
 
         <?php
-        /* Konfirmasi jadwal lewat WhatsApp panitia — tautan nyata bila nomor
-         * panitia sudah diisi di Pengaturan. */
-        $waPanitia = preg_replace('/\D+/', '', (string) ($PENGATURAN['kontak_wa_panitia'] ?? ''));
-        if ($waPanitia !== '' && strpos($waPanitia, '0') === 0) {
-            $waPanitia = '62' . substr($waPanitia, 1);
-        }
+        /* Konfirmasi jadwal lewat WhatsApp panitia — nomor sudah dinormalisasi di $waPanitia. */
         $pesanWaJadwal = rawurlencode('Assalamu\'alaikum, saya ingin konfirmasi jadwal tes seleksi SPMB '
             . $PENGATURAN['nama_sekolah'] . ' ' . $PENGATURAN['gelombang'] . '.');
         ?>
@@ -457,7 +459,19 @@ $nav = [
           <p class="text-xs text-ink-500">Hubungi panitia SPMB — Senin–Jumat, 08.00–15.00 WIB.</p>
         </div>
       </div>
-      <a href="<?= url('app/auth/login.php') ?>" class="btn btn-primary"><?= icon('school') ?> Login Siswa</a>
+      <?php
+      /* Chat langsung ke WhatsApp panitia (kontak_wa_panitia), pola tautannya
+       * sama dengan tombol "Konfirmasi Jadwal via WhatsApp" di atas. */
+      $pesanWaTanya = rawurlencode('Assalamu\'alaikum, saya ingin bertanya tentang SPMB ' . $PENGATURAN['nama_sekolah'] . '.');
+      ?>
+      <?php if ($waPanitia !== ''): ?>
+        <a href="https://wa.me/<?= e($waPanitia) ?>?text=<?= e($pesanWaTanya) ?>" target="_blank" rel="noopener"
+           class="btn btn-green whitespace-nowrap"><?= icon('forum') ?> Chat WhatsApp Panitia</a>
+      <?php else: ?>
+        <span class="btn btn-green whitespace-nowrap opacity-60 cursor-not-allowed" title="Nomor WhatsApp panitia belum diisi di Pengaturan Sistem">
+          <?= icon('forum') ?> Chat WhatsApp Panitia
+        </span>
+      <?php endif; ?>
     </div>
   </div>
 </section>
