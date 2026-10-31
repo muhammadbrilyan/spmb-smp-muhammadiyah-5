@@ -171,6 +171,22 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | J11 | Role bendahara/kepsek membuka URL `app/operator/petugas.php` | Dialihkan ke portal netral (require_role operator/admin) |
 | J12 | Kesiapan Rilis saat masih ada akun `!LOCKED` | Item "Akun staf sudah memiliki password" berwarna Perhatian dan menautkan halaman Petugas & Hak Akses |
 
+## K. Persetujuan Penetapan Hasil (`app/kepsek/penetapan.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| K1 | Login kepsek → sidebar **Monitoring → Persetujuan Hasil** | 200; 4 kartu ringkasan (total aktif, lulus, tidak lulus, masih proses) + tabel daftar hasil + sidik 12 karakter pertama |
+| K2 | Operator membuka `app/operator/pengumuman.php` sebelum ada persetujuan | Banner "Menunggu persetujuan kepala sekolah"; tombol **Umumkan Sekarang** & **Simpan Jadwal** `disabled`; POST langsung ditolak |
+| K3 | Kepsek menekan **Setujui Daftar Ini** → modal konfirmasi | Modal ber-`modal-root` tampil; pernyataan telaah wajib dicentang; aksi `setujui` terkirim |
+| K4 | Centang lalu simpan | Badge berubah jadi **Disetujui** + nama & waktu; kolom `hasil_disetujui_*` terisi, sidik = sidik daftar saat ini |
+| K5 | Operator memuat ulang halaman pengumuman | Banner hijau "Daftar hasil disetujui kepala sekolah"; tombol aktif; **Umumkan Sekarang** berhasil (`hasil_diumumkan_pada` terisi, tahap naik ke DIUMUMKAN) |
+| K6 | Setelah terbit, kepsek menekan **Tandatangani Rilis** | Badge **Ditandatangani**; blok tanda tangan pada hasil cetak menampilkan catatan "Sudah ditandatangani digital · tanggal" |
+| K7 | **Sebelum** ada rilis, coba tekan/batch-POST `ttd` | Tombol `disabled` dan POST ditolak: "Belum ada rilis yang ditandatangani…" |
+| K8 | Operator mengubah nilai/status satu pendaftar setelah persetujuan | Kedua catatan jadi badge **Batal** + penjelasan "daftar hasil berubah"; `persetujuan_hasil_sah()` false; penerbitan/jadwal ditolak lagi sampai ada persetujuan baru |
+| K9 | Kepsek memilih **Cabut Persetujuan** | Modal konfirmasi merah → kolom dikosongkan, penerbitan terkunci kembali |
+| K10 | Pendaftar diarsipkan/dipulihkan setelah persetujuan | Sidik ikut berubah (sidik hanya atas `arsip_at IS NULL`) → catatan menjadi **Batal** — persetujuan harus diminta ulang atas daftar yang benar-benar akan terbit |
+| K11 | Kepsek mencetak halaman | Kop laporan + tabel + blok tanda tangan tercetak; filter, tombol aksi, sidebar & topbar tidak ikut (`no-print`) |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |
@@ -187,6 +203,10 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | X10 | Cari rahasia di paket rilis / repo | `.env` absen dari zip & repo; `hak akses.txt` tiada; password hanya hash bcrypt/`!LOCKED` |
 | X11 | Edit `pay_token_hash` jadi duplikat | Ditolak DB (constraint UNIQUE) |
 | X12 | Pembatasan teks penolakan verifikasi diklik korban | Mendarat di cek-status (pemulihan aman), bukan halaman bayar |
+| X13 | Operator memaksa POST `umumkan_sekarang`/`jadwalkan` tanpa persetujuan (form dibuka lewat DevTools) | Ditolak server (`persetujuan_hasil_sah()` false) — `hasil_diumumkan_pada` tetap NULL |
+| X14 | Admin memaksa POST `setujui`/`ttd` di halaman kepsek | Ditolak dua lapis: layar `require_role(['kepsek','admin'])` tapi tombol nonaktif + `persetujuan_simpan()` menolak id bukan akun kepsek aktif |
+| X15 | Persetujuan lama dipakai menerbitkan daftar hasil yang sudah diubah | Sidik tidak cocok → catatan **Batal** → penerbitan terkunci lagi |
+| X16 | POST `aksi` sembarang / tanpa `nyata=1` ke `penetapan.php` | "Aksi tidak dikenal." / "Centang pernyataan telaah…" — tidak ada kolom yang berubah |
 
 ---
 

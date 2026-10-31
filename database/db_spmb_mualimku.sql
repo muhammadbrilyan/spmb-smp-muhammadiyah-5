@@ -348,12 +348,22 @@ CREATE TABLE `pengaturan_sekolah` (
   `notif_wa_aktif` tinyint(1) NOT NULL DEFAULT 0,
   `notif_email` varchar(255) DEFAULT NULL,
   `hasil_diumumkan_pada` datetime DEFAULT NULL,
+  `hasil_disetujui_oleh` varchar(36) DEFAULT NULL,
+  `hasil_disetujui_at` datetime DEFAULT NULL,
+  `hasil_disetujui_sidik` varchar(64) DEFAULT NULL,
+  `hasil_ttd_oleh` varchar(36) DEFAULT NULL,
+  `hasil_ttd_at` datetime DEFAULT NULL,
+  `hasil_ttd_sidik` varchar(64) DEFAULT NULL,
   `retensi_aktif` tinyint(1) NOT NULL DEFAULT 0,
   `retensi_bulan_tidak_lulus` smallint(5) unsigned DEFAULT NULL,
   `retensi_bulan_batal` smallint(5) unsigned DEFAULT NULL,
   `retensi_bulan_lulus_arsip` smallint(5) unsigned DEFAULT NULL,
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `fk_pengaturan_hasil_disetujui` (`hasil_disetujui_oleh`),
+  KEY `fk_pengaturan_hasil_ttd` (`hasil_ttd_oleh`),
+  CONSTRAINT `fk_pengaturan_hasil_disetujui` FOREIGN KEY (`hasil_disetujui_oleh`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pengaturan_hasil_ttd` FOREIGN KEY (`hasil_ttd_oleh`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `pengumuman_umum`;

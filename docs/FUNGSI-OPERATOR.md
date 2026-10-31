@@ -124,10 +124,16 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 
 | # | Fungsi | Status |
 |---|---|---|
-| 1 | Umumkan Sekarang | ✅ |
-| 2 | Jadwalkan Pengumuman | ✅ |
+| 1 | Umumkan Sekarang | ✅ — **terkunci** sampai daftar hasil disetujui kepala sekolah (`app/kepsek/penetapan.php`) |
+| 2 | Jadwalkan Pengumuman | ✅ — gerbang persetujuan yang sama |
 | 3 | Batalkan Pengumuman | ✅ |
 | 4 | WA massal + progress bar + retry (benar-benar terkirim ke Fonnte) | ⚠️ **Tanpa dedupe** → klik 2× = WA ganda; tanpa guard server "sudah diumumkan" |
+
+> **Gerbang persetujuan (31 Okt 2026).** Umumkan & Jadwalkan menolak jalan bila
+> belum ada persetujuan kepala sekolah, atau bila sidik daftar hasil tidak lagi
+> cocok dengan isi daftar saat ini (nilai/status diubah setelah disetujui).
+> Formulir menampilkan banner penyebabnya dan tombolnya `disabled`.
+> Pencabutan persetujuan oleh kepala sekolah mengunci kembali penerbitan.
 
 ---
 

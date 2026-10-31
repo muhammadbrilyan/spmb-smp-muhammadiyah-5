@@ -2,6 +2,7 @@
 /* ==================================================================
  * PENGUMUMAN HASIL SELEKSI (Fase 8).
  * - Umumkan sekarang / jadwalkan / batalkan jadwal.
+ * - Terkunci sampai kepala sekolah menyetujui daftar hasil (lihat Persetujuan Hasil).
  * - Peringatan bila ada LULUS belum ditempatkan kelas.
  * - Kirim WA batch 10/request via AJAX + "kirim ulang yang gagal".
  * ================================================================== */
@@ -12,12 +13,25 @@ $flash = flash();
 $aksi  = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['aksi'] ?? '') : '';
 $jmlLulusTanpa = (int) lulus_belum_ditempatkan_jumlah();
 
+/* Penerbitan hasil adalah keputusan kepala sekolah: operator hanya mengeksekusi
+ * daftar yang sudah disetujui. Sidik daftar hasil diperiksa, jadi menyetujui
+ * lalu mengubah nilai tidak bisa dipakai diam-diam. */
+$persetujuan = persetujuan_baca('disetujui');
+$setujuSah   = $persetujuan['ada'] && !$persetujuan['batal'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_cek($_POST['_csrf'] ?? '')) {
         flash('error', 'Formulir kedaluwarsa. Muat ulang halaman.');
         header('Location: ' . url('app/operator/pengumuman.php'));
         exit;
     } elseif ($aksi === 'umumkan_sekarang') {
+        if (!$setujuSah) {
+            flash('error', $persetujuan['ada']
+                ? 'Persetujuan kepala sekolah tidak lagi sah: daftar hasil diubah setelah disetujui. Minta persetujuan baru.'
+                : 'Hasil belum disetujui kepala sekolah. Penerbitan terkunci sampai daftar hasil disetujui.');
+            header('Location: ' . url('app/operator/pengumuman.php'));
+            exit;
+        }
         if ($jmlLulusTanpa > 0 && ($_POST['konfirmasi'] ?? '') !== '1') {
             flash('error', 'Konfirmasi diperlukan: masih ada siswa LULUS tanpa kelas.');
             header('Location: ' . url('app/operator/pengumuman.php'));
@@ -28,6 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ' . url('app/operator/pengumuman.php'));
         exit;
     } elseif ($aksi === 'jadwalkan') {
+        if (!$setujuSah) {
+            flash('error', 'Jadwal pengumuman baru bisa disimpan setelah kepala sekolah menyetujui daftar hasil.');
+            header('Location: ' . url('app/operator/pengumuman.php'));
+            exit;
+        }
         $r = pengumuman_jadwalkan($_POST['jadwal_waktu'] ?? '');
         flash($r['ok'] ? 'sukses' : 'error', $r['pesan']);
         header('Location: ' . url('app/operator/pengumuman.php'));
@@ -126,6 +145,29 @@ require_once __DIR__ . '/../../includes/partials/topbar.php';
     <?php endif; ?>
 
     <?php if (empty($status['diumumkan'])): ?>
+      <!-- Gerbang persetujuan kepala sekolah -->
+      <?php if ($setujuSah): ?>
+        <div class="mt-5 rounded-2xl border border-[#A7F3D0] bg-[#ECFDF5] p-4 text-sm text-[#065F46]">
+          <p class="font-semibold flex items-center gap-2"><?= icon('verified') ?> Daftar hasil disetujui kepala sekolah</p>
+          <p class="mt-1">Atas nama <?= e((string) $persetujuan['siapa']) ?> — <?= e((string) $persetujuan['kapan']) ?>.
+            Pengumuman boleh diterbitkan.</p>
+        </div>
+      <?php else: ?>
+        <div class="mt-5 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-4 text-sm text-[#92400E]" role="alert">
+          <p class="font-semibold flex items-center gap-2"><?= icon('lock') ?> <?= $persetujuan['ada'] ? 'Persetujuan batal — daftar hasil berubah' : 'Menunggu persetujuan kepala sekolah' ?></p>
+          <p class="mt-1">
+            <?php if ($persetujuan['ada']): ?>
+              Persetujuan atas nama <?= e((string) $persetujuan['siapa']) ?> (<?= e((string) $persetujuan['kapan']) ?>)
+              tidak lagi cocok dengan isi daftar hasil. Nilai atau status pendaftar diubah setelah disetujui,
+              sehingga persetujuan harus diminta ulang.
+            <?php else: ?>
+              Penerbitan hasil adalah keputusan kepala sekolah. Minta akun Kepala Sekolah membuka menu
+              <strong>Persetujuan Hasil</strong> dan menyetujui daftar ini; setelah itu tombol di bawah aktif.
+            <?php endif; ?>
+          </p>
+        </div>
+      <?php endif; ?>
+
       <!-- Aksi umumkan / jadwalkan -->
       <div class="mt-6 grid gap-5 sm:grid-cols-2">
         <form method="post" action="<?= url('app/operator/pengumuman.php') ?>" class="rounded-2xl border border-line p-5">
@@ -135,11 +177,13 @@ require_once __DIR__ . '/../../includes/partials/topbar.php';
           <p class="mt-1 text-[13px] text-ink-500">Hasil langsung tampil publik & tahap pendaftar menjadi DIUMUMKAN.</p>
           <?php if ($jmlLulusTanpa > 0): ?>
             <label class="mt-4 flex items-start gap-2.5 text-[13px] text-ink-700 cursor-pointer">
-              <input type="checkbox" name="konfirmasi" value="1" class="mt-0.5" required>
+              <input type="checkbox" name="konfirmasi" value="1" class="mt-0.5" <?= $setujuSah ? 'required' : 'disabled' ?>>
               <span>Saya memahami masih ada <strong><?= $jmlLulusTanpa ?> siswa LULUS tanpa kelas</strong> dan tetap ingin mengumumkan sekarang.</span>
             </label>
           <?php endif; ?>
-          <button type="submit" class="mt-4 btn btn-primary shadow-drop w-full sm:w-auto"><?= icon('campaign') ?> Umumkan Sekarang</button>
+          <button type="submit" class="mt-4 btn btn-primary shadow-drop w-full sm:w-auto <?= $setujuSah ? '' : 'opacity-50 cursor-not-allowed' ?>"
+                  <?= $setujuSah ? '' : 'disabled' ?>
+                  title="<?= $setujuSah ? '' : 'Belum disetujui kepala sekolah' ?>"><?= icon('campaign') ?> Umumkan Sekarang</button>
         </form>
 
         <form method="post" action="<?= url('app/operator/pengumuman.php') ?>" class="rounded-2xl border border-line p-5">
@@ -148,9 +192,17 @@ require_once __DIR__ . '/../../includes/partials/topbar.php';
           <p class="font-semibold text-ink-900">Jadwalkan</p>
           <p class="mt-1 text-[13px] text-ink-500">Tentukan waktu pengumuman otomatis (masa depan).</p>
           <label class="label mt-4" for="jadwal_waktu">Waktu Pengumuman</label>
-          <input id="jadwal_waktu" type="datetime-local" name="jadwal_waktu" required
+          <input id="jadwal_waktu" type="datetime-local" name="jadwal_waktu" <?= $setujuSah ? 'required' : 'disabled' ?>
                  value="<?= e($waktuDefault) ?>" class="input w-full sm:w-64">
-          <button type="submit" class="mt-4 btn btn-outline shadow-drop"><?= icon('schedule') ?> Simpan Jadwal</button>
+          <button type="submit" class="mt-4 btn btn-outline shadow-drop <?= $setujuSah ? '' : 'opacity-50 cursor-not-allowed' ?>"
+                  <?= $setujuSah ? '' : 'disabled' ?>><?= icon('schedule') ?> Simpan Jadwal</button>
+          <p class="mt-3 text-[12px] text-ink-400">
+            <?php if ($setujuSah): ?>
+              Jadwal baru disimpan setelah daftar hasil disetujui.
+            <?php else: ?>
+              Jadwalkan juga terkunci: penentuan waktu adalah bagian dari penerbitan hasil.
+            <?php endif; ?>
+          </p>
         </form>
       </div>
     <?php elseif (!empty($status['dijadwalkan_pada']) && empty($status['finalized'])): ?>

@@ -26,3 +26,4 @@ require_once __DIR__ . '/queries/publik.php';
 require_once __DIR__ . '/queries/export.php';
 require_once __DIR__ . '/queries/retensi.php';
 require_once __DIR__ . '/queries/petugas.php';
+require_once __DIR__ . '/queries/persetujuan.php';
