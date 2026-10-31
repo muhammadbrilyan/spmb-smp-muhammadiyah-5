@@ -20,11 +20,30 @@ $pageActions = $pageActions ?? '';
     </button>
 
     <!-- Breadcrumb -->
+    <?php
+    /* Halaman memakai dua konvensi: daftar ['A','B'] atau peta ['A' => href|null].
+     * Pada peta, LABEL-nya adalah kunci; nilai hanya dipakai sebagai tautan bila
+     * benar-benar URL (sebelumnya nilai null dicetak sebagai label sehingga semua
+     * breadcrumb halaman berpeta tampil kosong). */
+    $crumbs = [];
+    foreach ($breadcrumbs as $key => $val) {
+        $label = trim((string) (is_int($key) ? $val : $key));
+        if ($label === '') {
+            continue;
+        }
+        $href  = (is_string($val) && (str_starts_with($val, 'http') || str_starts_with($val, '/'))) ? $val : null;
+        $crumbs[] = ['label' => $label, 'href' => $href];
+    }
+    $crumbLast = count($crumbs) - 1;
+    ?>
     <nav class="hidden md:flex items-center gap-1.5 text-[13px] text-ink-500 min-w-0">
-      <?php $last = array_key_last($breadcrumbs); ?>
-      <?php foreach ($breadcrumbs as $i => $label): ?>
-        <?php if ($i !== 0): ?><span class="ms text-[16px] text-ink-400">chevron_right</span><?php endif; ?>
-        <span class="<?= $i === $last ? 'text-ink-900 font-semibold' : '' ?> truncate"><?= e($label) ?></span>
+      <?php foreach ($crumbs as $i => $c): ?>
+        <?php if ($i > 0): ?><span class="ms text-[16px] text-ink-400">chevron_right</span><?php endif; ?>
+        <?php if ($c['href'] !== null && $i !== $crumbLast): ?>
+          <a href="<?= e($c['href']) ?>" class="truncate hover:text-ink-900"><?= e($c['label']) ?></a>
+        <?php else: ?>
+          <span class="<?= $i === $crumbLast ? 'text-ink-900 font-semibold' : '' ?> truncate"><?= e($c['label']) ?></span>
+        <?php endif; ?>
       <?php endforeach; ?>
     </nav>
 

@@ -43,8 +43,10 @@ $teksKontras   = warna_kontras($warnaPrima);
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 
-<!-- Tailwind CSS lokal (tanpa CDN) — warna utama via CSS variable agar bisa diganti dari CMS -->
-<link rel="stylesheet" href="<?= asset('assets/css/tailwind.css') ?>">
+<!-- Tailwind CSS lokal (tanpa CDN) — warna utama via CSS variable agar bisa diganti dari CMS.
+     Penanda ?v= wajib: tanpa itu browser memakai salinan lama setiap kali npm run build:css
+     menghasilkan kelas baru (pola yang sama dipakai untuk app.css di bawah). -->
+<link rel="stylesheet" href="<?= asset('assets/css/tailwind.css') ?>?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/css/tailwind.css') ?: 1) ?>">
 <script>
 /* Dark mode: baca preferensi dari localStorage SEBELUM render agar tidak flash. */
 (function () {
