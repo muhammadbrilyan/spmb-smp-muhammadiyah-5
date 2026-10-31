@@ -5,6 +5,14 @@
  */
 $breadcrumbs = $breadcrumbs ?? ['Portal Akademik' => null, 'SPMB' => null, 'Operasional Operator SPMB' => null];
 $pageActions = $pageActions ?? '';
+
+/* Topbar ramping untuk semua peran sekolah (operator/bendahara/kepsek/admin):
+ * tanpa breadcrumb dan tanpa chip status gateway WA. Nama halaman sudah tercetak
+ * sebagai judul di badan tiap halaman, dan kondisi gateway dibaca di halaman
+ * Kesiapan Rilis. Portal siswa tidak ikut dirampingkan — breadcrumb-nya adalah
+ * satu-satunya tautan "kembali ke Portal Siswa" di halaman dalam. */
+$roleTop       = user_role();
+$topbarSiswa   = $roleTop === 'siswa';
 ?>
 <header class="no-print sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line lg:pl-[264px]">
   <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
@@ -19,7 +27,8 @@ $pageActions = $pageActions ?? '';
       <span class="ms" id="ikon-sidebar">left_panel_close</span>
     </button>
 
-    <!-- Breadcrumb -->
+    <!-- Breadcrumb (hanya portal siswa) -->
+    <?php if ($topbarSiswa): ?>
     <?php
     /* Halaman memakai dua konvensi: daftar ['A','B'] atau peta ['A' => href|null].
      * Pada peta, LABEL-nya adalah kunci; nilai hanya dipakai sebagai tautan bila
@@ -46,6 +55,7 @@ $pageActions = $pageActions ?? '';
         <?php endif; ?>
       <?php endforeach; ?>
     </nav>
+    <?php endif; ?>
 
     <div class="flex-1"></div>
 
@@ -55,10 +65,12 @@ $pageActions = $pageActions ?? '';
      * — selalu hijau berapa pun keadaan sebenarnya (waktu itu token masih
      * kosong, kini device pun terputus). Kini hanya menyatakan hal yang bisa
      * diverifikasi lokal: token terkonfigurasi + tingkat sukses dari wa_log. */
-    $waSiap  = fonnte_token() !== null;
-    $waTotal = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')") ?? 0);
-    $waOk    = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01') AND status = 'TERKIRIM'") ?? 0);
-    $waPct   = $waTotal > 0 ? round($waOk / $waTotal * 100) : null;
+    if ($topbarSiswa) {
+        $waSiap  = fonnte_token() !== null;
+        $waTotal = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')") ?? 0);
+        $waOk    = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01') AND status = 'TERKIRIM'") ?? 0);
+        $waPct   = $waTotal > 0 ? round($waOk / $waTotal * 100) : null;
+    }
     ?>
     <div class="hidden sm:flex items-center gap-2">
       <span class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-canvas border border-line text-[13px] text-ink-700">
@@ -67,6 +79,7 @@ $pageActions = $pageActions ?? '';
         <span class="text-ink-400">Genap</span>
       </span>
 
+      <?php if ($topbarSiswa): ?>
       <?php if ($waSiap): ?>
         <span class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] text-[13px] text-[#065F46]">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -83,6 +96,7 @@ $pageActions = $pageActions ?? '';
           <strong class="font-semibold">Gateway WA belum diatur</strong>
         </span>
       <?php endif; ?>
+      <?php endif; ?>
     </div>
 
     <!-- Aksi halaman -->
@@ -98,7 +112,6 @@ $pageActions = $pageActions ?? '';
      * dan titik merah notifikasi hardcode (selalu merah walau tidak ada pesan).
      * Kini menjadi tautan nyata; inilah yang menggantikan menu "Notifikasi" &
      * "Panduan" saat dihapus dari sidebar. */
-    $roleTop   = user_role();
     $bolehNotf = in_array($roleTop, ['operator', 'bendahara', 'kepsek', 'admin'], true);
     /* Siswa memakai notifikasi per penerima; staf memakai papan operator. */
     if ($roleTop === 'siswa') {
