@@ -6,11 +6,17 @@
 $breadcrumbs = $breadcrumbs ?? ['Portal Akademik' => null, 'SPMB' => null, 'Operasional Operator SPMB' => null];
 $pageActions = $pageActions ?? '';
 ?>
-<header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line">
+<header class="no-print sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line lg:pl-[264px]">
   <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
 
     <button class="lg:hidden icon-box border border-line text-ink-700 shrink-0" data-sidebar-open aria-label="Buka menu">
       <?= icon('menu') ?>
+    </button>
+
+    <!-- Lipat/bentangkan sidebar (desktop); status disimpan di localStorage -->
+    <button type="button" class="hidden lg:grid icon-box border border-line text-ink-700 shrink-0"
+            data-sidebar-toggle aria-label="Lipat atau bentangkan menu" title="Lipat atau bentangkan menu">
+      <span class="ms" id="ikon-sidebar">left_panel_close</span>
     </button>
 
     <!-- Breadcrumb -->
@@ -75,10 +81,22 @@ $pageActions = $pageActions ?? '';
      * "Panduan" saat dihapus dari sidebar. */
     $roleTop   = user_role();
     $bolehNotf = in_array($roleTop, ['operator', 'bendahara', 'kepsek', 'admin'], true);
-    $jmlNotf   = $bolehNotf ? notif_belum_dibaca() : 0;
-    $keNotf    = $bolehNotf
-        ? url('app/operator/notifikasi.php')
-        : url('app/siswa/pengumuman.php');
+    /* Siswa memakai notifikasi per penerima; staf memakai papan operator. */
+    if ($roleTop === 'siswa') {
+        $pidNotifTop = isset($siswa['id']) ? (string) $siswa['id'] : '';
+        if ($pidNotifTop === '') {
+            $pidNotifTop = (string) (q_col(
+                'SELECT id FROM pendaftar WHERE user_id = ? LIMIT 1',
+                [(string) (current_user()['id'] ?? '')]
+            ) ?? '');
+        }
+        $jmlNotf = $pidNotifTop !== '' ? notif_siswa_belum_dibaca($pidNotifTop) : 0;
+    } else {
+        $jmlNotf = $bolehNotf ? notif_belum_dibaca() : 0;
+    }
+    $keNotf = $roleTop === 'siswa'
+        ? url('app/siswa/notifikasi.php')
+        : ($bolehNotf ? url('app/operator/notifikasi.php') : url('app/siswa/notifikasi.php'));
     $keBantuan = $roleTop === 'siswa'
         ? url('app/spmb/index.php')
         : url('app/operator/panduan.php');
@@ -96,7 +114,7 @@ $pageActions = $pageActions ?? '';
       <?= icon('help') ?>
     </a>
 
-    <?php if ($bolehNotf): ?>
+    <?php if ($bolehNotf || $roleTop === 'siswa'): ?>
     <script>
     /* Polling ringan jumlah notifikasi belum dibaca — tiap 60 detik, tanpa library.
      * Menyasar SEMUA elemen .notif-badge-count (topbar + sidebar bendahara/kepsek)

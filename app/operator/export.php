@@ -4,16 +4,22 @@ require_role(['operator', 'admin', 'bendahara']);
 
 $jenis = $_GET['rekap'] ?? '';
 $izin  = ['pendaftar', 'seleksi', 'pembayaran'];
+
+/* Bendahara hanya punya dashboard keuangan — jangan lempar ke dashboard operator. */
+$kembali = current_user()['role'] === 'bendahara'
+    ? url('app/bendahara/index.php')
+    : url('app/operator/index.php');
+
 if (!in_array($jenis, $izin, true)) {
     flash('error', 'Jenis rekap tidak dikenal.');
-    header('Location: ' . url('app/operator/index.php'));
+    header('Location: ' . $kembali);
     exit;
 }
 
 $data = export_rekap($jenis);
 if (!$data['header'] || !$data['baris']) {
     flash('error', 'Tidak ada data untuk diekspor.');
-    header('Location: ' . url('app/operator/index.php'));
+    header('Location: ' . $kembali);
     exit;
 }
 

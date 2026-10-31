@@ -82,7 +82,16 @@ if (!$hasil['ok']) {
 } elseif (!empty($hasil['sudah'])) {
     flash('sukses', 'Pembayaran ' . $hasil['reg'] . ' sudah terverifikasi — tidak diproses ulang.');
 } else {
-    flash('sukses', 'Pembayaran ' . $hasil['reg'] . ' (' . rupiah($hasil['nominal'] ?? 0) . ') berhasil diverifikasi.');
+    $labelStatus = [
+        'LUNAS'      => 'LUNAS',
+        'ANGSURAN_1' => 'Angsuran 1 terverifikasi',
+        'ANGSURAN_2' => 'Angsuran 2 terverifikasi',
+        'VERIFIED'   => 'terverifikasi',
+    ][$hasil['status_baru'] ?? ''] ?? 'berhasil diverifikasi';
+    $infoSisa = ($hasil['jenis'] ?? '') === 'UANG_MASUK'
+        ? (($hasil['sisa'] ?? 0) > 0 ? ' Sisa tagihan ' . rupiah($hasil['sisa']) . '.' : ' Tidak ada sisa tagihan.')
+        : '';
+    flash('sukses', 'Pembayaran ' . $hasil['reg'] . ' (' . rupiah($hasil['nominal'] ?? 0) . ') ' . $labelStatus . '.' . $infoSisa);
 }
 
 header('Location: ' . $balik);

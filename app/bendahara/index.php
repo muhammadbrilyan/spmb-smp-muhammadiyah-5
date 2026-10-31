@@ -13,6 +13,32 @@ $USER_LOGIN = [
     'inisial' => $me['inisial'],
 ];
 
+/* Aksi: kirim pengingat jatuh tempo angsuran (in-app + WhatsApp bila aktif). */
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['aksi'] ?? '') === 'pengingat_jatuh_tempo') {
+    if (!csrf_cek($_POST['_csrf'] ?? '')) {
+        flash('error', 'Formulir kedaluwarsa. Muat ulang halaman lalu coba lagi.');
+    } else {
+        $hasilPengingat = angsuran_pengingat_semua(url('app/siswa/keuangan.php'));
+        if ($hasilPengingat['dibuat'] === 0 && $hasilPengingat['wa'] === 0 && $hasilPengingat['wa_gagal'] === 0) {
+            flash('info', 'Tidak ada angsuran yang mendekati atau melewati jatuh tempo.');
+        } else {
+            $pesan = (int) $hasilPengingat['siswa'] . ' siswa diingatkan · '
+                . (int) $hasilPengingat['dibuat'] . ' notifikasi baru';
+            if (angsuran_pengingat_wa_aktif()) {
+                $pesan .= ' · WhatsApp terkirim ' . (int) $hasilPengingat['wa'];
+                if ($hasilPengingat['wa_gagal'] > 0) {
+                    $pesan .= ', gagal ' . (int) $hasilPengingat['wa_gagal'];
+                }
+            } else {
+                $pesan .= ' · WhatsApp nonaktif di Pengaturan Sistem';
+            }
+            flash('success', 'Pengingat jatuh tempo dijalankan: ' . $pesan . '.');
+        }
+    }
+    header('Location: ' . url('app/bendahara/index.php'));
+    exit;
+}
+
 $title = 'Verifikasi Pembayaran & ' . label_biaya_pendaftaran() . ' SPMB';
 $desc  = 'Dashboard bendahara: verifikasi pembayaran formulir, status ' . label_biaya_pendaftaran() . ', dan rekap keuangan SPMB.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
@@ -25,7 +51,7 @@ require __DIR__ . '/../../includes/partials/sidebar.php';
 
 $breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Keuangan & Verifikasi' => null];
 $pageActions = '
-  <a href="#" class="btn btn-outline hidden md:inline-flex" data-demo="Tahap UI — export rekap keuangan (CSV/PDF).">' . icon('download') . ' Export Rekap</a>
+  <a href="' . url('app/operator/export.php?rekap=pembayaran') . '" class="btn btn-outline hidden md:inline-flex">' . icon('download') . ' Export CSV</a>
 ';
 require __DIR__ . '/../../includes/partials/topbar.php';
 
@@ -47,18 +73,24 @@ $stat       = stat_bendahara();
         </div>
         <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Verifikasi Pembayaran &amp; <?= e(label_biaya_pendaftaran()) ?> SPMB</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          Periksa bukti transfer biaya formulir, tetapkan status <strong>TERVERIFIKASI</strong> /
-          <strong>DITOLAK</strong>, dan pantau rekap keuangan <?= e($PENGATURAN['gelombang']) ?>.
+          Periksa bukti transfer biaya formulir maupun <?= e(label_biaya_pendaftaran()) ?> (lunas atau angsuran),
+          tetapkan status <strong>TERVERIFIKASI</strong> / <strong>DITOLAK</strong>, dan pantau rekap keuangan
+          <?= e($PENGATURAN['gelombang']) ?>.
         </p>
       </div>
 
       <div class="flex flex-wrap gap-2.5 shrink-0">
-        <button class="btn btn-outline" data-demo="Tahap UI — pengingat WhatsApp belum dikirim.">
-          <?= icon('send') ?> Ingatkan Menunggu Bayar
-        </button>
-        <button class="btn btn-primary shadow-drop" data-demo="Tahap UI — rekap keuangan disiapkan (dummy).">
-          <?= icon('download') ?> Cetak Rekap Keuangan
-        </button>
+        <form method="post" action="<?= url('app/bendahara/index.php') ?>" class="inline"
+              onsubmit="return confirm('Kirim pengingat jatuh tempo ke siswa yang angsurannya mendekati atau melewati jatuh tempo?<?= angsuran_pengingat_wa_aktif() ? ' Pesan WhatsApp juga akan dikirim ke orang tua/wali.' : '' ?>')">
+          <?= csrf_field() ?>
+          <input type="hidden" name="aksi" value="pengingat_jatuh_tempo">
+          <button type="submit" class="btn btn-outline">
+            <?= icon('send') ?> Kirim Pengingat Jatuh Tempo
+          </button>
+        </form>
+        <a href="<?= url('app/bendahara/rekap.php') ?>" class="btn btn-primary shadow-drop">
+          <?= icon('print') ?> Cetak Rekap Keuangan
+        </a>
       </div>
     </div>
 
@@ -89,7 +121,7 @@ $stat       = stat_bendahara();
         </div>
         <div class="mt-4 pt-3 border-t border-line-soft flex items-center justify-between text-xs">
           <span class="inline-flex items-center gap-1.5 text-[#065F46] font-semibold"><?= dot('green') ?> <?= (int) $stat['jml_masuk'] ?> pembayaran terverifikasi</span>
-          <span class="text-ink-400">Biaya formulir</span>
+          <span class="text-ink-400">Formulir &amp; pendaftaran</span>
         </div>
       </article>
 
@@ -138,11 +170,13 @@ $stat       = stat_bendahara();
         <option value="">Semua Status</option>
         <option value="PENDING">Menunggu</option>
         <option value="VERIFIED">Terverifikasi</option>
+        <option value="ANGSURAN_1">Angsuran 1</option>
+        <option value="ANGSURAN_2">Angsuran 2</option>
         <option value="REJECTED">Ditolak</option>
         <option value="LUNAS">Lunas</option>
       </select>
       <div class="flex-1"></div>
-      <span class="text-[13px] text-ink-500"><?= count($pembayaran) ?> transaksi biaya formulir</span>
+      <span class="text-[13px] text-ink-500"><?= count($pembayaran) ?> transaksi pembayaran</span>
     </div>
 
     <!-- ====================== TABEL PEMBAYARAN ====================== -->
@@ -247,7 +281,7 @@ $stat       = stat_bendahara();
                       <?php endif; ?>
 
                       <form method="post" action="<?= url('app/bendahara/verifikasi.php') ?>" class="inline"
-                            onsubmit="return confirm('Verifikasi pembayaran <?= e($p['reg']) ?> sebesar <?= e(rupiah($p['nominal'])) ?>?')">
+                            onsubmit="return confirm('Verifikasi pembayaran <?= e($p['reg']) ?> — <?= e($p['jenis']) ?> sebesar <?= e(rupiah($p['nominal'])) ?>?')">
                         <?= csrf_field() ?>
                         <input type="hidden" name="pembayaran_id" value="<?= e($p['id']) ?>">
                         <input type="hidden" name="aksi" value="verifikasi">
@@ -301,14 +335,17 @@ $stat       = stat_bendahara();
       <div class="flex items-start gap-3">
         <span class="icon-box bg-primary text-white shrink-0"><?= icon('info') ?></span>
         <div>
-          <p class="font-semibold text-ink-900 text-sm">Prosedur Verifikasi Pembayaran Formulir</p>
+          <p class="font-semibold text-ink-900 text-sm">Prosedur Verifikasi Pembayaran</p>
           <p class="text-[13px] text-ink-500">
             Cocokkan nominal &amp; rekening pengirim pada bukti transfer. Status <strong>VERIFIED</strong> menandakan
             dana telah diterima; <strong>REJECTED</strong> mewajibkan alasan agar siswa dapat mengunggah ulang.
+            Untuk <?= e(label_biaya_pendaftaran()) ?>, sistem menjumlahkan seluruh dana terverifikasi: angsuran 1
+            berstatus <strong>ANGSURAN_1</strong>, dan tagihan menjadi <strong>LUNAS</strong> otomatis setelah totalnya
+            menutup biaya pendaftaran — baik lewat 2 angsuran maupun sekali bayar.
           </p>
         </div>
       </div>
-      <a href="#" class="btn btn-sm btn-outline shrink-0" data-demo="Tahap UI — panduan SOP keuangan.">Panduan SOP Keuangan <?= icon('arrow_forward', 'text-[16px]') ?></a>
+      <a href="<?= url('app/operator/panduan.php#verifikasi-pembayaran-bendahara') ?>" class="btn btn-sm btn-outline shrink-0">Panduan SOP Keuangan <?= icon('arrow_forward', 'text-[16px]') ?></a>
     </div>
 
   </main>
@@ -432,7 +469,6 @@ $stat       = stat_bendahara();
       </div>
       <div id="bukti-isi" class="pratinjau-isi"></div>
       <div class="pratinjau-kaki">
-        <a id="bukti-unduh" class="btn btn-sm btn-outline mr-2" target="_blank" rel="noopener"><?= icon('open_in_new', 'text-[16px]') ?> Buka Tab Baru</a>
         <button type="button" class="btn btn-sm btn-outline" data-modal-close>Tutup</button>
       </div>
     </div>
@@ -452,7 +488,6 @@ $stat       = stat_bendahara();
     var judul = document.getElementById('bukti-judul');
     var meta  = document.getElementById('bukti-meta');
     var isi   = document.getElementById('bukti-isi');
-    var unduh = document.getElementById('bukti-unduh');
     var tombolTutup = modal.querySelector('.icon-box[data-modal-close]');
 
     function tutup() {
@@ -481,8 +516,6 @@ $stat       = stat_bendahara();
         gambar.className = 'pratinjau-gambar';
         isi.appendChild(gambar);
       }
-
-      if (unduh) unduh.href = url;
 
       modal.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');

@@ -401,9 +401,26 @@ $nav = [
           <?php endif; ?>
         </div>
 
-        <a href="#" class="btn btn-outline btn-block mt-5" data-demo="Tahap UI — kirim jadwal ke WhatsApp panitia.">
-          <?= icon('forum') ?> Konfirmasi Jadwal via WhatsApp
-        </a>
+        <?php
+        /* Konfirmasi jadwal lewat WhatsApp panitia — tautan nyata bila nomor
+         * panitia sudah diisi di Pengaturan. */
+        $waPanitia = preg_replace('/\D+/', '', (string) ($PENGATURAN['kontak_wa_panitia'] ?? ''));
+        if ($waPanitia !== '' && strpos($waPanitia, '0') === 0) {
+            $waPanitia = '62' . substr($waPanitia, 1);
+        }
+        $pesanWaJadwal = rawurlencode('Assalamu\'alaikum, saya ingin konfirmasi jadwal tes seleksi SPMB '
+            . $PENGATURAN['nama_sekolah'] . ' ' . $PENGATURAN['gelombang'] . '.');
+        ?>
+        <?php if ($waPanitia !== ''): ?>
+          <a href="https://wa.me/<?= e($waPanitia) ?>?text=<?= e($pesanWaJadwal) ?>" target="_blank" rel="noopener"
+             class="btn btn-outline btn-block mt-5">
+            <?= icon('forum') ?> Konfirmasi Jadwal via WhatsApp
+          </a>
+        <?php else: ?>
+          <span class="btn btn-outline btn-block mt-5 opacity-60 cursor-not-allowed" title="Nomor WhatsApp panitia belum diatur">
+            <?= icon('forum') ?> Konfirmasi Jadwal via WhatsApp
+          </span>
+        <?php endif; ?>
       </div>
 
     </div>

@@ -148,10 +148,14 @@ $terkunci  = in_array($detail['pend']['tahap'] ?? '', ['BERKAS_TERVERIFIKASI', '
                   <?php if ($d['ukuran_kb']): ?><span class="text-[12px] text-ink-400"><?= (int) $d['ukuran_kb'] ?> KB · <?= e(bulan($d['uploaded_at'])) ?></span><?php endif; ?>
                 </div>
                 <?php if ($d['file_url']): ?>
-                  <a class="mt-1 inline-flex items-center gap-1 text-[13px] text-primary hover:underline"
-                     href="<?= url('app/api/dokumen.php?f=' . rawurlencode(basename($d['file_url']))) ?>" target="_blank" rel="noopener">
+                  <?php $tipeBerkas = strtolower(pathinfo(basename((string) $d['file_url']), PATHINFO_EXTENSION)) === 'pdf' ? 'pdf' : 'gambar'; ?>
+                  <button type="button" class="mt-1 inline-flex items-center gap-1 text-[13px] font-semibold text-primary hover:underline"
+                          data-pratinjau-url="<?= e(url('app/api/dokumen.php?f=' . rawurlencode(basename((string) $d['file_url'])))) ?>"
+                          data-pratinjau-nama="<?= e($d['nama_jenis']) ?> · <?= e($p['no_pendaftaran']) ?>"
+                          data-pratinjau-tipe="<?= e($tipeBerkas) ?>"
+                          data-pratinjau-meta="<?= e(($tipeBerkas === 'pdf' ? 'PDF' : 'Gambar') . ($d['ukuran_kb'] ? ' · ' . (int) $d['ukuran_kb'] . ' KB' : '')) ?>">
                     <?= icon('visibility', 'text-[16px]') ?> Pratinjau berkas
-                  </a>
+                  </button>
                 <?php endif; ?>
                 <?php if ($d['status_verifikasi'] === 'REJECTED' && $d['catatan_verifikasi']): ?>
                   <p class="mt-2 text-[13px] text-[#991B1B]">Alasan: <?= e($d['catatan_verifikasi']) ?></p>
@@ -309,5 +313,6 @@ $terkunci  = in_array($detail['pend']['tahap'] ?? '', ['BERKAS_TERVERIFIKASI', '
 <script>window.APP_FLASH = <?= json_encode(['tipe' => $flash['tipe'], 'pesan' => $flash['pesan']], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php endif; ?>
 <script src="<?= asset('assets/js/app.js') ?>"></script>
+<?php require __DIR__ . '/../../includes/partials/pratinjau-dokumen.php'; ?>
 </body>
 </html>

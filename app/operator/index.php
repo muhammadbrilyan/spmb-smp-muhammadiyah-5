@@ -109,10 +109,19 @@ function op_detail_html(array $p, ?array $bayar): string
         $s = $bayar['status'];
         $labelJenisBayar = ['FORMULIR' => 'Biaya formulir',
             'UANG_MASUK' => label_biaya_pendaftaran()][$bayar['jenis_pembayaran']] ?? 'Biaya';
-        $bayarTeks = in_array($s, ['VERIFIED', 'LUNAS'], true) ? ['Lunas', 'green']
-            : ($s === 'PENDING' ? ['Menunggu Verifikasi', 'amber']
-            : ($s === 'REJECTED' ? ['Bukti Ditolak', 'red']
-            : [str_replace('_', ' ', $s), 'blue']));
+        if ($bayar['jenis_pembayaran'] === 'UANG_MASUK' && !empty($bayar['angsuran_ke'])) {
+            $labelJenisBayar .= ' · Angsuran ' . (int) $bayar['angsuran_ke'];
+        }
+        /* Label sama dengan tabel bendahara: angsuran tidak boleh disebut "Lunas". */
+        $petaBayar = [
+            'PENDING'    => ['Menunggu Verifikasi', 'amber'],
+            'REJECTED'   => ['Bukti Ditolak', 'red'],
+            'VERIFIED'   => ['Terverifikasi', 'green'],
+            'ANGSURAN_1' => ['Angsuran 1 Dibayar', 'blue'],
+            'ANGSURAN_2' => ['Angsuran 2 Dibayar', 'blue'],
+            'LUNAS'      => ['Lunas', 'green'],
+        ];
+        $bayarTeks = $petaBayar[$s] ?? [str_replace('_', ' ', $s), 'blue'];
         $bayarHtml = '<div class="mt-4 rounded-lg bg-canvas border border-line p-3">'
             . '<p class="text-[12px] text-ink-500">' . e($labelJenisBayar) . ' (' . e(str_replace('_', ' ', (string) ($bayar['metode'] ?: 'Transfer'))) . ')</p>'
             . '<p class="font-bold text-ink-900">' . rupiah((float) $bayar['nominal'])
@@ -361,6 +370,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <div class="absolute right-0 z-30 mt-2 w-96 max-w-[90vw] card p-4 shadow-modal space-y-4">
             <a href="<?= url('app/operator/export.php?rekap=pendaftar') ?>" class="btn btn-outline w-full"><?= icon('download') ?> Export Rekap SPMB</a>
             <p class="-mt-2 text-xs text-ink-500">Unduh rekap seluruh pendaftar SPMB.</p>
+            <a href="<?= url('app/operator/export.php?rekap=pembayaran') ?>" class="btn btn-outline w-full"><?= icon('receipt_long') ?> Export Rekap Pembayaran</a>
+            <p class="-mt-2 text-xs text-ink-500">Unduh rincian pembayaran untuk dicocokkan dengan bendahara.</p>
             <form method="post" action="<?= url('app/operator/akun.php') ?>" class="pt-4 border-t border-line-soft">
               <?= csrf_field() ?>
               <input type="hidden" name="aksi" value="generate_semua">

@@ -88,15 +88,13 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <article class="card p-5">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="text-[13px] font-medium text-ink-500">Pembayaran Terverifikasi</p>
-              <p class="mt-2 text-xl font-extrabold text-ink-900"><?= rupiah($totalTerverifikasi) ?></p>
+              <p class="text-[13px] font-medium text-ink-500">Pembayaran Formulir</p>
+              <p class="mt-2 text-xl font-extrabold text-ink-900"><?= rupiah($bayarFormulir['verified']) ?></p>
             </div>
             <span class="icon-box bg-[#ECFDF5] text-[#0E9F6E]"><?= icon('payments', 'text-[20px]') ?></span>
           </div>
-          <div class="mt-3 pt-3 border-t border-line-soft flex items-center justify-between gap-2 text-xs">
-            <?php $sisaTotal = $bayarFormulir['sisa'] + $bayarUangMasuk['sisa']; ?>
-            <span class="text-ink-500">Sisa tagihan: <strong class="text-ink-900"><?= rupiah($sisaTotal) ?></strong></span>
-            <a href="<?= url('app/siswa/keuangan.php') ?>" class="font-semibold text-primary hover:underline">Keuangan</a>
+          <div class="mt-3 pt-3 border-t border-line-soft text-xs text-ink-500">
+            Status: <strong class="text-ink-900"><?= e($bayarFormulir['label']) ?></strong>
           </div>
         </article>
 
@@ -149,7 +147,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               <h2 class="font-bold text-ink-900">Kabar Terbaru</h2>
               <p class="mt-1 text-[13px] text-ink-500">Diambil dari status pendaftaran, pembayaran, dan jadwal Anda.</p>
             </div>
-            <a href="<?= url('app/siswa/pengumuman.php') ?>" class="btn btn-sm btn-outline shrink-0">Semua</a>
+            <a href="<?= url('app/siswa/notifikasi.php') ?>" class="btn btn-sm btn-outline shrink-0">Semua</a>
           </div>
 
           <div class="mt-4 space-y-3">
@@ -180,7 +178,12 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <section class="card p-5 sm:p-6">
             <h2 class="font-bold text-ink-900">Ringkasan Pembayaran</h2>
             <div class="mt-4 space-y-3">
-              <?php foreach ([['Biaya formulir', $bayarFormulir], [label_biaya_pendaftaran(), $bayarUangMasuk]] as $item): ?>
+              <?php
+              $itemBayar = [['Biaya formulir', $bayarFormulir]];
+              if ($siswaDiterima || (float) $bayarUangMasuk['verified'] > 0 || (float) $bayarUangMasuk['pending'] > 0) {
+                  $itemBayar[] = [label_biaya_pendaftaran(), $bayarUangMasuk];
+              }
+              foreach ($itemBayar as $item): ?>
                 <?php $b = $item[1]; ?>
                 <div class="rounded-xl border border-line p-3">
                   <div class="flex items-start justify-between gap-2">

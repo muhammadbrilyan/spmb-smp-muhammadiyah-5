@@ -251,8 +251,12 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                       <?= e($d['nama']) ?><?= !empty($d['wajib']) ? ' <span class="text-red-600">*</span>' : '' ?>
                     </p>
                     <?php if (!empty($d['file_url'])): ?>
-                      <a class="text-[12px] text-primary hover:underline" target="_blank" rel="noopener"
-                         href="<?= url('app/api/dokumen.php?f=' . rawurlencode(basename((string) $d['file_url']))) ?>">Lihat berkas</a>
+                      <?php $tipeBerkas = strtolower(pathinfo(basename((string) $d['file_url']), PATHINFO_EXTENSION)) === 'pdf' ? 'pdf' : 'gambar'; ?>
+                      <button type="button" class="text-[12px] font-semibold text-primary hover:underline"
+                              data-pratinjau-url="<?= e(url('app/api/dokumen.php?f=' . rawurlencode(basename((string) $d['file_url'])))) ?>"
+                              data-pratinjau-nama="<?= e($d['nama']) ?>"
+                              data-pratinjau-tipe="<?= e($tipeBerkas) ?>"
+                              data-pratinjau-meta="<?= e($tipeBerkas === 'pdf' ? 'PDF' : 'Gambar') ?>">Lihat berkas</button>
                     <?php else: ?>
                       <p class="text-[12px] text-ink-400">Belum diunggah</p>
                     <?php endif; ?>
@@ -547,5 +551,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>
 <script>window.APP_FLASH = <?= json_encode($flash, JSON_UNESCAPED_UNICODE) ?>;</script>
 <script src="<?= asset('assets/js/app.js') ?>"></script>
+<?php require __DIR__ . '/../../includes/partials/pratinjau-dokumen.php'; ?>
 </body>
 </html>

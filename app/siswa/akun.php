@@ -243,9 +243,9 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <span class="ms text-[20px] text-primary">how_to_reg</span>
             <p class="mt-1 text-[13px] font-semibold text-ink-900">PPDB &amp; Seleksi</p>
           </a>
-          <a href="<?= url('app/siswa/pengumuman.php') ?>" class="rounded-xl border border-line p-3.5 hover:bg-canvas transition">
-            <span class="ms text-[20px] text-primary">campaign</span>
-            <p class="mt-1 text-[13px] font-semibold text-ink-900">Pengumuman</p>
+          <a href="<?= url('app/siswa/notifikasi.php') ?>" class="rounded-xl border border-line p-3.5 hover:bg-canvas transition">
+            <span class="ms text-[20px] text-primary">notifications</span>
+            <p class="mt-1 text-[13px] font-semibold text-ink-900">Notifikasi</p>
           </a>
         </div>
       </section>

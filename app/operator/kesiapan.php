@@ -61,6 +61,17 @@ try {
             $migrasiKurang[] = $tbl . '.' . $col;
         }
     }
+    /* Tabel modul Tahap 2 (notifikasi siswa & pengumuman umum). */
+    foreach (['notifikasi_siswa', 'pengumuman_umum'] as $tbl) {
+        $ada = (int) (q_col(
+            'SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = ?',
+            [$tbl]
+        ) ?? 0) === 1;
+        if (!$ada) {
+            $migrasiKurang[] = 'tabel ' . $tbl;
+        }
+    }
     $migrasiOk = !$migrasiKurang;
 } catch (Throwable $e) {
     $migrasiOk = false;
@@ -164,8 +175,8 @@ $items[] = [
     'grup' => 'Keamanan', 'status' => $migrasiOk ? 'ok' : 'gagal',
     'judul' => 'Skema & migrasi terbaru',
     'ket'   => $migrasiOk
-        ? 'Kolom penanda migrasi terbaru (pay_token_hash &amp; teks_beasiswa) ada — migrasi terjalankan.'
-        : 'Kolom tidak ditemukan: ' . e(implode(', ', $migrasiKurang))
+        ? 'Kolom/tabel penanda migrasi terbaru (pay_token_hash, teks_beasiswa, notifikasi_siswa, pengumuman_umum) ada — migrasi terjalankan.'
+        : 'Belum ditemukan: ' . e(implode(', ', $migrasiKurang))
             . ' — jalankan berurutan file di database/migrations/.',
 ];
 

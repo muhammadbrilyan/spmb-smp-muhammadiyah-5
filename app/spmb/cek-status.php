@@ -207,11 +207,22 @@ $labelBayar = [
           <!-- Pembayaran -->
           <div class="rounded-2xl border border-line p-4">
             <p class="font-semibold text-sm text-ink-900">Pembayaran</p>
-            <?php if ($r['bayar']): ?>
+            <?php
+            /* Tagihan biaya pendaftaran baru ditampilkan setelah LULUS & diumumkan. */
+            $bayarTampil = array_values(array_filter($r['bayar'], function ($b) use ($hasil, $pengumumanAktif) {
+                return $b['jenis_pembayaran'] === 'FORMULIR'
+                    || ($pengumumanAktif && ($hasil['status_seleksi'] ?? '') === 'LULUS');
+            }));
+            ?>
+            <?php if ($bayarTampil): ?>
               <ul class="mt-2.5 space-y-2">
-                <?php foreach ($r['bayar'] as $b): $lb = $labelBayar[$b['status']] ?? [$b['status'], 'gray']; ?>
+                <?php foreach ($bayarTampil as $b): $lb = $labelBayar[$b['status']] ?? [$b['status'], 'gray']; ?>
                   <li class="flex items-center justify-between gap-2 text-[13px]">
-                    <span class="text-ink-700"><?= e($b['jenis_pembayaran'] === 'FORMULIR' ? 'Biaya Formulir' : label_biaya_pendaftaran()) ?> · <?= rupiah($b['nominal']) ?></span>
+                    <span class="text-ink-700">
+                      <?= e($b['jenis_pembayaran'] === 'FORMULIR' ? 'Biaya Formulir' : label_biaya_pendaftaran()) ?>
+                      <?= !empty($b['angsuran_ke']) ? ' · Angsuran ' . (int) $b['angsuran_ke'] : '' ?>
+                      · <?= rupiah($b['nominal']) ?>
+                    </span>
                     <?= badge($lb[0], $lb[1]) ?>
                   </li>
                 <?php endforeach; ?>

@@ -14,7 +14,8 @@
  *
  * Tipe pemicu:
  *   - BUKTI_BAYAR_MASUK         → unggah bukti transfer/QRIS (Fase 2)
- *   - PEMBAYARAN_GATEWAY_LUNAS  → callback Midtrans VERIFIED (Fase 2)
+ *   - PEMBAYARAN_GATEWAY_LUNAS  → callback Midtrans VERIFIED/LUNAS (Fase 2)
+ *   - PEMBAYARAN_GATEWAY_MASUK  → callback Midtrans angsuran terverifikasi
  *   - BERKAS_DISUBMIT           → siswa submit berkas (Fase 5)
  *   - (Fase lanjutan: PENOLAKAN_BAYAR, BERKAS_REVISI, JADWAL_DITETAPKAN, dll.)
  */

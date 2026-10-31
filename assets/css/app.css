@@ -149,8 +149,80 @@ html.gelap .pratinjau-isi {
   border-color: #334155;
 }
 
-/* Cetak (kartu/bukti) */
+/* ===== SIDEBAR LIPAT (DESKTOP) =====
+   State disimpan pada <html class="sidebar-lipat"> oleh head.php (anti-flash)
+   dan app.js (tombol topbar). Saat terlipat, sidebar menjadi rail ikon 76px
+   dan lebar konten mengikuti lewat override .lg:pl-[264px] — jadi halaman
+   tidak perlu diubah satu per satu. Drawer mobile tidak terpengaruh. */
+.app-sidebar {
+  transition: width .18s ease, transform .2s ease;
+}
+.nav-rel {
+  display: none;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem .625rem;
+  flex-direction: column;
+  gap: .375rem;
+}
+.rail-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  border-radius: .75rem;
+  color: #64748b;
+}
+.rail-link .ms { font-size: 22px; }
+.rail-link:hover { background-color: #f1f5f9; color: var(--color-primary); }
+.rail-link-active { background-color: var(--color-primary-light); color: var(--color-primary); }
+.rail-pemisah {
+  height: 1px;
+  margin: .375rem .5rem;
+  background-color: #e2e8f0;
+}
+html.gelap .rail-link:hover { background-color: #334155; }
+html.gelap .rail-pemisah { background-color: #334155; }
+
+@media (min-width: 1024px) {
+  html.sidebar-lipat #sidebar { width: 76px; }
+  html.sidebar-lipat .lg\:pl-\[264px\] { padding-left: 76px; }
+  html.sidebar-lipat .sidebar-teks { display: none !important; }
+  html.sidebar-lipat .sidebar-brand { justify-content: center; padding-left: 0; padding-right: 0; }
+  html.sidebar-lipat .sidebar-cta { display: none !important; }
+  html.sidebar-lipat .nav-penuh { display: none !important; }
+  html.sidebar-lipat .nav-rel { display: flex; }
+  html.sidebar-lipat .sidebar-kaki .nav-link { justify-content: center; }
+}
+
+/* Cetak (kartu/bukti/rekap): kerangka aplikasi tidak ikut tercetak. */
 @media print {
   .no-print { display: none !important; }
   body { background: #fff; }
+  #sidebar,
+  header.sticky { display: none !important; }
+  .lg\:pl-\[264px\] { padding-left: 0 !important; }
+  main { padding: 0 !important; max-width: none !important; }
+  .card { box-shadow: none !important; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+}
+
+/* Mode cetak kartu peserta: hanya salinan kartu yang tampil. */
+#print-area { display: none; }
+@media print {
+  body.mode-cetak-kartu > *:not(#print-area) { display: none !important; }
+  body.mode-cetak-kartu #print-area { display: block !important; }
+  body.mode-cetak-kartu #print-area .no-print { display: none !important; }
+  body.mode-cetak-kartu #print-area #kartu-peserta {
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
 }

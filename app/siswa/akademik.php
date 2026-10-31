@@ -62,7 +62,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </p>
         <div class="mt-4 flex flex-wrap items-center justify-center gap-2.5">
           <a href="<?= url('app/siswa/ppdb.php?tab=hasil') ?>" class="btn btn-primary btn-sm"><?= icon('emoji_events') ?> Lihat Status Seleksi</a>
-          <a href="<?= url('app/siswa/data-siswa.php?tab=akademik') ?>" class="btn btn-outline btn-sm">Data Akademik Dasar</a>
         </div>
       </section>
 
@@ -171,8 +170,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <?php endif; ?>
 
           <div class="mt-5 border-t border-line-soft pt-4 text-[12px] text-ink-500">
-            Perubahan data akademik dasar dilakukan melalui menu
-            <a class="font-semibold text-primary hover:underline" href="<?= url('app/siswa/data-siswa.php?tab=akademik') ?>">Data Siswa → Data Akademik</a>.
+            Perubahan data diri dilakukan melalui menu
+            <a class="font-semibold text-primary hover:underline" href="<?= url('app/siswa/data-siswa.php') ?>">Data Siswa</a>.
           </div>
         </section>
 

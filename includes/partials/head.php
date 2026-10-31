@@ -50,6 +50,8 @@ $teksKontras   = warna_kontras($warnaPrima);
 (function () {
   var t = localStorage.getItem('tema');
   if (t === 'gelap') document.documentElement.classList.add('gelap');
+  /* Sidebar lipat: diterapkan sebelum render agar lebar konten tidak melompat. */
+  if (localStorage.getItem('sidebar-lipat') === '1') document.documentElement.classList.add('sidebar-lipat');
 })();
 </script>
 <style>

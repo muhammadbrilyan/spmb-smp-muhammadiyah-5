@@ -15,6 +15,16 @@ if (!is_logged_in()) {
 }
 
 $role = user_role();
+if ($role === 'siswa') {
+    /* Notifikasi siswa bersifat per penerima (notifikasi_siswa). */
+    $pid = (string) (q_col(
+        'SELECT id FROM pendaftar WHERE user_id = ? LIMIT 1',
+        [(string) (current_user()['id'] ?? '')]
+    ) ?? '');
+    echo json_encode(['ok' => true, 'jumlah' => $pid !== '' ? notif_siswa_belum_dibaca($pid) : 0]);
+    exit;
+}
+
 if (!in_array($role, ['operator', 'admin', 'bendahara', 'kepsek'], true)) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'jumlah' => 0]);

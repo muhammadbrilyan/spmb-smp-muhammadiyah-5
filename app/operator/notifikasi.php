@@ -54,6 +54,7 @@ function notif_tautan($tipe)
     switch ($tipe) {
         case 'BUKTI_BAYAR_MASUK':
         case 'PEMBAYARAN_GATEWAY_LUNAS':
+        case 'PEMBAYARAN_GATEWAY_MASUK':
         case 'PENOLAKAN_BAYAR':
             return url('app/bendahara/index.php');
         case 'BERKAS_DISUBMIT':

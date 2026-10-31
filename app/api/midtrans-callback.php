@@ -63,7 +63,7 @@ if ($db === null) {
  * paralel untuk order yang sama saling menunggu (serialize). */
 try {
     $db->beginTransaction();
-    $sel = $db->prepare('SELECT id, pendaftar_id, status, nominal, midtrans_status, paid_at FROM pembayaran WHERE order_id = ? LIMIT 1 FOR UPDATE');
+    $sel = $db->prepare('SELECT id, pendaftar_id, status, nominal, jenis_pembayaran, angsuran_ke, midtrans_status, paid_at FROM pembayaran WHERE order_id = ? LIMIT 1 FOR UPDATE');
     $sel->execute([$orderId]);
     $row = $sel->fetch();
 } catch (Throwable $e) {
@@ -98,13 +98,29 @@ if ($nominalDb <= 0 || abs($grossNotif - $nominalDb) > 0.5) {
 }
 
 $statusBaru = midtrans_map_status($statusMid);
+$jenisPembayaran = (string) $row['jenis_pembayaran'];
+$angsuranKe      = (int) ($row['angsuran_ke'] ?? 0);
+
+/* Settle angsuran UANG_MASUK TIDAK otomatis berarti lunas: status dihitung
+ * dari total kumulatif terverifikasi (angsuran 1 belum menutup total). */
+if ($statusBaru === 'VERIFIED' && $jenisPembayaran === 'UANG_MASUK') {
+    $terverifLain = (float) (q_col(
+        "SELECT COALESCE(SUM(nominal), 0) FROM pembayaran
+          WHERE pendaftar_id = ? AND jenis_pembayaran = 'UANG_MASUK' AND id <> ?
+            AND status IN ('VERIFIED','LUNAS','ANGSURAN_1','ANGSURAN_2')",
+        [$row['pendaftar_id'], $byrId]
+    ) ?? 0);
+    $statusBaru = pembayaran_status_pendaftaran($nominalDb, $terverifLain);
+}
+
+$perluPaidAt = in_array($statusBaru, ['VERIFIED', 'LUNAS', 'ANGSURAN_1', 'ANGSURAN_2'], true);
 
 /* --- Idempotensi: notifikasi ganda / retry dengan status yang sama ---
  * Bila midtrans_status & status baris sudah identik dengan notifikasi ini,
  * tidak ada efek tambahan — kembalikan OK tanpa UPDATE. */
 if ((string) $row['midtrans_status'] === $statusMid
     && $statusLama === $statusBaru
-    && ($statusBaru !== 'VERIFIED' || $row['paid_at'] !== null)) {
+    && (!$perluPaidAt || $row['paid_at'] !== null)) {
     try { $db->rollBack(); } catch (Throwable $x) { /* abaikan */ }
     http_response_code(200);
     echo json_encode(['message' => 'OK (already processed)', 'order_id' => $orderId, 'status' => $statusMid]);
@@ -130,7 +146,7 @@ if ($rankBaru < $rankLama) {
 }
 
 /* Update status pembayaran. */
-$paidAt = ($statusBaru === 'VERIFIED') ? date('Y-m-d H:i:s') : null;
+$paidAt = $perluPaidAt ? date('Y-m-d H:i:s') : null;
 $ket    = 'Midtrans: ' . $statusMid . ($paymentMethod !== '' ? ' via ' . $paymentMethod : '');
 
 try {
@@ -166,7 +182,11 @@ try {
 }
 
 /* Notifikasi operator (Fase 3) — tidak boleh memengaruhi respons webhook. */
-if ($statusBaru === 'VERIFIED' || $statusBaru === 'LUNAS') {
+$terverifikasi = in_array($statusBaru, ['VERIFIED', 'LUNAS', 'ANGSURAN_1', 'ANGSURAN_2'], true);
+if ($terverifikasi) {
+    $jenisLabel = $jenisPembayaran === 'UANG_MASUK'
+        ? label_biaya_pendaftaran() . ($angsuranKe > 0 ? ' angsuran ' . $angsuranKe : '')
+        : 'biaya formulir';
     try {
         $info = q_all(
             'SELECT nama_siswa, no_pendaftaran FROM pendaftar WHERE id = ? LIMIT 1',
@@ -176,11 +196,13 @@ if ($statusBaru === 'VERIFIED' || $statusBaru === 'LUNAS') {
         if ($info !== null) {
             $tautanVerif = url_abs('app/bendahara/index.php');
             notif_operator(
-                'PEMBAYARAN_GATEWAY_LUNAS',
+                $statusBaru === 'LUNAS' ? 'PEMBAYARAN_GATEWAY_LUNAS' : 'PEMBAYARAN_GATEWAY_MASUK',
                 $row['pendaftar_id'],
-                "Pembayaran gateway LUNAS (otomatis terverifikasi).\n"
+                ($statusBaru === 'LUNAS' ? 'Pembayaran gateway LUNAS' : 'Pembayaran gateway terverifikasi')
+                . " (otomatis).\n"
                 . "Nama : {$info['nama_siswa']}\n"
                 . "No. Pendaftaran : {$info['no_pendaftaran']}\n"
+                . "Jenis : {$jenisLabel}\n"
                 . "Status : {$statusMid}\n"
                 . "Detail: {$tautanVerif}"
             );
@@ -189,11 +211,35 @@ if ($statusBaru === 'VERIFIED' || $statusBaru === 'LUNAS') {
         /* abaikan */
     }
 
-    /* Fase 4: kirim akun otomatis setelah gateway lunas (toggle CMS, default nonaktif). */
+    /* Notifikasi in-app siswa — dedup per baris pembayaran. */
     try {
-        kirim_akun_gateway_otomatis($row['pendaftar_id']);
+        $rUm = $jenisPembayaran === 'UANG_MASUK' ? angsuran_ringkas($row['pendaftar_id']) : null;
+        $sisaTxt = '';
+        if ($rUm !== null) {
+            $sisaTxt = !empty($rUm['lunas'])
+                ? "\nSeluruh tagihan " . label_biaya_pendaftaran() . ' sudah lunas.'
+                : "\nSisa tagihan: " . rupiah($rUm['sisa']) . '.';
+        }
+        notif_siswa_kirim(
+            $row['pendaftar_id'],
+            'BAYAR_TERVERIFIKASI',
+            $statusBaru === 'LUNAS' ? 'Pembayaran Lunas' : 'Pembayaran Terverifikasi',
+            'Pembayaran online ' . $jenisLabel . ' sebesar ' . rupiah($nominalDb)
+                . ' telah terverifikasi otomatis.' . $sisaTxt,
+            url('app/siswa/keuangan.php'),
+            $byrId
+        );
     } catch (Throwable $e) {
-        /* abaikan — webhook tetap 200 */
+        /* abaikan */
+    }
+
+    /* Fase 4: kirim akun otomatis setelah gateway lunas (toggle CMS, default nonaktif). */
+    if ($statusBaru === 'LUNAS' || ($jenisPembayaran === 'FORMULIR' && $statusBaru === 'VERIFIED')) {
+        try {
+            kirim_akun_gateway_otomatis($row['pendaftar_id']);
+        } catch (Throwable $e) {
+            /* abaikan — webhook tetap 200 */
+        }
     }
 }
 

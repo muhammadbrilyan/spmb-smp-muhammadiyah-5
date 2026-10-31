@@ -187,5 +187,25 @@ function koreksi_ubah_status($id, $status, $catatan, $reviewer_id)
         );
     }
 
+    /* Notifikasi in-app siswa atas hasil tinjauan koreksi (lonceng portal). */
+    if ($status === 'DISETUJUI') {
+        notif_siswa_kirim(
+            $row['pendaftar_id'],
+            'KOREKSI_DATA',
+            'Pengajuan koreksi disetujui',
+            'Pengajuan koreksi data Anda disetujui. Formulir dibuka kembali — perbarui data, lalu ajukan verifikasi ulang.'
+                . ($catatan !== '' ? "\nCatatan panitia: {$catatan}" : ''),
+            url('app/siswa/data-siswa.php')
+        );
+    } elseif ($status === 'DITOLAK') {
+        notif_siswa_kirim(
+            $row['pendaftar_id'],
+            'KOREKSI_DATA',
+            'Pengajuan koreksi ditolak',
+            "Pengajuan koreksi data Anda belum dapat disetujui.\nAlasan: {$catatan}",
+            url('app/siswa/data-siswa.php')
+        );
+    }
+
     return ['ok' => true, 'pesan' => 'Status pengajuan koreksi diperbarui.'];
 }

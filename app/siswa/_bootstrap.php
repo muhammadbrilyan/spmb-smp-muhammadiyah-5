@@ -63,6 +63,7 @@ $tagihanFormulir = (float) ($PENGATURAN['biaya_formulir'] ?? 0);
 $tagihanUangMasuk = (float) ($PENGATURAN['estimasi_uang_masuk'] ?? 0);
 $bayarFormulir = ['tagihan' => 0, 'verified' => 0, 'pending' => 0, 'pending_bukti' => 0, 'rejected' => 0, 'sisa' => 0, 'label' => 'Belum Ada Data', 'tone' => 'gray', 'rows' => []];
 $bayarUangMasuk = $bayarFormulir;
+$ringkasAngsuran = null;
 $totalTerverifikasi = 0;
 $koreksi = [];
 $koreksiBidang = koreksi_bidang();
@@ -103,6 +104,13 @@ if ($siswa) {
         $jadwalSiswa = $jadwalSiswa[0] ?? null;
     }
 
+    $siswaDiterima = $pengumumanAktif && ($siswa['status_seleksi'] ?? '') === 'LULUS';
+    $siswaAktif = $siswaDiterima;
+
+    /* Tagihan biaya pendaftaran hanya aktif setelah LULUS + diumumkan. */
+    $ringkasAngsuran = angsuran_ringkas($siswa['id']);
+    $tagihanUangMasuk = $siswaDiterima ? $ringkasAngsuran['total'] : 0;
+
     $bayarFormulir   = siswa_ringkas_bayar($pembayaran, 'FORMULIR', $tagihanFormulir);
     $bayarUangMasuk  = siswa_ringkas_bayar($pembayaran, 'UANG_MASUK', $tagihanUangMasuk);
     $totalTerverifikasi = $bayarFormulir['verified'] + $bayarUangMasuk['verified'];
@@ -116,8 +124,10 @@ if ($siswa) {
         $tahap['desc']   = 'Hasil seleksi belum diumumkan resmi. Pantau menu PPDB & Seleksi.';
         $tahap['persen'] = 95;
     }
-    $siswaDiterima = $pengumumanAktif && ($siswa['status_seleksi'] ?? '') === 'LULUS';
-    $siswaAktif = $siswaDiterima;
+    /* Pengingat jatuh tempo angsuran (idempoten per jadwal). */
+    if ($siswaDiterima && !empty($ringkasAngsuran['aktif'])) {
+        angsuran_kirim_pengingat($siswa['id'], $ringkasAngsuran, url('app/siswa/keuangan.php'));
+    }
     $langkahBerikut = siswa_langkah_berikut(
         $siswa, $bayarFormulir, $dokumen, $kartuUjian, $pengumuman, $seleksi, $penempatan
     );
@@ -278,10 +288,10 @@ function siswa_langkah_berikut($siswa, $bayarFormulir, $dokumen, $kartuUjian, $p
             }
         }
         if (($siswa['tahap'] ?? '') === 'BERKAS_REVISI') {
-            return ['judul' => 'Perbaiki berkas yang ditolak', 'pesan' => 'Unggah ulang berkas dengan catatan panitia, lalu kirim kembali.', 'ikon' => 'folder_shared', 'tautan' => url('app/siswa/data-siswa.php?tab=dokumen'), 'label' => 'Perbaiki Berkas', 'tone' => 'red'];
+            return ['judul' => 'Perbaiki berkas yang ditolak', 'pesan' => 'Unggah ulang berkas dengan catatan panitia, lalu kirim kembali.', 'ikon' => 'folder_shared', 'tautan' => url('app/siswa/data-siswa.php'), 'label' => 'Perbaiki Berkas', 'tone' => 'red'];
         }
         if ($wajib > 0 && $terisi < $wajib && in_array($siswa['tahap'] ?? '', ['MELENGKAPI_BERKAS', 'AKUN_TERKIRIM', 'BAYAR_TERVERIFIKASI'], true)) {
-            return ['judul' => 'Lengkapi berkas persyaratan', 'pesan' => ($wajib - $terisi) . ' berkas wajib belum diunggah.', 'ikon' => 'upload_file', 'tautan' => url('app/siswa/data-siswa.php?tab=dokumen'), 'label' => 'Lengkapi Berkas', 'tone' => 'amber'];
+            return ['judul' => 'Lengkapi berkas persyaratan', 'pesan' => ($wajib - $terisi) . ' berkas wajib belum diunggah.', 'ikon' => 'upload_file', 'tautan' => url('app/siswa/data-siswa.php'), 'label' => 'Lengkapi Berkas', 'tone' => 'amber'];
         }
     }
 
@@ -387,7 +397,7 @@ function siswa_kabar_terbaru($siswa, $pembayaran, $kartuUjian, $pengumuman, $pen
             'judul' => 'Informasi SPMB ' . ($GLOBALS['PENGATURAN']['gelombang'] ?? ''),
             'pesan' => trim((string) ($GLOBALS['PENGATURAN']['ticker_header'] ?? '')),
             'tanggal' => null,
-            'tautan' => url('app/siswa/pengumuman.php'),
+            'tautan' => url('app/siswa/notifikasi.php'),
         ];
     }
 

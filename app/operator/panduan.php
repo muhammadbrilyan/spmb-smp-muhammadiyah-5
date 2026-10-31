@@ -88,7 +88,9 @@ $panduan = [
             'Daftar tagihan PENDING tampil dengan unggahan bukti transfer.',
             'Klik <em>Verifikasi</em> untuk menyetujui atau <em>Tolak</em> bila bukti tidak valid.',
             'Nominal tagihan diambil dari Pengaturan (biaya formulir & ' . e(label_biaya_pendaftaran()) . ').',
-            'Rekap pembayaran bisa diekspor CSV dari dashboard operator.',
+            'Tagihan ' . e(label_biaya_pendaftaran()) . ' boleh dibayar lunas atau 2 angsuran — status menjadi ANGSURAN_1 setelah dana pertama menutup setengah biaya, dan LUNAS setelah totalnya menutup seluruh biaya.',
+            'Tombol <em>Kirim Pengingat Jatuh Tempo</em> mengirim notifikasi in-app (dan WhatsApp bila diaktifkan di Pengaturan) ke siswa yang angsurannya mendekati/melewati jatuh tempo.',
+            'Rekap pembayaran dicetak dari tombol <em>Cetak Rekap Keuangan</em> (siap PDF) atau diunduh sebagai CSV lewat <em>Export CSV</em>.',
         ],
     ],
     [
@@ -265,8 +267,11 @@ $panduan = [
         if ($me['role'] === 'kepsek' && !in_array('kepsek', $p['role'], true)) {
             continue;
         }
+        /* Jangkar per judul agar dashboard lain bisa menautkan bagian spesifik,
+         * mis. app/operator/panduan.php#verifikasi-pembayaran-bendahara. */
+        $slug = trim((string) preg_replace('/[^a-z0-9]+/', '-', strtolower($p['judul'])), '-');
       ?>
-        <section class="card p-5 sm:p-6">
+        <section id="<?= e($slug) ?>" class="card p-5 sm:p-6 scroll-mt-24">
           <div class="flex items-start gap-3">
             <span class="icon-box bg-canvas border border-line text-ink-700 shrink-0"><?= icon($p['icon']) ?></span>
             <div class="min-w-0 flex-1">

@@ -1,7 +1,8 @@
 <?php
 /**
  * ENDPOINT AJAX — buat Snap Token untuk pembayaran online.
- * POST (login siswa): pendaftar_id, jenis (FORMULIR|UANG_MASUK), idem_key
+ * POST (login siswa): pendaftar_id, jenis (FORMULIR|UANG_MASUK), idem_key,
+ *                     mode (LUNAS|ANGSURAN, khusus UANG_MASUK), angsuran_ke
  * POST (publik):      pay_token, jenis, idem_key
  * Returns JSON: { ok, snap_token, order_id, client_key, snap_url } atau { ok:false, pesan }
  *
@@ -49,6 +50,9 @@ if (!rate_limit_cek('snap_token', 20, 60)) {
 $profil      = null;
 $pendaftarId = '';
 $jenis       = $jenisRaw;
+$angsuranKe  = 0;
+$skemaUm     = angsuran_skema();
+$ringkasAngsuran = null;
 
 if ($payToken !== '') {
     /* Jalur publik — validasi pay_token. */
@@ -91,23 +95,41 @@ if ($payToken !== '') {
     }
     rate_limit_catat('snap_token');
 
-    /* Fase 11 A1: UANG_MASUK hanya bila tahap minimal BERKAS_TERVERIFIKASI
-     * (urutan tahap resmi — tahap_minimal()) dan belum pernah VERIFIED/LUNAS. */
+    /* Tagihan biaya pendaftaran hanya terbuka setelah LULUS & diumumkan.
+     * Mode LUNAS membayar seluruh sisa tagihan; mode ANGSURAN membayar
+     * angsuran berikutnya (setengah tagihan) bila skema 2 angsuran aktif. */
     if ($jenis === 'UANG_MASUK') {
-        if (!tahap_minimal($profil['tahap'] ?? '', 'BERKAS_TERVERIFIKASI')) {
-            echo json_encode(['ok' => false, 'pesan' => label_biaya_pendaftaran() . ' dapat dibayar setelah berkas terverifikasi panitia.']);
+        $ringkasUm = angsuran_ringkas($pendaftarId);
+        if (!tagihan_pendaftaran_aktif($profil)) {
+            echo json_encode(['ok' => false, 'pesan' => label_biaya_pendaftaran() . ' dapat dibayar setelah hasil seleksi diumumkan dan Anda dinyatakan LULUS.']);
             exit;
         }
-        $sudahUm = (int) (q_col(
-            "SELECT COUNT(*) FROM pembayaran
-              WHERE pendaftar_id = ? AND jenis_pembayaran = 'UANG_MASUK'
-                AND status IN ('VERIFIED','LUNAS')",
-            [$pendaftarId]
-        ) ?? 0);
-        if ($sudahUm > 0) {
-            echo json_encode(['ok' => false, 'pesan' => label_biaya_pendaftaran() . ' untuk pendaftar ini sudah terverifikasi/lunas.']);
+        if (!empty($ringkasUm['lunas'])) {
+            echo json_encode(['ok' => false, 'pesan' => label_biaya_pendaftaran() . ' untuk pendaftar ini sudah lunas.']);
             exit;
         }
+        if ((float) $ringkasUm['pending'] > 0) {
+            echo json_encode(['ok' => false, 'pesan' => 'Masih ada pembayaran yang menunggu verifikasi. Selesaikan dulu sebelum membayar lagi.']);
+            exit;
+        }
+        if (($_POST['mode'] ?? '') === 'ANGSURAN') {
+            if (!$skemaUm['aktif']) {
+                echo json_encode(['ok' => false, 'pesan' => 'Skema angsuran tidak tersedia. Silakan bayar lunas.']);
+                exit;
+            }
+            $angsuranKe = (int) ($_POST['angsuran_ke'] ?? 0);
+            $berikut = (int) ($ringkasUm['berikut'] ?? 0);
+            if ($angsuranKe <= 0) {
+                $angsuranKe = $berikut;
+            }
+            if ($berikut <= 0 || $angsuranKe !== $berikut) {
+                echo json_encode(['ok' => false, 'pesan' => $berikut > 0
+                    ? 'Saat ini yang dapat dibayar adalah angsuran ' . $berikut . '.'
+                    : 'Tidak ada angsuran yang dapat dibayar saat ini.']);
+                exit;
+            }
+        }
+        $ringkasAngsuran = $ringkasUm;
     }
 }
 
@@ -121,10 +143,14 @@ if (!gateway_tersedia() || $clientKey === null) {
     exit;
 }
 
-/* Nominal dari CMS. */
-$nominal = $jenis === 'UANG_MASUK'
-    ? (float) ($PENGATURAN['estimasi_uang_masuk'] ?? 0)
-    : (float) ($PENGATURAN['biaya_formulir'] ?? 200000);
+/* Nominal dari CMS / sisa angsuran berikutnya. */
+if ($jenis === 'UANG_MASUK') {
+    $nominal = $angsuranKe > 0
+        ? (float) $ringkasAngsuran['angsuran'][$angsuranKe]['sisa']
+        : (float) ($ringkasAngsuran['sisa'] ?? 0);
+} else {
+    $nominal = (float) ($PENGATURAN['biaya_formulir'] ?? 200000);
+}
 if ($nominal <= 0) {
     echo json_encode(['ok' => false, 'pesan' => 'Nominal biaya belum diatur di Pengaturan Sistem.']);
     exit;
@@ -153,7 +179,7 @@ if ($existing && $existing['snap_token'] && $existing['snap_expires_at']
  *    Key yang sama → baris & order_id lama dipakai ulang.
  * ------------------------------------------------------------------ */
 $orderId = midtrans_order_id($pendaftarId, $jenis);
-$siap = pembayaran_siapkan_online($pendaftarId, $jenis, $nominal, $orderId, $idemKey);
+$siap = pembayaran_siapkan_online($pendaftarId, $jenis, $nominal, $orderId, $idemKey, null, null, $angsuranKe > 0 ? $angsuranKe : null);
 
 if (!$siap['ok']) {
     echo json_encode(['ok' => false, 'pesan' => $siap['pesan'] ?? 'Gagal menyiapkan data pembayaran.']);
@@ -187,6 +213,7 @@ $r = midtrans_buat_transaksi([
     'nama_siswa'     => $profil['nama_siswa'] ?? '-',
     'no_pendaftaran' => $profil['no_pendaftaran'] ?? '',
     'jenis'          => $jenis,
+    'angsuran_ke'    => $angsuranKe > 0 ? $angsuranKe : null,
     'phone'          => $profil['no_whatsapp'] ?? null,
 ]);
 

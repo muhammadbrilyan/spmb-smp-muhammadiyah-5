@@ -127,7 +127,7 @@ function cek_status_ringkas($pendaftar_id)
         return null;
     }
     $bayar = q_all(
-        'SELECT jenis_pembayaran, nominal, status FROM pembayaran WHERE pendaftar_id = ? ORDER BY created_at',
+        'SELECT jenis_pembayaran, angsuran_ke, nominal, status FROM pembayaran WHERE pendaftar_id = ? ORDER BY created_at',
         [$pendaftar_id]
     ) ?: [];
     $sel = q_all(

@@ -70,13 +70,21 @@ function daftar_pendaftar()
 
 function stat_operator()
 {
-    /* Angka dummy lama dipertahankan bila database tidak terbaca. */
+    /* Nol bila database tidak terbaca — sama seperti stat_bendahara().
+     * Angka dummy lama (215/184/...) membuat dashboard operator menampilkan
+     * angka palsu yang tidak cocok dengan tabel di bawahnya. */
     $s = [
-        'akun_aktif'  => 215, 'akun_total' => 215,
-        'peserta'     => 184, 'offline'    => 142, 'daring' => 42,
-        'dinilai'     => 146, 'lulus'      => 128, 'proses' => 18,
-        'terisi'      => 43,  'kuota'      => 90,  'rombel' => 3,
+        'akun_aktif' => 0, 'akun_total' => 0,
+        'peserta'    => 0, 'offline'    => 0, 'daring' => 0,
+        'dinilai'    => 0, 'lulus'      => 0, 'proses' => 0,
+        'terisi'     => 0, 'kuota'      => 0, 'rombel' => 0,
     ];
+
+    if (!db_aktif()) {
+        $s['akun_persen']   = 0.0;
+        $s['persen_terisi'] = 0.0;
+        return $s;
+    }
 
     $dihitung = [
         'akun_total'  => q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL'),
@@ -84,10 +92,12 @@ function stat_operator()
         'peserta'     => q_col("SELECT COALESCE(SUM(peserta_dijadwalkan),0) FROM jadwal_tes WHERE status = 'TERJADWAL'"),
         'offline'     => q_col("SELECT COALESCE(SUM(peserta_dijadwalkan),0) FROM jadwal_tes WHERE status = 'TERJADWAL' AND mode = 'OFFLINE'"),
         'daring'      => q_col("SELECT COALESCE(SUM(peserta_dijadwalkan),0) FROM jadwal_tes WHERE status = 'TERJADWAL' AND mode IN ('DARING','VIDEO_CALL')"),
-        'dinilai'     => q_col('SELECT COUNT(*) FROM seleksi'),
-        'lulus'       => q_col("SELECT COUNT(*) FROM seleksi WHERE hasil = 'LULUS'"),
-        'proses'      => q_col("SELECT COUNT(*) FROM seleksi WHERE hasil = 'PROSES'"),
-        'terisi'      => q_col('SELECT COUNT(*) FROM penempatan_kelas'),
+        /* Data pendaftar terarsip tidak dihitung, agar angkanya sama dengan
+         * total pendaftar di dashboard bendahara & rekap export. */
+        'dinilai'     => q_col('SELECT COUNT(*) FROM seleksi s JOIN pendaftar p ON p.id = s.pendaftar_id WHERE p.arsip_at IS NULL'),
+        'lulus'       => q_col("SELECT COUNT(*) FROM seleksi s JOIN pendaftar p ON p.id = s.pendaftar_id WHERE s.hasil = 'LULUS' AND p.arsip_at IS NULL"),
+        'proses'      => q_col("SELECT COUNT(*) FROM seleksi s JOIN pendaftar p ON p.id = s.pendaftar_id WHERE s.hasil = 'PROSES' AND p.arsip_at IS NULL"),
+        'terisi'      => q_col('SELECT COUNT(*) FROM penempatan_kelas pk JOIN pendaftar p ON p.id = pk.pendaftar_id WHERE p.arsip_at IS NULL'),
         'kuota'       => q_col('SELECT COALESCE(SUM(kuota),0) FROM kelas WHERE is_aktif = 1'),
         'rombel'      => q_col('SELECT COUNT(*) FROM kelas WHERE is_aktif = 1'),
     ];
@@ -546,6 +556,27 @@ function verifikasi_data_set($pendaftar_id, $status, $catatan, $verifier_id)
               WHERE id = ?',
             [$status, $catatan !== '' ? $catatan : null, $pendaftar_id]
         );
+    }
+
+    if ($ok) {
+        if ($status === 'TERVERIFIKASI') {
+            notif_siswa_kirim(
+                $pendaftar_id,
+                'DATA_TERVERIFIKASI',
+                'Data terverifikasi',
+                'Data calon siswa Anda telah diverifikasi panitia dan dikunci. '
+                    . 'Perubahan setelah ini diajukan melalui menu Data Siswa (pengajuan koreksi).',
+                url('app/siswa/data-siswa.php')
+            );
+        } elseif ($status === 'DITOLAK') {
+            notif_siswa_kirim(
+                $pendaftar_id,
+                'DATA_DITOLAK',
+                'Data perlu diperbaiki',
+                "Panitia meminta perbaikan data calon siswa.\nCatatan panitia: {$catatan}",
+                url('app/siswa/data-siswa.php')
+            );
+        }
     }
 
     return $ok

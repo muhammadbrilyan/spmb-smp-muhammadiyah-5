@@ -37,11 +37,11 @@ if ($role === 'siswa') {
             'judul' => 'Portal Saya',
             'menu'  => [
                 $menuItem('dashboard', 'dashboard', 'Dashboard', url('app/siswa/index.php')),
+                $menuItem('notifikasi', 'notifications', 'Notifikasi & Pengumuman', url('app/siswa/notifikasi.php')),
                 $menuItem('siswa', 'badge', 'Data Siswa', url('app/siswa/data-siswa.php')),
                 $menuItem('keuangan', 'account_balance_wallet', 'Keuangan', url('app/siswa/keuangan.php')),
                 $menuItem('ppdb', 'how_to_reg', 'PPDB & Seleksi', url('app/siswa/ppdb.php')),
                 $menuItem('akademik', 'menu_book', 'Akademik', url('app/siswa/akademik.php')),
-                $menuItem('pengumuman', 'campaign', 'Pengumuman', url('app/siswa/pengumuman.php')),
             ],
         ],
         [
@@ -78,6 +78,7 @@ if ($role === 'siswa') {
                 $menuItem('peserta', 'event_seat', 'Peserta Ujian', url('app/operator/peserta-ujian.php')),
                 $menuItem('seleksi', 'assignment', 'Data & Status Tes', url('app/operator/seleksi.php')),
                 $menuItem('pengumuman', 'campaign', 'Pengumuman Hasil', url('app/operator/pengumuman.php')),
+                $menuItem('pengumuman-umum', 'notifications_active', 'Pengumuman Umum', url('app/operator/pengumuman-umum.php')),
             ],
         ],
         [
@@ -132,27 +133,39 @@ if ($role === 'siswa') {
 }
 
 /* [PERBAIKAN] Hitung jumlah notifikasi BELUM DIBACA hanya bila role itu punya
- * menu Notifikasi di sidebar (bendahara/kepsek/admin). Untuk operator, menu
+ * menu Notifikasi di sidebar (siswa/bendahara/kepsek). Untuk operator, menu
  * itu sudah dihapus — aksesnya lewat ikon notifikasi di topbar, jadi query ini
- * tidak perlu dijalankan di sini. */
+ * tidak perlu dijalankan di sini.
+ * Siswa memakai notifikasi_siswa (per penerima), staf memakai papan operator. */
 $notifBadge = 0;
 foreach ($navGrup as $gNav) {
     foreach ($gNav['menu'] as $mNav) {
         if ($mNav['key'] === 'notifikasi') {
-            $notifBadge = notif_belum_dibaca();
+            if ($role === 'siswa') {
+                $pidNotif = isset($siswa['id']) ? (string) $siswa['id'] : '';
+                if ($pidNotif === '') {
+                    $pidNotif = (string) (q_col(
+                        'SELECT id FROM pendaftar WHERE user_id = ? LIMIT 1',
+                        [(string) (current_user()['id'] ?? '')]
+                    ) ?? '');
+                }
+                $notifBadge = $pidNotif !== '' ? notif_siswa_belum_dibaca($pidNotif) : 0;
+            } else {
+                $notifBadge = notif_belum_dibaca();
+            }
             break 2;
         }
     }
 }
 ?>
 <aside id="sidebar"
-       class="fixed inset-y-0 left-0 z-50 w-[264px] bg-white border-r border-line flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200">
+       class="app-sidebar no-print fixed inset-y-0 left-0 z-50 w-[264px] bg-white border-r border-line flex flex-col -translate-x-full lg:translate-x-0 transition-transform duration-200">
 
   <!-- Brand -->
-  <div class="px-5 py-5 flex items-center justify-between border-b border-line">
+  <div class="sidebar-brand px-5 py-5 flex items-center justify-between border-b border-line">
     <a href="<?= url('app/spmb/index.php') ?>" class="flex items-center gap-3 min-w-0">
       <img src="<?= e($PENGATURAN['logo_url']) ?>" alt="Logo" class="w-10 h-10 shrink-0">
-      <span class="min-w-0 leading-tight">
+      <span class="sidebar-teks min-w-0 leading-tight">
         <span class="block font-bold text-ink-900 text-[15px] truncate"><?= e(APP_SHORT) ?></span>
         <span class="block text-[11px] text-ink-500"><?= e(APP_TAGLINE) ?></span>
       </span>
@@ -161,13 +174,13 @@ foreach ($navGrup as $gNav) {
   </div>
 
   <?php if ($role === 'operator'): ?>
-    <div class="px-4 pt-4">
+    <div class="sidebar-cta px-4 pt-4">
       <a href="<?= url('app/operator/pendaftar-baru.php') ?>" class="btn btn-primary btn-block">
         <?= icon('add_circle') ?> Pendaftaran Manual
       </a>
     </div>
   <?php elseif ($role === 'siswa'): ?>
-    <div class="px-4 pt-4">
+    <div class="sidebar-cta px-4 pt-4">
       <a href="<?= url('app/spmb/index.php') ?>" class="btn btn-outline btn-block" target="_blank" rel="noopener">
         <?= icon('language') ?> Info SPMB
       </a>
@@ -175,7 +188,7 @@ foreach ($navGrup as $gNav) {
   <?php endif; ?>
 
   <!-- Navigasi berkelompok -->
-  <nav class="flex-1 overflow-y-auto scroll-thin px-4 py-4 space-y-4">
+  <nav class="nav-penuh flex-1 overflow-y-auto scroll-thin px-4 py-4 space-y-4">
     <?php foreach ($navGrup as $gi => $grup):
       /* [PERBAIKAN] Grup dibuat bisa dilipat agar sidebar tidak terlihat
        * menumpuk. Dua aturan agar tidak pernah membingungkan:
@@ -219,6 +232,21 @@ foreach ($navGrup as $gNav) {
     <?php endforeach; ?>
   </nav>
 
+  <!-- Navigasi rail: tampil hanya saat sidebar dilipat di desktop -->
+  <nav class="nav-rel scroll-thin" aria-label="Menu ringkas">
+    <?php $grupPertama = true; foreach ($navGrup as $grup): ?>
+      <?php if (!$grupPertama): ?><span class="rail-pemisah" aria-hidden="true"></span><?php endif; $grupPertama = false; ?>
+      <?php foreach ($grup['menu'] as $m): $isActive = $m['key'] === $activeMenu; ?>
+        <a href="<?= e($m['href']) ?>"
+           class="rail-link <?= $isActive ? 'rail-link-active' : '' ?>"
+           title="<?= e($m['label']) ?>" aria-label="<?= e($m['label']) ?>"
+           <?= $isActive ? 'aria-current="page"' : '' ?>>
+          <span class="ms" aria-hidden="true"><?= e($m['icon']) ?></span>
+        </a>
+      <?php endforeach; ?>
+    <?php endforeach; ?>
+  </nav>
+
   <!-- [PERBAIKAN] Blok "Bantuan & Panduan" dihapus — sudah digantikan ikon "?"
        di topbar (ke kanan atas) yang untuk semua peran sudah menunjuk ke
        halaman yang benar: siswa ke Info SPMB, staf ke Panduan & SOP. -->
@@ -227,14 +255,14 @@ foreach ($navGrup as $gNav) {
   <!-- [PERBAIKAN] Kartu profil (avatar + nama + jabatan) dihapus — informasi
        yang sama sudah tampil di topbar, dan kartu itu hanya memakan tinggi
        sidebar. Yang tersisa: dua aksi yang benar-benar dipakai. -->
-  <div class="px-4 pb-4 pt-3 border-t border-line">
-    <a href="<?= url('app/staf/ganti-password.php') ?>" class="nav-link">
-      <span class="ms text-[20px] text-ink-400">lock</span> Ganti Password
+  <div class="sidebar-kaki px-4 pb-4 pt-3 border-t border-line">
+    <a href="<?= url('app/staf/ganti-password.php') ?>" class="nav-link" title="Ganti Password">
+      <span class="ms text-[20px] text-ink-400">lock</span> <span class="sidebar-teks">Ganti Password</span>
     </a>
     <form method="post" action="<?= url('app/auth/logout.php') ?>">
       <?= csrf_field() ?>
-      <button type="submit" class="nav-link w-full text-red-600 hover:text-red-700 hover:bg-red-50">
-        <span class="ms text-[20px]">logout</span> Keluar
+      <button type="submit" class="nav-link w-full text-red-600 hover:text-red-700 hover:bg-red-50" title="Keluar">
+        <span class="ms text-[20px]">logout</span> <span class="sidebar-teks">Keluar</span>
       </button>
     </form>
   </div>

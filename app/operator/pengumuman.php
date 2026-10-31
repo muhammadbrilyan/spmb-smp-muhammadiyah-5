@@ -61,7 +61,8 @@ require_once __DIR__ . '/../../includes/partials/sidebar.php';
 require_once __DIR__ . '/../../includes/partials/topbar.php';
 ?>
 
-<div class="px-4 sm:px-6 lg:px-8 py-6 space-y-6 max-w-[1100px]">
+<div class="lg:pl-[264px]">
+<main class="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 space-y-6 max-w-[1100px] mx-auto">
 
   <?php if ($flash): ?>
     <div class="rounded-xl border <?= $flash['tipe'] === 'sukses' ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800' ?> px-4 py-3 text-sm">
@@ -198,6 +199,7 @@ require_once __DIR__ . '/../../includes/partials/topbar.php';
     </ol>
   </div>
 
+  </main>
 </div>
 
 <script>

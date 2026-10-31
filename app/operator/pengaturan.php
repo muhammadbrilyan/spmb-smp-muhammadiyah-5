@@ -110,6 +110,12 @@ $f = [
     'biaya_formulir'       => $PENGATURAN['biaya_formulir'],
     'biaya_spp'            => $PENGATURAN['biaya_spp'] ?? 0,
     'estimasi_uang_masuk'  => $PENGATURAN['estimasi_uang_masuk'] ?? 0,
+    'angsuran_1_nominal'   => $PENGATURAN['angsuran_1_nominal'] ?? 0,
+    'angsuran_2_nominal'   => $PENGATURAN['angsuran_2_nominal'] ?? 0,
+    'angsuran_1_jatuh_tempo' => $PENGATURAN['angsuran_1_jatuh_tempo'] ?? '',
+    'angsuran_2_jatuh_tempo' => $PENGATURAN['angsuran_2_jatuh_tempo'] ?? '',
+    'pengingat_angsuran_hari' => (int) ($PENGATURAN['pengingat_angsuran_hari'] ?? 7),
+    'pengingat_angsuran_wa'   => (int) ($PENGATURAN['pengingat_angsuran_wa'] ?? 0),
     'nama_bank'            => $PENGATURAN['nama_bank'],
     'no_rekening'          => $PENGATURAN['no_rekening'],
     'atas_nama_rekening'   => $PENGATURAN['atas_nama_rekening'],
@@ -163,6 +169,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $f[$kunci] = trim((string) $_POST[$kunci]);
         }
     }
+
+    /* Nominal angsuran otomatis: selalu dua bagian sama besar dari biaya
+     * pendaftaran (sisa pembulatan masuk ke angsuran 2). */
+    $totalAngsuran = max(0, (float) (is_numeric($f['estimasi_uang_masuk']) ? $f['estimasi_uang_masuk'] : 0));
+    $f['angsuran_1_nominal'] = $totalAngsuran > 0 ? round($totalAngsuran / 2) : 0;
+    $f['angsuran_2_nominal'] = $totalAngsuran > 0 ? $totalAngsuran - $f['angsuran_1_nominal'] : 0;
 
     /* Kolom rahasia (token Fonnte & API key Midtrans).
      * [PERBAIKAN 2026-10-28] Semula input type=password selalu ikut terkirim
@@ -231,6 +243,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
     }
 
+    /* Pengingat jatuh tempo angsuran (in-app + WhatsApp orang tua). */
+    $f['pengingat_angsuran_wa']   = empty($_POST['pengingat_angsuran_wa']) ? 0 : 1;
+    $f['pengingat_angsuran_hari'] = (int) ($_POST['pengingat_angsuran_hari'] ?? 0);
+    if ($f['pengingat_angsuran_hari'] < 1 || $f['pengingat_angsuran_hari'] > 60) {
+        $galat[] = 'Pengingat jatuh tempo harus antara H-1 sampai H-60.';
+    }
+    if ($f['pengingat_angsuran_wa'] && fonnte_token() === null) {
+        $galat[] = 'Pengingat WhatsApp diaktifkan tetapi token Fonnte belum diisi.';
+    }
+
     /* QRIS aktif → wajib punya gambar (baru diupload ATAU sudah ada, dan tidak direset).
      * Catatan: blok ini dieksekusi sebelum proses upload, jadi cek $_FILES langsung. */
     $qrisReset = !empty($_POST['qris_reset']);
@@ -269,15 +291,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!preg_match('/^\+?[0-9\s-]{6,20}$/', $f['kontak_wa_panitia'])) {
         $galat[] = 'Kontak WhatsApp hanya boleh berisi angka (6-20 digit).';
     }
-    foreach (['biaya_formulir', 'biaya_spp', 'estimasi_uang_masuk'] as $nominal) {
+    foreach (['biaya_formulir', 'biaya_spp', 'estimasi_uang_masuk', 'angsuran_1_nominal', 'angsuran_2_nominal'] as $nominal) {
         if ($f[$nominal] === '' || !is_numeric($f[$nominal]) || (float) $f[$nominal] < 0) {
             $galat[] = 'Nilai "' . str_replace('_', ' ', $nominal) . '" harus angka >= 0.';
         }
     }
-    foreach (['tanggal_buka_ppdb', 'tanggal_tutup_ppdb', 'tanggal_pengumuman'] as $tgl) {
+    foreach (['tanggal_buka_ppdb', 'tanggal_tutup_ppdb', 'tanggal_pengumuman', 'angsuran_1_jatuh_tempo', 'angsuran_2_jatuh_tempo'] as $tgl) {
         if ($f[$tgl] !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $f[$tgl])) {
             $galat[] = 'Format tanggal tidak valid.';
         }
+    }
+
+    /* Nominal angsuran tidak divalidasi manual — dihitung otomatis dari
+     * Estimasi Biaya Pendaftaran di atas. */
+    if ($f['angsuran_1_jatuh_tempo'] !== '' && $f['angsuran_2_jatuh_tempo'] !== ''
+        && $f['angsuran_2_jatuh_tempo'] < $f['angsuran_1_jatuh_tempo']) {
+        $galat[] = 'Jatuh tempo angsuran 2 tidak boleh lebih awal dari angsuran 1.';
     }
     if (strlen($f['nama_sekolah']) > 150) {
         $galat[] = 'Nama sekolah maksimal 150 karakter.';
@@ -535,6 +564,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     ticker_header = ?, profil_singkat = ?, deskripsi_sekolah = ?, tagline = ?,
                     warna_utama = ?,
                     biaya_formulir = ?, biaya_spp = ?, estimasi_uang_masuk = ?,
+                    angsuran_1_nominal = ?, angsuran_2_nominal = ?,
+                    angsuran_1_jatuh_tempo = ?, angsuran_2_jatuh_tempo = ?,
+                    pengingat_angsuran_hari = ?, pengingat_angsuran_wa = ?,
                     label_uang_pangkal = ?, label_spp = ?, teks_beasiswa = ?,
                     nama_bank = ?, no_rekening = ?, atas_nama_rekening = ?,
                     tahun_ajaran = ?, gelombang = ?,
@@ -562,6 +594,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 (float) $f['biaya_formulir'],
                 (float) $f['biaya_spp'],
                 (float) $f['estimasi_uang_masuk'],
+                (float) $f['angsuran_1_nominal'],
+                (float) $f['angsuran_2_nominal'],
+                $f['angsuran_1_jatuh_tempo'] !== '' ? $f['angsuran_1_jatuh_tempo'] : null,
+                $f['angsuran_2_jatuh_tempo'] !== '' ? $f['angsuran_2_jatuh_tempo'] : null,
+                (int) $f['pengingat_angsuran_hari'],
+                (int) $f['pengingat_angsuran_wa'],
                 $f['label_uang_pangkal'] !== '' ? $f['label_uang_pangkal'] : 'Biaya Pendaftaran',
                 $f['label_spp'] !== '' ? $f['label_spp'] : 'SPP Bulanan',
                 $f['teks_beasiswa'] !== '' ? mb_substr($f['teks_beasiswa'], 0, 300) : null,
@@ -901,6 +939,59 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           </div>
         </div>
         <p class="hint">Nilai dipakai langsung pada bagian "Rincian Biaya" di landing page.</p>
+        <!-- SKEMA ANGSURAN — siswa bebas memilih lunas atau 2 angsuran sama besar -->
+        <div class="mt-4 rounded-2xl border border-line p-4">
+          <p class="font-semibold text-ink-900 text-sm">Skema Angsuran Biaya Pendaftaran</p>
+          <p class="mt-1 text-[12px] text-ink-500">
+            Siswa dapat memilih <strong>bayar lunas</strong> atau <strong>angsuran 2 kali</strong>.
+            Nominal angsuran otomatis setengah dari Estimasi Biaya Pendaftaran — tidak perlu diisi manual.
+            Tanggal jatuh tempo di bawah dipakai untuk pengingat otomatis.
+          </p>
+          <?php
+          $totalTampil = max(0, (float) ($f['estimasi_uang_masuk'] ?? 0));
+          $angsuran1Tampil = $totalTampil > 0 ? round($totalTampil / 2) : 0;
+          $angsuran2Tampil = $totalTampil > 0 ? $totalTampil - $angsuran1Tampil : 0;
+          ?>
+          <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-xl bg-canvas border border-line px-3.5 py-3">
+              <p class="text-[12px] text-ink-500">Angsuran 1 (otomatis)</p>
+              <p class="font-bold text-ink-900 mt-0.5"><?= rupiah($angsuran1Tampil) ?></p>
+              <input id="angsuran_1_jatuh_tempo" name="angsuran_1_jatuh_tempo" type="date" class="input mt-2" value="<?= e($f['angsuran_1_jatuh_tempo']) ?>" aria-label="Jatuh tempo angsuran 1">
+              <p class="hint">Jatuh tempo angsuran 1 — kosong berarti tanpa pengingat.</p>
+            </div>
+            <div class="rounded-xl bg-canvas border border-line px-3.5 py-3">
+              <p class="text-[12px] text-ink-500">Angsuran 2 (otomatis)</p>
+              <p class="font-bold text-ink-900 mt-0.5"><?= rupiah($angsuran2Tampil) ?></p>
+              <input id="angsuran_2_jatuh_tempo" name="angsuran_2_jatuh_tempo" type="date" class="input mt-2" value="<?= e($f['angsuran_2_jatuh_tempo']) ?>" aria-label="Jatuh tempo angsuran 2">
+              <p class="hint">Jatuh tempo angsuran 2 — kosong berarti tanpa pengingat.</p>
+            </div>
+          </div>
+          <div class="mt-3 rounded-xl bg-canvas border border-line px-3.5 py-3">
+            <p class="text-[12px] font-semibold uppercase tracking-wider text-ink-400">Pengingat Jatuh Tempo</p>
+            <div class="mt-2 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="label" for="pengingat_angsuran_hari">Kirim pengingat H-</label>
+                <div class="flex items-center gap-2">
+                  <input id="pengingat_angsuran_hari" name="pengingat_angsuran_hari" type="number" min="1" max="60" step="1" class="input w-24" value="<?= (int) $f['pengingat_angsuran_hari'] ?>">
+                  <span class="text-[13px] text-ink-500">hari sebelum jatuh tempo</span>
+                </div>
+                <p class="hint">Dikirim untuk angsuran berikutnya yang belum dibayar, lalu sekali lagi saat angsuran melewati jatuh tempo.</p>
+              </div>
+              <div>
+                <label class="flex items-start gap-2.5 cursor-pointer">
+                  <input type="checkbox" name="pengingat_angsuran_wa" value="1" class="mt-1 w-4 h-4 accent-primary" <?= $f['pengingat_angsuran_wa'] ? 'checked' : '' ?>>
+                  <span>
+                    <span class="block text-[13px] font-semibold text-ink-900">Kirim juga via WhatsApp</span>
+                    <span class="block text-[12px] text-ink-500">Pesan dikirim ke nomor WhatsApp orang tua/wali pendaftar.</span>
+                  </span>
+                </label>
+                <p class="hint"><?= fonnte_token() !== null
+                    ? 'Token Fonnte tersedia — pengingat WhatsApp siap dikirim.'
+                    : 'Token Fonnte belum diisi. Isi token di bagian WhatsApp Gateway (Fonnte) agar pengingat WhatsApp dapat terkirim.' ?></p>
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- LABEL BIAYA — ubah nama tampilan tanpa mengubah nominal -->
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
           <div>

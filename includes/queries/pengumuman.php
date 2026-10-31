@@ -59,7 +59,49 @@ function pengumuman_finalisasi_tahap()
           WHERE tahap = 'NILAI_TERINPUT'
             AND status_seleksi IN ('LULUS','TIDAK_LULUS')"
     );
+    pengumuman_notif_hasil_semua();
     return 0; /* jumlah baris tidak kritis (idempoten) */
+}
+
+/**
+ * Notifikasi in-app hasil seleksi untuk pendaftar yang sudah diumumkan.
+ * Idempoten: siswa yang sudah pernah menerima notifikasi HASIL_SELEKSI dilewati.
+ * @return int jumlah notifikasi yang dibuat
+ */
+function pengumuman_notif_hasil_semua()
+{
+    $calon = q_all(
+        "SELECT p.id, p.status_seleksi,
+                (SELECT CONCAT(k.kode, ' — ', k.nama_kelas)
+                   FROM penempatan_kelas pk
+                   JOIN kelas k ON k.id = pk.kelas_id
+                  WHERE pk.pendaftar_id = p.id LIMIT 1) AS kelas
+           FROM pendaftar p
+          WHERE p.tahap IN ('NILAI_TERINPUT', 'DIUMUMKAN')
+            AND p.status_seleksi IN ('LULUS', 'TIDAK_LULUS')
+            AND p.arsip_at IS NULL"
+    ) ?: [];
+
+    $n = 0;
+    foreach ($calon as $c) {
+        if (notif_siswa_sudah_ada($c['id'], 'HASIL_SELEKSI')) {
+            continue;
+        }
+        if ($c['status_seleksi'] === 'LULUS') {
+            $judul = 'Selamat, Anda dinyatakan LULUS';
+            $pesan = 'Hasil seleksi SPMB telah resmi diumumkan: Anda dinyatakan LULUS.'
+                . (!empty($c['kelas']) ? ' Ditempatkan di kelas ' . $c['kelas'] . '.' : '')
+                . ' Silakan lanjutkan proses daftar ulang sesuai jadwal panitia.';
+        } else {
+            $judul = 'Hasil seleksi: Tidak Lulus';
+            $pesan = 'Hasil seleksi SPMB telah resmi diumumkan. Berdasarkan penilaian panitia, '
+                . 'Anda dinyatakan belum lulus. Terima kasih atas partisipasi dan kepercayaan Bapak/Ibu.';
+        }
+        if (notif_siswa_kirim($c['id'], 'HASIL_SELEKSI', $judul, $pesan, url('app/siswa/ppdb.php?tab=hasil'))) {
+            $n++;
+        }
+    }
+    return $n;
 }
 
 /**

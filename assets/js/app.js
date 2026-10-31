@@ -27,6 +27,23 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   if (overlay) overlay.addEventListener('click', closeSidebar);
 
+  /* ---------------- Sidebar lipat (desktop) ---------------- */
+  const ikonSidebar = document.getElementById('ikon-sidebar');
+  function gambarIkonSidebar() {
+    if (!ikonSidebar) return;
+    ikonSidebar.textContent = document.documentElement.classList.contains('sidebar-lipat')
+      ? 'left_panel_open'
+      : 'left_panel_close';
+  }
+  document.querySelectorAll('[data-sidebar-toggle]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      const lipat = document.documentElement.classList.toggle('sidebar-lipat');
+      try { localStorage.setItem('sidebar-lipat', lipat ? '1' : '0'); } catch (e) { /* storage diblokir */ }
+      gambarIkonSidebar();
+    });
+  });
+  gambarIkonSidebar();
+
   /* ---------------- Tab (dashboard) ---------------- */
   const tabButtons = document.querySelectorAll('[data-tab-target]');
   if (tabButtons.length) {

@@ -129,8 +129,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <?php endif; ?>
 
             <div class="mt-5 flex flex-wrap gap-2.5 border-t border-line-soft pt-4">
-              <a href="<?= url('app/siswa/data-siswa.php?tab=data-diri') ?>" class="btn btn-outline btn-sm"><?= icon('badge') ?> Periksa Data</a>
-              <a href="<?= url('app/siswa/data-siswa.php?tab=dokumen') ?>" class="btn btn-outline btn-sm"><?= icon('folder_shared') ?> Berkas Persyaratan</a>
+              <a href="<?= url('app/siswa/data-siswa.php') ?>" class="btn btn-outline btn-sm"><?= icon('badge') ?> Periksa Data</a>
+              <a href="<?= url('app/siswa/data-siswa.php') ?>" class="btn btn-outline btn-sm"><?= icon('folder_shared') ?> Berkas Persyaratan</a>
             </div>
           </section>
 
@@ -166,7 +166,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 <li>Terverifikasi: <strong class="text-[#065F46]"><?= (int) $dokStatus['VERIFIED'] ?></strong></li>
                 <li>Ditolak: <strong class="text-[#991B1B]"><?= (int) $dokStatus['REJECTED'] ?></strong></li>
               </ul>
-              <a href="<?= url('app/siswa/data-siswa.php?tab=dokumen') ?>" class="btn btn-outline btn-block btn-sm mt-3">Buka Berkas</a>
+              <a href="<?= url('app/siswa/data-siswa.php') ?>" class="btn btn-outline btn-block btn-sm mt-3">Buka Berkas</a>
             </section>
           </div>
         </div>
@@ -182,7 +182,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                   <h2 class="font-bold text-ink-900">Kartu Peserta Ujian</h2>
                   <p class="mt-1 text-[13px] text-ink-500">Cetak &amp; bawa saat hari ujian (atau simpan tautan daring).</p>
                 </div>
-                <button type="button" class="btn btn-outline btn-sm no-print" onclick="window.print()"><?= icon('print') ?> Cetak</button>
+                <button type="button" class="btn btn-outline btn-sm no-print" onclick="cetakKartu()"><?= icon('print') ?> Cetak</button>
               </div>
 
               <div class="mt-4 rounded-2xl border-2 border-dashed border-primary/40 p-5 bg-white">
@@ -274,7 +274,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               <p class="mt-2 text-sm text-ink-500">Berkas sudah terverifikasi. Panitia sedang menyiapkan jadwal tes; kartu peserta akan muncul di halaman ini.</p>
             <?php else: ?>
               <p class="mt-2 text-sm text-ink-500">Jadwal tes tersedia setelah berkas persyaratan Anda terverifikasi panitia.</p>
-              <a href="<?= url('app/siswa/data-siswa.php?tab=dokumen') ?>" class="btn btn-outline btn-sm mt-4">Periksa Berkas</a>
+              <a href="<?= url('app/siswa/data-siswa.php') ?>" class="btn btn-outline btn-sm mt-4">Periksa Berkas</a>
             <?php endif; ?>
           </section>
         <?php endif; ?>
@@ -366,8 +366,30 @@ require __DIR__ . '/../../includes/partials/topbar.php';
   </main>
 </div>
 
+<div id="print-area" aria-hidden="true"></div>
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>
 <script>window.APP_FLASH = <?= json_encode($flash, JSON_UNESCAPED_UNICODE) ?>;</script>
 <script src="<?= asset('assets/js/app.js') ?>"></script>
+<script>
+  /* Cetak hanya kartu peserta ujian — sisa antarmuka portal disembunyikan. */
+  function cetakKartu() {
+    var kartu = document.getElementById('kartu-peserta');
+    var host  = document.getElementById('print-area');
+    if (!kartu || !host) { window.print(); return; }
+
+    host.innerHTML = kartu.outerHTML;
+    host.removeAttribute('aria-hidden');
+    document.body.classList.add('mode-cetak-kartu');
+
+    var selesai = function () {
+      document.body.classList.remove('mode-cetak-kartu');
+      host.innerHTML = '';
+      host.setAttribute('aria-hidden', 'true');
+      window.removeEventListener('afterprint', selesai);
+    };
+    window.addEventListener('afterprint', selesai);
+    window.print();
+  }
+</script>
 </body>
 </html>

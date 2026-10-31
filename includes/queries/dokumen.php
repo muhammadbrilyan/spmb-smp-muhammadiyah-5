@@ -223,6 +223,57 @@ function dokumen_upload($pendaftar_id, $kode, $pathRel, $ukuranKb)
 }
 
 /**
+ * Hapus unggahan berkas milik siswa yang DITOLAK panitia: fisik berkas
+ * dihapus dan baris dikosongkan (file_url NULL) TAPI baris dipertahankan
+ * dengan status REJECTED + catatan panitia — agar pada tahap revisi kartu
+ * berkas kembali ke kondisi "Kosong / Pilih berkas" dan alasan penolakan
+ * tetap terlihat sampai siswa mengunggah pengganti.
+ *
+ * Syarat sama seperti unggah ulang: tahap membuka pengelolaan berkas dan
+ * hanya berkas REJECTED yang boleh dihapus.
+ *
+ * @return array{ok:bool, pesan?:string}
+ */
+function dokumen_hapus($pendaftar_id, $dokumen_id)
+{
+    $tahap = q_col('SELECT tahap FROM pendaftar WHERE id = ?', [$pendaftar_id]);
+    if ($tahap === null) {
+        return ['ok' => false, 'pesan' => 'Pendaftar tidak ditemukan.'];
+    }
+    if (_dok_tahap_terkunci($tahap)) {
+        return ['ok' => false, 'pesan' => 'Berkas terkunci pada tahap ini. Menunggu keputusan panitia.'];
+    }
+    if (!dokumen_tahap_boleh_unggah($tahap)) {
+        return ['ok' => false, 'pesan' => 'Pengelolaan berkas dibuka setelah pembayaran formulir diverifikasi.'];
+    }
+
+    $baris = q_all(
+        'SELECT id, file_url, status_verifikasi FROM dokumen WHERE id = ? AND pendaftar_id = ? LIMIT 1',
+        [(string) $dokumen_id, $pendaftar_id]
+    );
+    if (!$baris) {
+        return ['ok' => false, 'pesan' => 'Berkas tidak ditemukan pada akun Anda.'];
+    }
+    if (($baris[0]['status_verifikasi'] ?? '') !== 'REJECTED') {
+        return ['ok' => false, 'pesan' => 'Hanya berkas yang ditolak panitia yang dapat dihapus.'];
+    }
+
+    $ok = q_exec(
+        'UPDATE dokumen SET file_url = NULL, ukuran_kb = NULL, uploaded_at = NULL
+          WHERE id = ? AND pendaftar_id = ? AND status_verifikasi = "REJECTED"',
+        [(string) $dokumen_id, $pendaftar_id]
+    );
+    if (!$ok) {
+        return ['ok' => false, 'pesan' => 'Gagal menghapus berkas. Coba lagi.'];
+    }
+
+    if (!empty($baris[0]['file_url'])) {
+        hapus_berkas_upload((string) $baris[0]['file_url']);
+    }
+    return ['ok' => true, 'pesan' => 'Berkas ditolak dihapus. Pilih berkas pengganti, lalu simpan.'];
+}
+
+/**
  * "Kirim untuk Verifikasi": semua berkas WAJIB harus sudah diunggah.
  * Setelah submit: tahap = BERKAS_DISUBMIT + notifikasi operator.
  *
@@ -410,6 +461,34 @@ function berkas_evaluasi_tahap($pendaftar_id)
 
     if ($ditolak > 0) {
         q_exec("UPDATE pendaftar SET tahap = 'BERKAS_REVISI' WHERE id = ? AND tahap = 'BERKAS_DISUBMIT'", [$pendaftar_id]);
+
+        /* Daftar berkas ditolak + alasan — dipakai notifikasi in-app & WA. */
+        $daftar = q_all(
+            "SELECT jenis_dokumen, catatan_verifikasi FROM dokumen
+              WHERE pendaftar_id = ? AND status_verifikasi = 'REJECTED'",
+            [$pendaftar_id]
+        ) ?: [];
+        $namaJenis = [];
+        foreach (jenis_dokumen_semua() as $j) {
+            $namaJenis[$j['kode']] = $j['nama'];
+        }
+        $baris = [];
+        foreach ($daftar as $d) {
+            $nm = $namaJenis[$d['jenis_dokumen']] ?? $d['jenis_dokumen'];
+            $baris[] = "- {$nm}: " . ($d['catatan_verifikasi'] ?: 'Ditolak tanpa catatan');
+        }
+
+        /* Notifikasi in-app siswa (lonceng portal). */
+        notif_siswa_kirim(
+            $pendaftar_id,
+            'BERKAS_DITOLAK',
+            'Berkas perlu diperbaiki',
+            "Panitia menolak sebagian berkas. Perbaiki / unggah ulang berkas berikut:\n"
+                . implode("\n", $baris)
+                . "\n\nBerkas yang sudah lolos tidak perlu diunggah ulang.",
+            url('app/siswa/data-siswa.php')
+        );
+
         /* WA orang tua: daftar berkas ditolak + alasan. */
         try {
             $info = q_all(
@@ -420,20 +499,6 @@ function berkas_evaluasi_tahap($pendaftar_id)
             );
             $info = $info ? $info[0] : null;
             if ($info && !empty($info['no_whatsapp'])) {
-                $daftar = q_all(
-                    "SELECT jenis_dokumen, catatan_verifikasi FROM dokumen
-                      WHERE pendaftar_id = ? AND status_verifikasi = 'REJECTED'",
-                    [$pendaftar_id]
-                ) ?: [];
-                $namaJenis = [];
-                foreach (jenis_dokumen_semua() as $j) {
-                    $namaJenis[$j['kode']] = $j['nama'];
-                }
-                $baris = [];
-                foreach ($daftar as $d) {
-                    $nm = $namaJenis[$d['jenis_dokumen']] ?? $d['jenis_dokumen'];
-                    $baris[] = "- {$nm}: " . ($d['catatan_verifikasi'] ?: 'Ditolak tanpa catatan');
-                }
                 $daftarTeks = implode("\n", $baris);
                 $pesan = "Assalamu'alaikum.\n\n"
                     . "Hasil pemeriksaan berkas SPMB atas nama:\n"
@@ -455,6 +520,14 @@ function berkas_evaluasi_tahap($pendaftar_id)
 
     if ($jml > 0 && $lolos === $jml) {
         q_exec("UPDATE pendaftar SET tahap = 'BERKAS_TERVERIFIKASI' WHERE id = ? AND tahap = 'BERKAS_DISUBMIT'", [$pendaftar_id]);
+        notif_siswa_kirim(
+            $pendaftar_id,
+            'BERKAS_TERVERIFIKASI',
+            'Berkas terverifikasi',
+            'Seluruh berkas persyaratan Anda telah diperiksa dan dinyatakan lengkap. '
+                . 'Tahap berikutnya menunggu penjadwalan tes dari panitia.',
+            url('app/siswa/data-siswa.php')
+        );
         return ['ok' => true, 'tahap' => 'BERKAS_TERVERIFIKASI', 'pesan' => 'Seluruh berkas lolos — BERKAS_TERVERIFIKASI.'];
     }
 
