@@ -172,7 +172,7 @@ $nav = [
         </div>
 
         <div class="mt-7 flex flex-wrap gap-3">
-          <a href="#registrasi" class="btn btn-primary btn-lg shadow-drop"><?= icon('arrow_forward') ?> Daftar Sekarang</a>
+          <a href="#registrasi" data-sorot="registrasi" class="btn btn-primary btn-lg shadow-drop"><?= icon('arrow_forward') ?> Daftar Sekarang</a>
         </div>
 
         <!-- statistik -->
@@ -191,6 +191,9 @@ $nav = [
 
       <!-- Kolom kanan: pendaftaran cepat -->
       <div class="lg:col-span-5 w-full" id="registrasi">
+        <div class="mb-2 flex justify-center lg:justify-start">
+          <span class="badge badge-blue shadow-card"><?= icon('edit_note', 'text-[13px]') ?> Formulir pendaftaran — mulai di sini</span>
+        </div>
         <div class="card p-5 sm:p-6 shadow-drop lg:mt-4">
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3">
@@ -465,7 +468,7 @@ $nav = [
 <?php require_once __DIR__ . '/../../includes/partials/footer-public.php'; ?>
 
 <div id="toast-host" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 items-end no-print"></div>
-<script src="<?= asset('assets/js/app.js') ?>"></script>
+<script src="<?= asset('assets/js/app.js') ?>?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/js/app.js') ?: 1) ?>"></script>
 <script>
 /* Fungsi toggle dark/light mode — dipanggil dari tombol di header landing. */
 function toggleTema() {

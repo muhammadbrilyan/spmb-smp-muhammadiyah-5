@@ -356,6 +356,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  /* ---------------- Sorot sasaran tautan jangkar (landing) ---------------- */
+  document.querySelectorAll('[data-sorot]').forEach(function (el) {
+    el.addEventListener('click', function (ev) {
+      const target = document.getElementById(el.getAttribute('data-sorot'));
+      if (!target) return;                       /* tanpa sasaran: biarkan lompatan jangkar bawaan */
+      ev.preventDefault();
+      const halus = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({ behavior: halus ? 'smooth' : 'auto', block: 'start' });
+      /* Hanya di layar besar: di HP fokus otomatis membuka keyboard dan menutupi formulir. */
+      if (window.matchMedia('(min-width: 1024px)').matches) {
+        const isian = target.querySelector('input:not([type="hidden"]):not([tabindex="-1"]), select, textarea');
+        if (isian) isian.focus({ preventScroll: true });
+      }
+      target.classList.remove('sorot');
+      void target.offsetWidth;                   /* restart animasi bila tombol diklik lagi */
+      window.setTimeout(function () { target.classList.add('sorot'); }, 200);
+      window.setTimeout(function () { target.classList.remove('sorot'); }, 2800);
+    });
+  });
+
   /* ---------------- Color picker warna tema (demo) ---------------- */
   const colorPicker = document.getElementById('theme-color');
   if (colorPicker) {

@@ -46,3 +46,12 @@
   .tab-underline { @apply relative px-4 py-3 text-sm font-semibold text-ink-500 border-b-2 border-transparent hover:text-ink-900 transition-colors; }
   .tab-underline[data-active="true"] { @apply text-primary border-primary; }
 }
+
+/* Kelas "sorot" hanya dipasang lewat JavaScript (assets/js/app.js), jadi ditulis
+   di luar @layer agar tidak ikut dibuang Tailwind — konten pemindai hanya berkas PHP. */
+.sorot { animation: sorot 1.3s ease-out 2; }
+@keyframes sorot {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent); }
+  25%      { box-shadow: 0 0 0 12px color-mix(in srgb, var(--color-primary) 45%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .sorot { animation: none; } }
