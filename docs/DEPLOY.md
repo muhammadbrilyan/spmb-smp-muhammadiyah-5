@@ -33,6 +33,12 @@ Tanpa Composer/npm — Tailwind sudah di-build statis.
 4. Migrasi tambahan per fase (idempoten, aman dijalankan ulang): buka tiap
    file di `database/migrations/` secara berurutan (nama file = urut waktu)
    di phpMyAdmin → tab SQL → Run.
+5. **Jalankan langkah 4 setiap kali menarik kode baru.** Kolom yang tertinggal
+   membuat halaman gagal menyimpan secara menyeluruh, bukan sebagian — satu
+   `UPDATE` 49 kolom dibatalkan MySQL (`1054 Unknown column`) sehingga seluruh
+   perubahan operator hangus. Dengan akses CLI, `php tools/cek-proyek.php`
+   pemeriksaan 5 membandingkan semua kolom seed terhadap database (251 kolom)
+   dan menyebut nama kolom yang belum ada.
 
 **PENTING (Fase 11):** seed utama sengaja **tidak memuat password login yang
 bisa dipakai** — akun staf (`operator`, `bendahara`, `kepsek`) di-seed dgn

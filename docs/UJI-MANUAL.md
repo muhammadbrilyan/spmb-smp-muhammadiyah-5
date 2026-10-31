@@ -187,6 +187,19 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | K10 | Pendaftar diarsipkan/dipulihkan setelah persetujuan | Sidik ikut berubah (sidik hanya atas `arsip_at IS NULL`) → catatan menjadi **Batal** — persetujuan harus diminta ulang atas daftar yang benar-benar akan terbit |
 | K11 | Kepsek mencetak halaman | Kop laporan + tabel + blok tanda tangan tercetak; filter, tombol aksi, sidebar & topbar tidak ikut (`no-print`) |
 
+## L. Pengaturan Sistem / CMS (`app/operator/pengaturan.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| L1 | Login operator → **Pengaturan Sistem** → isi alamat sekolah → **Simpan** | Toast hijau "Pengaturan tersimpan…"; muat ulang halaman, textarea masih berisi alamat yang diketik (bukan alamat contoh `Jl. Perintis Kemerdekaan…`) |
+| L2 | Buka landing publik / footer / kartu hasil | Alamat yang baru tersimpan ikut berubah — nilai `$PENGATURAN` = isi database |
+| L3 | Kosongkan satu kolom (mis. Email) lalu **Simpan** | Kolom itu jadi **NULL** di DB, bukan terisi ulang nilai contoh dari `includes/dummy.php`; formulir menampilkannya kosong |
+| L4 | Isi ulang kolom tersebut → Simpan | Nilai kembali tersimpan; kolom lain tidak ikut berubah (logo, banner, QRIS, jalur, S&K tetap) |
+| L5 | Ubah Estimasi Biaya Pendaftaran | Angsuran 1 & 2 otomatis terbagi dua sama besar (sisa pembulatan ke angsuran 2) |
+| L6 | **Simpan** padahal DB tertinggal satu migrasi (buang kolom contoh: `ALTER TABLE pengaturan_sekolah DROP COLUMN pengingat_angsuran_wa`) | Toast merah menyebut "Struktur basis data belum lengkap (… Unknown column …) — jalankan database/migrations/"; **tidak ada** perubahan yang tersimpan separuh |
+| L7 | `php tools/cek-proyek.php` sesudah langkah L6 | Pemeriksaan 5 **GAGAL**: `1 kolom ada di seed tapi belum ada di DB: pengaturan_sekolah.pengingat_angsuran_wa`; pulihkan dengan `mysql -u root < database/migrations/20261031_pengingat_angsuran.sql` → 8 PASS |
+| L8 | Simpan dengan token Fonnte kosong di form (tidak mengetik ulang) | Token tersimpan **tidak terhapus**; penghapusan hanya lewat checkbox "Hapus token dari database" |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |

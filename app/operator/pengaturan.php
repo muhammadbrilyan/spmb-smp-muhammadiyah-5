@@ -98,56 +98,68 @@ function gambar_resize_otomatis(string $path, int $maksSisi, int $kualitas = 85)
 
 /* ==================================================================
  * Nilai awal formulir dari CMS (pengaturan_sekolah id = 1)
+ *
+ * [PERBAIKAN 2026-11-01] Diisi dari baris MENTAH database, bukan dari
+ * $PENGATURAN. $PENGATURAN menambal kolom kosong dengan contoh demo
+ * (includes/dummy.php), jadi kolom yang operator kosongkan akan ikut
+ * terganti nilai contoh itu saat disimpan — perubahan kelihatan
+ * "kembali sendiri". Kolom gambar tetap dari $PENGATURAN karena nilainya
+ * sudah dinormalisasi menjadi URL absolut; blok penyimpanan mengubahnya
+ * kembali ke path relatif.
  * ================================================================== */
+$cmsBaris = pengaturan_baris() ?? [];
+$teks = function (string $k, $d = '') use ($cmsBaris) {
+    return (isset($cmsBaris[$k]) && $cmsBaris[$k] !== null && $cmsBaris[$k] !== '') ? (string) $cmsBaris[$k] : $d;
+};
 $f = [
-    'nama_sekolah'         => $PENGATURAN['nama_sekolah'],
-    'alamat_sekolah'       => $PENGATURAN['alamat_sekolah'],
-    'kontak_wa_panitia'    => $PENGATURAN['kontak_wa_panitia'],
-    'email_sekolah'        => $PENGATURAN['email_sekolah'],
-    'ticker_header'        => $PENGATURAN['ticker'],
-    'profil_singkat'       => $PENGATURAN['profil_singkat'] ?? '',
-    'warna_utama'          => $PENGATURAN['warna_utama'],
-    'biaya_formulir'       => $PENGATURAN['biaya_formulir'],
-    'biaya_spp'            => $PENGATURAN['biaya_spp'] ?? 0,
-    'estimasi_uang_masuk'  => $PENGATURAN['estimasi_uang_masuk'] ?? 0,
-    'angsuran_1_nominal'   => $PENGATURAN['angsuran_1_nominal'] ?? 0,
-    'angsuran_2_nominal'   => $PENGATURAN['angsuran_2_nominal'] ?? 0,
-    'angsuran_1_jatuh_tempo' => $PENGATURAN['angsuran_1_jatuh_tempo'] ?? '',
-    'angsuran_2_jatuh_tempo' => $PENGATURAN['angsuran_2_jatuh_tempo'] ?? '',
-    'pengingat_angsuran_hari' => (int) ($PENGATURAN['pengingat_angsuran_hari'] ?? 7),
-    'pengingat_angsuran_wa'   => (int) ($PENGATURAN['pengingat_angsuran_wa'] ?? 0),
-    'nama_bank'            => $PENGATURAN['nama_bank'],
-    'no_rekening'          => $PENGATURAN['no_rekening'],
-    'atas_nama_rekening'   => $PENGATURAN['atas_nama_rekening'],
-    'tahun_ajaran'         => $PENGATURAN['tahun_ajaran'],
-    'gelombang'            => $PENGATURAN['gelombang'],
-    'tanggal_buka_ppdb'    => $PENGATURAN['tanggal_buka_ppdb'] ?? '',
-    'tanggal_tutup_ppdb'   => $PENGATURAN['tanggal_tutup_ppdb'] ?? '',
-    'tanggal_pengumuman'   => $PENGATURAN['tanggal_pengumuman'] ?? '',
-    'deskripsi_gelombang'  => $PENGATURAN['deskripsi_gelombang'] ?? '',
-    'fonnte_token'         => $PENGATURAN['fonnte_token'] ?? '',
-    'midtrans_server_key'  => $PENGATURAN['midtrans_server_key'] ?? '',
-    'midtrans_client_key'  => $PENGATURAN['midtrans_client_key'] ?? '',
-    'midtrans_sandbox'     => (int) ($PENGATURAN['midtrans_sandbox'] ?? 1),
-    'bayar_gateway_aktif'  => (int) ($PENGATURAN['bayar_gateway_aktif'] ?? 0),
-    'bayar_transfer_aktif' => (int) ($PENGATURAN['bayar_transfer_aktif'] ?? 1),
-    'bayar_qris_aktif'     => (int) ($PENGATURAN['bayar_qris_aktif'] ?? 0),
-    'qris_merchant'        => $PENGATURAN['qris_merchant'] ?? '',
+    'nama_sekolah'         => $teks('nama_sekolah'),
+    'alamat_sekolah'       => $teks('alamat_sekolah'),
+    'kontak_wa_panitia'    => $teks('kontak_wa_panitia'),
+    'email_sekolah'        => $teks('email_sekolah'),
+    'ticker_header'        => $teks('ticker_header'),
+    'profil_singkat'       => $teks('profil_singkat'),
+    'warna_utama'          => $teks('warna_utama', '#0056b3'),
+    'biaya_formulir'       => $teks('biaya_formulir', '0'),
+    'biaya_spp'            => $teks('biaya_spp', '0'),
+    'estimasi_uang_masuk'  => $teks('estimasi_uang_masuk', '0'),
+    'angsuran_1_nominal'   => $teks('angsuran_1_nominal', '0'),
+    'angsuran_2_nominal'   => $teks('angsuran_2_nominal', '0'),
+    'angsuran_1_jatuh_tempo' => $teks('angsuran_1_jatuh_tempo'),
+    'angsuran_2_jatuh_tempo' => $teks('angsuran_2_jatuh_tempo'),
+    'pengingat_angsuran_hari' => (int) $teks('pengingat_angsuran_hari', '7'),
+    'pengingat_angsuran_wa'   => (int) $teks('pengingat_angsuran_wa', '0'),
+    'nama_bank'            => $teks('nama_bank'),
+    'no_rekening'          => $teks('no_rekening'),
+    'atas_nama_rekening'   => $teks('atas_nama_rekening'),
+    'tahun_ajaran'         => $teks('tahun_ajaran'),
+    'gelombang'            => $teks('gelombang'),
+    'tanggal_buka_ppdb'    => $teks('tanggal_buka_ppdb'),
+    'tanggal_tutup_ppdb'   => $teks('tanggal_tutup_ppdb'),
+    'tanggal_pengumuman'   => $teks('tanggal_pengumuman'),
+    'deskripsi_gelombang'  => $teks('deskripsi_gelombang'),
+    'fonnte_token'         => $teks('fonnte_token'),
+    'midtrans_server_key'  => $teks('midtrans_server_key'),
+    'midtrans_client_key'  => $teks('midtrans_client_key'),
+    'midtrans_sandbox'     => (int) $teks('midtrans_sandbox', '1'),
+    'bayar_gateway_aktif'  => (int) $teks('bayar_gateway_aktif', '0'),
+    'bayar_transfer_aktif' => (int) $teks('bayar_transfer_aktif', '1'),
+    'bayar_qris_aktif'     => (int) $teks('bayar_qris_aktif', '0'),
+    'qris_merchant'        => $teks('qris_merchant'),
     'qris_image_url'       => $PENGATURAN['qris_image_url'] ?? '',
-    'kirim_akun_otomatis'  => (int) ($PENGATURAN['kirim_akun_otomatis'] ?? 0),
-    'notif_wa_operator'    => $PENGATURAN['notif_wa_operator'] ?? '',
-    'notif_wa_aktif'       => (int) ($PENGATURAN['notif_wa_aktif'] ?? 0),
-    'notif_email'          => $PENGATURAN['notif_email'] ?? '',
-    'syarat_ketentuan'     => $PENGATURAN['syarat_ketentuan'] ?? '',
-    'syarat_versi'         => (int) ($PENGATURAN['syarat_versi'] ?? 1),
+    'kirim_akun_otomatis'  => (int) $teks('kirim_akun_otomatis', '0'),
+    'notif_wa_operator'    => $teks('notif_wa_operator'),
+    'notif_wa_aktif'       => (int) $teks('notif_wa_aktif', '0'),
+    'notif_email'          => $teks('notif_email'),
+    'syarat_ketentuan'     => $teks('syarat_ketentuan'),
+    'syarat_versi'         => (int) $teks('syarat_versi', '1'),
     'hero_banner_url'      => $PENGATURAN['hero_banner_url'] ?? '',
     'login_banner_url'     => $PENGATURAN['login_banner_url'] ?? '',
-    'deskripsi_sekolah'    => $PENGATURAN['deskripsi_sekolah'] ?? '',
-    'tagline'              => $PENGATURAN['tagline'] ?? '',
-    'label_uang_pangkal'   => $PENGATURAN['label_uang_pangkal'] ?? '',
-    'label_spp'            => $PENGATURAN['label_spp'] ?? '',
-    'teks_beasiswa'        => $PENGATURAN['teks_beasiswa'] ?? '',
-    'jalur_aktif'          => $PENGATURAN['jalur_aktif'] ?? '',
+    'deskripsi_sekolah'    => $teks('deskripsi_sekolah'),
+    'tagline'              => $teks('tagline'),
+    'label_uang_pangkal'   => $teks('label_uang_pangkal'),
+    'label_spp'            => $teks('label_spp'),
+    'teks_beasiswa'        => $teks('teks_beasiswa'),
+    'jalur_aktif'          => $teks('jalur_aktif'),
 ];
 
 $galat   = [];
@@ -687,7 +699,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 flash('error', 'Pengaturan tersimpan, TETAPI ' . $sumberWa . ' belum bisa dipakai: ' . $cekWa['pesan']);
             }
         } catch (Throwable $e) {
-            flash('error', 'Gagal menyimpan ke database.');
+            error_log('[pengaturan] gagal simpan: ' . $e->getMessage());
+            /* Dulu hanya "Gagal menyimpan ke database." — operator tidak pernah
+             * tahu bahwa satu query besar ini membatalkan SEMUA perubahan,
+             * termasuk kolom yang tidak berhubungan. 1054 (unknown column)
+             * hampir selalu berarti struktur DB tertinggal satu migrasi. */
+            $detail = $e->getMessage();
+            if (stripos($detail, 'unknown column') !== false || strpos($detail, '42S22') !== false) {
+                flash('error', 'Perubahan TIDAK tersimpan. Struktur basis data belum lengkap ('
+                    . $detail . ') — jalankan berkas di database/migrations/, lalu muat ulang halaman ini.');
+            } else {
+                flash('error', 'Perubahan TIDAK tersimpan. Database menolak penyimpanan: ' . $detail);
+            }
         }
 
         header('Location: ' . url('app/operator/pengaturan.php'));

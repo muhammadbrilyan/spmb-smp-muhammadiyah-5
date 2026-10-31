@@ -313,6 +313,8 @@ CREATE TABLE `pengaturan_sekolah` (
   `angsuran_2_nominal` decimal(12,2) NOT NULL DEFAULT 0.00,
   `angsuran_1_jatuh_tempo` date DEFAULT NULL,
   `angsuran_2_jatuh_tempo` date DEFAULT NULL,
+  `pengingat_angsuran_hari` tinyint(3) unsigned NOT NULL DEFAULT 7,
+  `pengingat_angsuran_wa` tinyint(1) NOT NULL DEFAULT 0,
   `label_uang_pangkal` varchar(100) DEFAULT 'Uang Pangkal Gedung',
   `label_spp` varchar(100) DEFAULT 'SPP Bulanan',
   `teks_beasiswa` varchar(300) DEFAULT NULL,

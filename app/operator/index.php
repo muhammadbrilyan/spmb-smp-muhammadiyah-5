@@ -288,7 +288,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <span class="icon-box bg-[#FFF7ED] text-[#EA580C]"><?= icon('event', 'text-[20px]') ?></span>
         </div>
         <div class="mt-4 pt-3 border-t border-line-soft flex items-center justify-between text-xs">
-          <span class="text-ink-600"><strong class="text-ink-900"><?= (int) $stat['offline'] ?></strong> Offline Kampus</span>
+          <span class="text-ink-600"><strong class="text-ink-900"><?= (int) $stat['offline'] ?></strong> Offline di Sekolah</span>
           <span class="text-ink-600"><strong class="text-ink-900"><?= (int) $stat['daring'] ?></strong> Daring VC</span>
         </div>
       </article>

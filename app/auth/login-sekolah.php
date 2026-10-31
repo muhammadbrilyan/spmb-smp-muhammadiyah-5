@@ -66,7 +66,7 @@ $ikon_role = ['operator' => 'settings_suggest', 'bendahara' => 'payments', 'keps
     <?php if (!empty($loginBanner)): ?>
       <img src="<?= e($loginBanner) ?>" alt="Foto Sekolah" class="absolute inset-0 w-full h-full object-cover">
     <?php else: ?>
-      <img src="<?= asset('assets/img/kampus.png') ?>" alt="Kampus SMP Muhammadiyah 5" class="absolute inset-0 w-full h-full object-cover">
+      <img src="<?= asset('assets/img/kampus.png') ?>" alt="Gedung SMP Muhammadiyah 5 Kota Tangerang" class="absolute inset-0 w-full h-full object-cover">
     <?php endif; ?>
     <div class="absolute inset-0 bg-gradient-to-br from-ink-900/90 via-ink-900/75 to-primary/70"></div>
     <div class="absolute -bottom-32 -left-24 w-96 h-96 rounded-full bg-accent/20 blur-3xl"></div>

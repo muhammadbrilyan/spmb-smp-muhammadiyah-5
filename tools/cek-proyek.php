@@ -140,37 +140,51 @@ if ($db === null) {
 }
 
 /* ---------------------------------------------------------------
- * 5. Skema migrasi terbaru (sudah dijalankan?)
+ * 5. Skema database vs seed repo (migrasi tertinggal?)
+ *
+ * Daftar kolom tidak lagi disarikan tangan — sumbernya seed
+ * database/db_spmb_mualimku.sql yang menjadi acuan "skema + seluruh
+ * migrasi". Kolom yang hilang di DB membuat query gagal diam-diam:
+ * halaman Pengaturan Sistem misalnya, satu kolom tidak ada = semua
+ * perubahan hangus tanpa pesan yang jelas.
  * ------------------------------------------------------------- */
 if ($db !== null) {
-    $kolom = [];
-    try {
-        $q = q_all(
-            "SELECT CONCAT(table_name, '.', column_name) AS k
-               FROM information_schema.columns
-              WHERE table_schema = DATABASE()
-                AND ((table_name = 'pendaftar' AND column_name = 'pay_token_hash')
-                  OR (table_name = 'users' AND column_name = 'wajib_ganti_password')
-                  OR (table_name = 'rate_limit' AND column_name = 'aksi')
-                  OR (table_name = 'pengaturan_sekolah' AND column_name = 'teks_beasiswa'))"
-        );
-        foreach ($q as $r) {
-            $kolom[$r['k']] = true;
-        }
-    } catch (Throwable $e) {
-        $kolom = [];
-    }
-    $kurang = [];
-    foreach (['pendaftar.pay_token_hash', 'users.wajib_ganti_password', 'rate_limit.aksi',
-        'pengaturan_sekolah.teks_beasiswa'] as $k) {
-        if (!isset($kolom[$k])) {
-            $kurang[] = $k;
+    $kolomSeed = [];
+    $sqlSeed   = (string) file_get_contents($root . '/database/db_spmb_mualimku.sql');
+    if (preg_match_all('/CREATE TABLE `([^`]+)` \((.*?)\n\) ENGINE/is', $sqlSeed, $blok, PREG_SET_ORDER)) {
+        foreach ($blok as $b) {
+            if (preg_match_all('/^\s+`([a-z0-9_]+)`\s/msi', $b[2], $k)) {
+                foreach ($k[1] as $c) {
+                    $kolomSeed[strtolower($b[1]) . '.' . strtolower($c)] = true;
+                }
+            }
         }
     }
-    if ($kurang) {
-        catat('GAGAL', 'Skema migrasi terbaru', 'kolom belum ada: ' . implode(', ', $kurang) . ' — jalankan database/migrations/ berurutan');
+    if (!$kolomSeed) {
+        catat('WARN', 'Skema database', 'tidak ada satu pun CREATE TABLE yang terbaca dari seed — pemeriksaan dilewati');
     } else {
-        catat('PASS', 'Skema migrasi terbaru', 'pay_token_hash, wajib_ganti_password, rate_limit.aksi, teks_beasiswa ada');
+        $kolomDb = [];
+        foreach (q_all(
+            'SELECT CONCAT(table_name, ".", column_name) AS k FROM information_schema.columns
+              WHERE table_schema = DATABASE()'
+        ) as $r) {
+            $kolomDb[strtolower($r['k'])] = true;
+        }
+        $kurang = array_values(array_diff(array_keys($kolomSeed), array_keys($kolomDb)));
+        $lebih  = array_values(array_diff(array_keys($kolomDb), array_keys($kolomSeed)));
+        if ($kurang) {
+            catat('GAGAL', 'Skema database', count($kurang) . ' kolom ada di seed tapi belum ada di DB: '
+                . implode(', ', array_slice($kurang, 0, 8))
+                . (count($kurang) > 8 ? ' ...' : '')
+                . ' — jalankan database/migrations/ berurutan');
+        } elseif ($lebih) {
+            catat('WARN', 'Skema database', count($lebih) . ' kolom ada di DB tapi tidak ada di seed: '
+                . implode(', ', array_slice($lebih, 0, 8))
+                . (count($lebih) > 8 ? ' ...' : '')
+                . ' — samakan database/db_spmb_mualimku.sql');
+        } else {
+            catat('PASS', 'Skema database', count($kolomSeed) . ' kolom seed = kolom database');
+        }
     }
 }
 

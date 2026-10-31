@@ -26,6 +26,38 @@ function normalisasi_logo($logo, $default = null)
 }
 
 /**
+ * Baris MENTAH pengaturan_sekolah (id = 1), tanpa campuran nilai dummy.
+ *
+ * Dipakai halaman CMS sebagai nilai awal formulir. Kalau formulir diisi dari
+ * pengaturan() (yang menambal kolom kosong dengan contoh dari dummy.php),
+ * operator yang mengosongkan sebuah kolom justru menyimpan nilai contoh itu
+ * ke database — perubahannya kelihatan "kembali sendiri".
+ *
+ * @return array<string,string|null>|null null bila database tidak terbaca
+ */
+function pengaturan_baris()
+{
+    static $baris  = null;
+    static $dibaca = false;
+    if ($dibaca) {
+        return $baris;
+    }
+    $dibaca = true;
+
+    $db = db();
+    if ($db === null) {
+        return null;
+    }
+    try {
+        $hasil = $db->query('SELECT * FROM pengaturan_sekolah WHERE id = 1')->fetch();
+    } catch (Throwable $e) {
+        return null;
+    }
+    $baris = $hasil ?: null;
+    return $baris;
+}
+
+/**
  * Pengaturan CMS (single row id = 1) — kolom DB menimpa nilai dummy.
  * @return array
  */
@@ -40,23 +72,23 @@ function pengaturan()
 
     $db = db();
     if ($db !== null) {
-        try {
-            $baris = $db->query('SELECT * FROM pengaturan_sekolah WHERE id = 1')->fetch();
-            if ($baris) {
-                /* kolom DB yang namanya berbeda di tampilan */
-                $peta = ['ticker_header' => 'ticker'];
-                foreach ($baris as $kolom => $nilai_kolom) {
-                    if ($nilai_kolom === null || $nilai_kolom === '') {
-                        continue;
-                    }
-                    $kunci = $peta[$kolom] ?? $kolom;
-                    if ($kunci === 'id') {
-                        continue;
-                    }
-                    $nilai[$kunci] = $nilai_kolom;
+        $baris = pengaturan_baris();
+        if ($baris) {
+            /* kolom DB yang namanya berbeda di tampilan */
+            $peta = ['ticker_header' => 'ticker'];
+            foreach ($baris as $kolom => $nilai_kolom) {
+                if ($nilai_kolom === null || $nilai_kolom === '') {
+                    continue;
                 }
+                $kunci = $peta[$kolom] ?? $kolom;
+                if ($kunci === 'id') {
+                    continue;
+                }
+                $nilai[$kunci] = $nilai_kolom;
             }
-            /* Total kuota = jumlah seluruh rombel aktif. */
+        }
+        /* Total kuota = jumlah seluruh rombel aktif. */
+        try {
             $jumlah = $db->query('SELECT COALESCE(SUM(kuota),0) FROM kelas WHERE is_aktif = 1')->fetchColumn();
             if ($jumlah !== false && $jumlah !== null) {
                 $nilai['kuota_total'] = (int) $jumlah;
