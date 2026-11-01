@@ -136,7 +136,7 @@ $flash = flash();
           Cari pendaftar, pantau status verifikasi data, dan buka detail untuk memeriksa kelengkapan formulir serta pengajuan koreksi.
         </p>
       </div>
-      <a href="<?= url('app/operator/verifikasi-data.php') ?>" class="btn btn-primary shrink-0 shadow-drop">
+      <a href="<?= url('app/operator/verifikasi.php?tab=data') ?>" class="btn btn-primary shrink-0 shadow-drop">
         <?= icon('fact_check') ?> Antrean Verifikasi Data
       </a>
     </div>
@@ -290,7 +290,7 @@ $flash = flash();
               ?>
               <tr class="tr-hover align-top <?= $terarsip ? 'opacity-70' : '' ?>">
                 <td class="td">
-                  <a href="<?= url('app/operator/verifikasi-data.php?id=' . rawurlencode($p['id'])) ?>" class="font-semibold text-ink-900 hover:text-primary">
+                  <a href="<?= url('app/operator/verifikasi.php?tab=data&amp;id=' . rawurlencode($p['id'])) ?>" class="font-semibold text-ink-900 hover:text-primary">
                     <?= e($p['nama_siswa']) ?>
                   </a>
                   <p class="mt-0.5 font-mono text-[12px] text-ink-500"><?= e($p['no_pendaftaran']) ?></p>
@@ -357,7 +357,7 @@ $flash = flash();
                         </button>
                       </form>
                     <?php else: ?>
-                      <a href="<?= url('app/operator/verifikasi-data.php?id=' . rawurlencode($p['id'])) ?>" class="btn btn-sm btn-outline">
+                      <a href="<?= url('app/operator/verifikasi.php?tab=data&amp;id=' . rawurlencode($p['id'])) ?>" class="btn btn-sm btn-outline">
                         <?= icon('fact_check', 'text-[15px]') ?> Periksa
                       </a>
                       <button type="button" class="btn btn-sm btn-outline"

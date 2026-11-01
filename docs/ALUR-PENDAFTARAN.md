@@ -66,7 +66,7 @@ flowchart TD
 - `jenis_dokumen` (nama, kode, wajib, format, maks_kb, is_aktif; seed 6 jenis)
 - `dokumen` kolom: `catatan_verifikasi`, `verified_by`, `verified_at`; `jenis` VARCHAR(30)
 - `dokumen_siswa()`, `dokumen_upload()`, `dokumen_submit()`, `berkas_keputusan()`, `berkas_evaluasi_tahap()`
-- Halaman: `app/operator/berkas.php`, `app/operator/jenis-dokumen.php`
+- Halaman: `app/operator/verifikasi.php` tab Berkas (dahulu `berkas.php`), `app/operator/jenis-dokumen.php`
 
 ### Fase 6 — Jadwal Ujian & Peserta
 - `jadwal_tes.ruangan` VARCHAR(100), `kapasitas` INT (0 = tanpa batas)

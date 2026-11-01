@@ -692,7 +692,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <button class="btn btn-outline" data-modal-close>Batal</button>
         <!-- [PERBAIKAN] Tombol "Tolak Berkas" dihapus — tidak melakukan apa pun
              di sini. Aksi terima/tolak yang sesungguhnya ada di Verifikasi Berkas. -->
-        <a href="<?= url('app/operator/berkas.php') ?>" class="btn btn-green" data-modal-close><?= icon('task_alt') ?> Setujui &amp; Kirim Kredensial</a>
+        <a href="<?= url('app/operator/verifikasi.php?tab=berkas') ?>" class="btn btn-green" data-modal-close><?= icon('task_alt') ?> Setujui &amp; Kirim Kredensial</a>
       </div>
 
     </div>

@@ -135,7 +135,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | H4 | Reload dashboard operator, antrean berkas & verifikasi data, daftar bendahara, kartu statistik, halaman kesiapan | Pendaftar terarsip **hilang** dari semua antrean dan angka; statistik tidak menghitungnya |
 | H5 | Export CSV pendaftar + counter publik (`app/spmb/index.php`) + `cek-status.php` dengan nomor terarsip | Terarsip tidak ikut ekspor/tidak ditemukan publik |
 | H6 | Filter **Tampilkan = Terarsip** pada Data Pendaftar | Hanya baris terarsip (badge "Terarsip" + alasan + petugas + waktu), urut waktu pengarsipan; tombol jadi **Pulihkan** |
-| H7 | Buka `verifikasi-data.php?id=<pendaftar terarsip>` lalu coba ubah status | Ditolak: "Pendaftar ini sudah diarsipkan — pulihkan dulu…" |
+| H7 | Buka `verifikasi.php?tab=data&id=<pendaftar terarsip>` lalu coba ubah status | Ditolak: "Pendaftar ini sudah diarsipkan — pulihkan dulu…" |
 | H8 | Klik **Pulihkan** (konfirmasi) | `arsip_at/alasan/oleh` kembali NULL, `is_active = 1`, pendaftar muncul lagi di semua antrean |
 | H9 | Registrasi baru dengan data Identik pendaftar terarsip | Allowed — cek duplikat mengabaikan baris terarsip (`arsip_at IS NULL`) |
 | H10 | Arsipkan/pulihkan 11× dalam 1 jam oleh operator sama | Rate limit **10/jam per user** aktif (pesan flash error) |

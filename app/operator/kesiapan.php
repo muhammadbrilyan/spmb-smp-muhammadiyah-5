@@ -438,14 +438,14 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <span class="text-xs text-ink-400">Total <?= (int) $antre['total'] ?> pendaftar</span>
         </div>
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
-          <a href="<?= url('app/operator/berkas.php') ?>" class="group rounded-2xl border border-line p-4 flex items-start justify-between hover:border-primary transition">
+          <a href="<?= url('app/operator/verifikasi.php?tab=berkas') ?>" class="group rounded-2xl border border-line p-4 flex items-start justify-between hover:border-primary transition">
             <div>
               <p class="text-sm font-semibold text-ink-900 group-hover:text-primary">Berkas menunggu verifikasi</p>
-              <p class="mt-1 text-xs text-ink-500">Operator membuka Verifikasi Berkas</p>
+              <p class="mt-1 text-xs text-ink-500">Operator membuka Verifikasi Pendaftar</p>
             </div>
             <span class="text-2xl font-extrabold <?= $antre['berkas'] > 0 ? 'text-[#EA580C]' : 'text-ink-400' ?>"><?= (int) $antre['berkas'] ?></span>
           </a>
-          <a href="<?= url('app/operator/berkas.php') ?>" class="group rounded-2xl border border-line p-4 flex items-start justify-between hover:border-primary transition">
+          <a href="<?= url('app/operator/verifikasi.php?tab=berkas') ?>" class="group rounded-2xl border border-line p-4 flex items-start justify-between hover:border-primary transition">
             <div>
               <p class="text-sm font-semibold text-ink-900 group-hover:text-primary">Revisi berkas (siswa)</p>
               <p class="mt-1 text-xs text-ink-500">Menunggu unggah ulang oleh siswa</p>

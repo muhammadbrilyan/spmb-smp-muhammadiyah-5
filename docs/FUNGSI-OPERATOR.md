@@ -43,7 +43,7 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | 9 | Tombol "Panduan SOP SPMB" | ✅ *diperbaiki* — kini ke `panduan.php` (semula `href="#"`) |
 | 10 | Edit / Kirim WA jadwal (tab 2) | ✅ *diperbaiki* — kini link ke `jadwal.php` |
 | 11 | Edit / Hapus rombel (tab 4) | ✅ *diperbaiki* — kini link ke `kelas.php` |
-| 12 | Tombol "Setujui & Kirim Kredensial" di modal detail | ✅ *diperbaiki* — kini ke `berkas.php` |
+| 12 | Tombol "Setujui & Kirim Kredensial" di modal detail | ✅ *diperbaiki* — kini ke tab Berkas pada `verifikasi.php` |
 | 13 | Footer tabel (keterangan jumlah baris) | ✅ *diperbaiki* — semula tombol halaman 1/2/3/…/36 tanpa `href` (murni hiasan) |
 | 14 | **Input nilai CBT/BTQ/wawancara di tab 3** | ❌ Input tanpa `name`, tanpa `<form>`, tanpa tombol simpan → murni hiasan. Jalur nyata ada di `seleksi.php` |
 
@@ -61,7 +61,7 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | 8 | **Pulihkan** pendaftar terarsip | ✅ — kolom arsip dibersihkan, akun diaktifkan lagi |
 | 9 | **Pagination & sorting** | 🚧 Semua baris dimuat tanpa `LIMIT` |
 
-### 3. Verifikasi Kelengkapan Formulir — `app/operator/berkas.php`
+### 3. Verifikasi Berkas — `app/operator/verifikasi.php?tab=berkas` (dahulu `berkas.php`)
 
 | # | Fungsi | Status |
 |---|---|---|
@@ -69,7 +69,7 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | 2 | Setujui / Tolak berkas + alasan | ⚠️ Guard hanya menerima tahap `BERKAS_DISUBMIT`, sehingga selalu gagal untuk `BERKAS_REVISI` (`includes/queries/dokumen.php:368-373`) |
 | 3 | Retensi berkas pribadi | ✅ |
 
-### 4. Verifikasi Data Calon Siswa — `app/operator/verifikasi-data.php`
+### 4. Verifikasi Data & Koreksi — `app/operator/verifikasi.php?tab=data` (dahulu `verifikasi-data.php`)
 
 | # | Fungsi | Status |
 |---|---|---|
@@ -295,6 +295,7 @@ Untuk kondisi awal di mana **belum ada** akun staf yang bisa login (semua
 | 14 | **Semua perubahan di Pengaturan Sistem hilang tanpa jejak** (2026-11-01) | Akar: database lokal belum menjalankan `20261031_pengingat_angsuran.sql`, padahal satu `UPDATE` di `pengaturan.php` menulis 49 kolom sekaligus termasuk `pengingat_angsuran_hari`/`_wa` → MySQL menolak `1054 Unknown column` dan **seluruh** kolom ikut batal; pesan saat itu hanya "Gagal menyimpan ke database." Kini: migrasi diterapkan + seed `database/db_spmb_mualimku.sql` disamakan, pesan galat menyebut kolom yang hilang dan arahkan ke `database/migrations/`, dan pemeriksaan 5 `tools/cek-proyek.php` tidak lagi mengandalkan daftar tangan — ia membandingkan **semua** kolom seed vs database (251 kolom) |
 | 15 | **Nilai contoh `includes/dummy.php` bocor ke database** | Formulir CMS dulu diisi dari `$PENGATURAN` (dummy ditimpa DB). Kolom yang kosong di DB ikut terganti alamat/rekening/telepon contoh setiap kali operator menekan Simpan, sehingga perubahan kelihatan "kembali sendiri". Kini lewat `cms.php::pengaturan_baris()` (baris mentah database) — kolom yang dikosongkan tersimpan NULL. Kolom gambar tetap dari `$PENGATURAN` karena nilainya sudah dinormalisasi menjadi URL absolut |
 | 16 | Sebutan **"Kampus"** pada teks yang dilihat pengguna | `includes/dummy.php` langkah 3, badge jadwal di dashboard operator, dan `alt` di dua halaman login → "sekolah" / "Gedung SMP Muhammadiyah 5 Kota Tangerang". Nama berkas `assets/img/kampus.png` tidak diubah |
+| 17 | **Dua menu verifikasi yang dikerjakan berurutan digabung** (2026-11-01) | `berkas.php` + `verifikasi-data.php` → satu halaman `app/operator/verifikasi.php` dengan tab **Berkas Persyaratan / Data Siswa / Koreksi Data**. Satu pendaftar dibuka di satu layar (berkas + keputusan per berkas, identitas, orang tua, ringkasan, keputusan verifikasi data, koreksi, retensi yang kini ditutup rapi di `<details>`). Sidebar operator 14 → 13 menu. `berkas.php` & `verifikasi-data.php` tetap ada sebagai pengalih 302 (tautan lama di notifikasi/WA/markah tidak mati); semua tautan internal ikut dipindah ke `verifikasi.php?tab=…` |
 
 ---
 

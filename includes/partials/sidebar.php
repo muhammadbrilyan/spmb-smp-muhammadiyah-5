@@ -67,8 +67,7 @@ if ($role === 'siswa') {
             'menu'  => [
                 $menuItem('dashboard', 'dashboard', 'Dashboard Operasional', url('app/operator/index.php')),
                 $menuItem('pendaftar', 'group', 'Data Pendaftar', url('app/operator/pendaftar.php')),
-                $menuItem('berkas', 'folder_shared', 'Verifikasi Berkas', url('app/operator/berkas.php')),
-                $menuItem('verifikasi-data', 'fact_check', 'Verifikasi Data Siswa', url('app/operator/verifikasi-data.php')),
+                $menuItem('verifikasi', 'fact_check', 'Verifikasi Pendaftar', url('app/operator/verifikasi.php')),
             ],
         ],
         [

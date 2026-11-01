@@ -113,7 +113,7 @@ $panduan = [
             'Kelola daftar jenis berkas di <strong>Pengaturan → Daftar Berkas</strong> (tambah/ubah/nonaktif; set format & maksimum unggah per jenis).',
             'Siswa mengunggah berkas di portal — validasi format/ukuran/MIME dilakukan server.',
             'Submit hanya bisa bila semua berkas <em>wajib</em> lengkap → pendaftar masuk BERKAS_DISUBMIT + notifikasi operator.',
-            'Buka <strong>Verifikasi Berkas</strong> — antrean BERKAS_DISUBMIT / BERKAS_REVISI.',
+            'Buka <strong>Verifikasi Pendaftar</strong> tab Berkas Persyaratan — antrean BERKAS_DISUBMIT / BERKAS_REVISI.',
             'Putuskan per berkas: Setujui / Tolak (alasan wajib). Semua lolos → BERKAS_TERVERIFIKASI; ada ditolak → BERKAS_REVISI + WA ke orang tua (hanya berkas ditolak yang dibuka kembali).',
             'WA penolakan menautkan penerima ke halaman <strong>Cek Status Pendaftaran</strong> (bukan halaman bayar) — di sana ada tombol <em>Pulihkan Tautan</em> bila perlu tautan bayar baru.',
         ],

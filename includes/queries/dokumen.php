@@ -322,7 +322,7 @@ function dokumen_submit($pendaftar_id)
         $info = q_all('SELECT no_pendaftaran, nama_siswa FROM pendaftar WHERE id = ?', [$pendaftar_id]);
         $info = $info ? $info[0] : null;
         if ($info !== null) {
-            $tautan = url_abs('app/operator/berkas.php');
+            $tautan = url_abs('app/operator/verifikasi.php?tab=berkas');
             notif_operator(
                 'BERKAS_DISUBMIT',
                 $pendaftar_id,
