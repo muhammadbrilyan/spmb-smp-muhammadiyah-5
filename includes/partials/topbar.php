@@ -1,18 +1,16 @@
 <?php
 /**
- * Topbar dashboard.
- * Variabel: $breadcrumbs (array label => href|null), $pageActions (HTML opsional)
+ * Topbar dashboard — sama untuk semua peran (operator/bendahara/kepsek/admin/siswa).
+ * Variabel: $pageActions (HTML opsional)
+ *
+ * Breadcrumb dan chip status gateway WA tidak lagi dirender: nama halaman sudah
+ * tercetak sebagai judul di badan tiap halaman, menu aktif ditandai di sidebar,
+ * dan kondisi gateway WA dibaca di halaman Kesiapan Rilis. Chip gateway juga
+ * bukan informasi yang layak dilihat calon siswa. ($breadcrumbs masih diset oleh
+ * banyak halaman tetapi tidak dipakai lagi di sini.)
  */
-$breadcrumbs = $breadcrumbs ?? ['Portal Akademik' => null, 'SPMB' => null, 'Operasional Operator SPMB' => null];
 $pageActions = $pageActions ?? '';
-
-/* Topbar ramping untuk semua peran sekolah (operator/bendahara/kepsek/admin):
- * tanpa breadcrumb dan tanpa chip status gateway WA. Nama halaman sudah tercetak
- * sebagai judul di badan tiap halaman, dan kondisi gateway dibaca di halaman
- * Kesiapan Rilis. Portal siswa tidak ikut dirampingkan — breadcrumb-nya adalah
- * satu-satunya tautan "kembali ke Portal Siswa" di halaman dalam. */
-$roleTop       = user_role();
-$topbarSiswa   = $roleTop === 'siswa';
+$roleTop     = user_role();
 ?>
 <header class="no-print sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-line lg:pl-[264px]">
   <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
@@ -27,76 +25,15 @@ $topbarSiswa   = $roleTop === 'siswa';
       <span class="ms" id="ikon-sidebar">left_panel_close</span>
     </button>
 
-    <!-- Breadcrumb (hanya portal siswa) -->
-    <?php if ($topbarSiswa): ?>
-    <?php
-    /* Halaman memakai dua konvensi: daftar ['A','B'] atau peta ['A' => href|null].
-     * Pada peta, LABEL-nya adalah kunci; nilai hanya dipakai sebagai tautan bila
-     * benar-benar URL (sebelumnya nilai null dicetak sebagai label sehingga semua
-     * breadcrumb halaman berpeta tampil kosong). */
-    $crumbs = [];
-    foreach ($breadcrumbs as $key => $val) {
-        $label = trim((string) (is_int($key) ? $val : $key));
-        if ($label === '') {
-            continue;
-        }
-        $href  = (is_string($val) && (str_starts_with($val, 'http') || str_starts_with($val, '/'))) ? $val : null;
-        $crumbs[] = ['label' => $label, 'href' => $href];
-    }
-    $crumbLast = count($crumbs) - 1;
-    ?>
-    <nav class="hidden md:flex items-center gap-1.5 text-[13px] text-ink-500 min-w-0">
-      <?php foreach ($crumbs as $i => $c): ?>
-        <?php if ($i > 0): ?><span class="ms text-[16px] text-ink-400">chevron_right</span><?php endif; ?>
-        <?php if ($c['href'] !== null && $i !== $crumbLast): ?>
-          <a href="<?= e($c['href']) ?>" class="truncate hover:text-ink-900"><?= e($c['label']) ?></a>
-        <?php else: ?>
-          <span class="<?= $i === $crumbLast ? 'text-ink-900 font-semibold' : '' ?> truncate"><?= e($c['label']) ?></span>
-        <?php endif; ?>
-      <?php endforeach; ?>
-    </nav>
-    <?php endif; ?>
-
     <div class="flex-1"></div>
 
-    <!-- Chips status -->
-    <?php
-    /* [PERBAIKAN] Chip semula hardcode "WA Gateway Online" + "99.4% Terkirim"
-     * — selalu hijau berapa pun keadaan sebenarnya (waktu itu token masih
-     * kosong, kini device pun terputus). Kini hanya menyatakan hal yang bisa
-     * diverifikasi lokal: token terkonfigurasi + tingkat sukses dari wa_log. */
-    if ($topbarSiswa) {
-        $waSiap  = fonnte_token() !== null;
-        $waTotal = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')") ?? 0);
-        $waOk    = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01') AND status = 'TERKIRIM'") ?? 0);
-        $waPct   = $waTotal > 0 ? round($waOk / $waTotal * 100) : null;
-    }
-    ?>
+    <!-- Tahun ajaran -->
     <div class="hidden sm:flex items-center gap-2">
       <span class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-canvas border border-line text-[13px] text-ink-700">
         <span class="ms text-[17px] text-primary">calendar_month</span>
         <strong class="font-semibold"><?= e(APP_TAHUN) ?></strong>
         <span class="text-ink-400">Genap</span>
       </span>
-
-      <?php if ($topbarSiswa): ?>
-      <?php if ($waSiap): ?>
-        <span class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] text-[13px] text-[#065F46]">
-          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <strong class="font-semibold">Gateway WA dikonfigurasi</strong>
-          <?php if ($waPct !== null): ?>
-            <span class="hidden xl:inline text-[#065F46]/70"><?= number_format($waPct) ?>% terkirim bulan ini</span>
-          <?php else: ?>
-            <span class="hidden xl:inline text-[#065F46]/70">belum ada pesan</span>
-          <?php endif; ?>
-        </span>
-      <?php else: ?>
-        <span class="inline-flex items-center gap-2 h-9 px-3 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] text-[13px] text-[#92400E]">
-          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-          <strong class="font-semibold">Gateway WA belum diatur</strong>
-        </span>
-      <?php endif; ?>
-      <?php endif; ?>
     </div>
 
     <!-- Aksi halaman -->

@@ -237,4 +237,6 @@ html.gelap .rail-pemisah { background-color: #334155; }
     padding: 0 !important;
     background: #fff !important;
   }
+  /* Pembungkus gulir layar tidak boleh memotong tabel agenda di atas kertas. */
+  body.mode-cetak-kartu #print-area .overflow-x-auto { overflow: visible !important; }
 }

@@ -363,6 +363,7 @@ foreach ($deret as $d) {
       <div class="space-y-5">
 
         <!-- Rekening -->
+        <?php $skemaRekening = angsuran_skema(); ?>
         <section class="card p-5">
           <h2 class="font-bold text-ink-900 text-sm">Rekening Penampungan</h2>
           <dl class="mt-3 space-y-2.5 text-[13px]">
@@ -370,7 +371,8 @@ foreach ($deret as $d) {
             <div class="flex justify-between gap-3"><dt class="text-ink-500">No. Rekening</dt><dd class="font-mono font-semibold text-ink-900 text-right"><?= e($PENGATURAN['no_rekening'] ?: '—') ?></dd></div>
             <div class="flex justify-between gap-3"><dt class="text-ink-500">Atas Nama</dt><dd class="font-semibold text-ink-900 text-right"><?= e($PENGATURAN['atas_nama_rekening'] ?: '—') ?></dd></div>
             <div class="flex justify-between gap-3"><dt class="text-ink-500">Biaya Formulir</dt><dd class="font-semibold text-ink-900 text-right"><?= e(rupiah((float) ($PENGATURAN['biaya_formulir'] ?? 0))) ?></dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500"><?= e(label_biaya_pendaftaran()) ?></dt><dd class="font-semibold text-ink-900 text-right"><?= e(rupiah((float) ($PENGATURAN['estimasi_uang_masuk'] ?? 0))) ?></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-500"><?= e(label_biaya_pendaftaran()) ?></dt><dd class="font-semibold text-ink-900 text-right"><?= e(rupiah($skemaRekening['biaya_masuk'])) ?></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-500">Sisa ditagih</dt><dd class="font-semibold text-ink-900 text-right"><?= e(rupiah($skemaRekening['total'])) ?></dd></div>
           </dl>
         </section>
 
@@ -451,7 +453,7 @@ foreach ($deret as $d) {
                 </li>
               <?php endforeach; ?>
             </ul>
-            <p class="mt-3 text-[11px] text-ink-400">Tagihan berubah menjadi <strong>LUNAS</strong> otomatis setelah total dana terverifikasi menutup <?= e(label_biaya_pendaftaran()) ?>.</p>
+            <p class="mt-3 text-[11px] text-ink-400">Tagihan berubah menjadi <strong>LUNAS</strong> otomatis setelah total dana terverifikasi menutup sisa <?= e(label_biaya_pendaftaran()) ?> (<?= e(rupiah($skema['biaya_masuk'])) ?> dikurangi biaya formulir yang sudah dibayar).</p>
           </section>
         <?php endif; ?>
 

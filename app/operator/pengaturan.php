@@ -183,9 +183,43 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
     }
 
-    /* Nominal angsuran otomatis: selalu dua bagian sama besar dari biaya
-     * pendaftaran (sisa pembulatan masuk ke angsuran 2). */
-    $totalAngsuran = max(0, (float) (is_numeric($f['estimasi_uang_masuk']) ? $f['estimasi_uang_masuk'] : 0));
+    /* Rincian item biaya masuk (label + nominal) — susunan bebas, boleh
+     * diubah sewaktu-waktu. Daftar yang terisi menjadi sumber Biaya Masuk:
+     * estimasi_uang_masuk = total rincian, supaya angsuran_skema() dan semua
+     * halaman biaya tetap memakai satu angka yang sama. */
+    $rincianLabel  = (array) ($_POST['rincian_label'] ?? []);
+    $rincianNominal = (array) ($_POST['rincian_nominal'] ?? []);
+    $rincianBaru   = [];
+    foreach ($rincianLabel as $i => $labelRaw) {
+        $label = preg_replace('/\s+/u', ' ', trim((string) $labelRaw));
+        $nominal = is_numeric($rincianNominal[$i] ?? null) ? (float) $rincianNominal[$i] : 0;
+        if ($label === '' && $nominal <= 0) {
+            continue; /* baris kosong hasil "Tambah Item" yang tidak jadi diisi */
+        }
+        if ($label === '') {
+            $galat[] = 'Rincian biaya baris ' . (count($rincianBaru) + 1) . ' belum ada nama itemnya.';
+            continue;
+        }
+        if ($nominal <= 0) {
+            $galat[] = 'Nominal "' . mb_substr($label, 0, 40) . '" harus lebih dari 0.';
+            continue;
+        }
+        $rincianBaru[] = ['label' => mb_substr($label, 0, 60), 'nominal' => $nominal];
+    }
+    if (count($rincianBaru) > 15) {
+        $galat[] = 'Rincian biaya maksimal 15 item.';
+    }
+    $f['rincian_biaya'] = rincian_biaya_json($rincianBaru);
+    if (!$galat && $rincianBaru) {
+        $f['estimasi_uang_masuk'] = (string) array_sum(array_column($rincianBaru, 'nominal'));
+    }
+
+    /* Nominal angsuran otomatis: dua bagian sama besar dari sisa tagihan
+     * (Biaya Masuk dikurangi Biaya Formulir). Kolom angsuran_*_nominal sudah
+     * tidak dibaca aplikasi — ikut diisi supaya angkanya tidak ketinggalan. */
+    $biayaMasukSimpan = max(0, (float) (is_numeric($f['estimasi_uang_masuk']) ? $f['estimasi_uang_masuk'] : 0));
+    $formulirSimpan   = max(0, (float) (is_numeric($f['biaya_formulir']) ? $f['biaya_formulir'] : 0));
+    $totalAngsuran    = $biayaMasukSimpan - min($formulirSimpan, $biayaMasukSimpan);
     $f['angsuran_1_nominal'] = $totalAngsuran > 0 ? round($totalAngsuran / 2) : 0;
     $f['angsuran_2_nominal'] = $totalAngsuran > 0 ? $totalAngsuran - $f['angsuran_1_nominal'] : 0;
 
@@ -297,7 +331,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $galat[] = 'Nama sekolah wajib diisi.';
     }
     if (mb_strlen($f['teks_beasiswa']) > 300) {
-        $galat[] = 'Teks program beasiswa maksimal 300 karakter (saat ini '
+        $galat[] = 'Teks promo maksimal 300 karakter (saat ini '
             . mb_strlen($f['teks_beasiswa']) . ').';
     }
     if (!warna_valid($f['warna_utama'])) {
@@ -323,7 +357,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     /* Nominal angsuran tidak divalidasi manual — dihitung otomatis dari
-     * Estimasi Biaya Pendaftaran di atas. */
+     * sisa Biaya Masuk (Biaya Masuk − Biaya Formulir) di atas. */
     if ($f['angsuran_1_jatuh_tempo'] !== '' && $f['angsuran_2_jatuh_tempo'] !== ''
         && $f['angsuran_2_jatuh_tempo'] < $f['angsuran_1_jatuh_tempo']) {
         $galat[] = 'Jatuh tempo angsuran 2 tidak boleh lebih awal dari angsuran 1.';
@@ -584,6 +618,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     ticker_header = ?, profil_singkat = ?, deskripsi_sekolah = ?, tagline = ?,
                     warna_utama = ?,
                     biaya_formulir = ?, biaya_spp = ?, estimasi_uang_masuk = ?,
+                    rincian_biaya = ?,
                     angsuran_1_nominal = ?, angsuran_2_nominal = ?,
                     angsuran_1_jatuh_tempo = ?, angsuran_2_jatuh_tempo = ?,
                     pengingat_angsuran_hari = ?, pengingat_angsuran_wa = ?,
@@ -614,6 +649,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 (float) $f['biaya_formulir'],
                 (float) $f['biaya_spp'],
                 (float) $f['estimasi_uang_masuk'],
+                $f['rincian_biaya'] ?? null,
                 (float) $f['angsuran_1_nominal'],
                 (float) $f['angsuran_2_nominal'],
                 $f['angsuran_1_jatuh_tempo'] !== '' ? $f['angsuran_1_jatuh_tempo'] : null,
@@ -955,49 +991,133 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
       <!-- ============ 4. TARIF & BIAYA ============ -->
       <section class="card p-5 sm:p-6">
-        <h2 class="font-bold text-ink-900">Struktur Tarif &amp; Biaya SPMB</h2>
-        <div class="mt-5 grid gap-4 sm:grid-cols-3">
+        <h2 class="font-bold text-ink-900">Rincian Biaya SPMB</h2>
+        <p class="mt-1 text-[13px] text-ink-500">Angka di bawah dipakai langsung oleh landing page, portal siswa, dan dashboard bendahara.</p>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
             <label class="label" for="biaya_formulir">Biaya Formulir <span class="text-red-600">*</span></label>
             <input id="biaya_formulir" name="biaya_formulir" type="number" min="0" step="1000" class="input font-semibold" value="<?= e($f['biaya_formulir']) ?>">
+            <p class="hint">Dibayar saat registrasi awal. Setelah lulus, nominal ini memotong Biaya Masuk.</p>
           </div>
           <div>
             <label class="label" for="biaya_spp">Nominal SPP Bulanan</label>
             <input id="biaya_spp" name="biaya_spp" type="number" min="0" step="1000" class="input font-semibold" value="<?= e($f['biaya_spp']) ?>">
-          </div>
-          <div>
-            <label class="label" for="estimasi_uang_masuk">Estimasi Biaya Pendaftaran</label>
-            <input id="estimasi_uang_masuk" name="estimasi_uang_masuk" type="number" min="0" step="1000" class="input font-semibold" value="<?= e($f['estimasi_uang_masuk']) ?>">
+            <p class="hint">Biaya bulanan — tampil sebagai informasi, tidak ditagih lewat antrean verifikasi.</p>
           </div>
         </div>
-        <p class="hint">Nilai dipakai langsung pada bagian "Rincian Biaya" di landing page.</p>
-        <!-- SKEMA ANGSURAN — siswa bebas memilih lunas atau 2 angsuran sama besar -->
+
+        <?php
+        /* Daftar item tersimpan; bila belum ada, satu baris kosong disiapkan
+         * supaya operator langsung melihat tempat mengetik. */
+        $rincianSimpan = rincian_biaya_list();
+        $rincianTampil = $rincianSimpan ?: [['label' => '', 'nominal' => '']];
+        ?>
         <div class="mt-4 rounded-2xl border border-line p-4">
-          <p class="font-semibold text-ink-900 text-sm">Skema Angsuran Biaya Pendaftaran</p>
-          <p class="mt-1 text-[12px] text-ink-500">
-            Siswa dapat memilih <strong>bayar lunas</strong> atau <strong>angsuran 2 kali</strong>.
-            Nominal angsuran otomatis setengah dari Estimasi Biaya Pendaftaran — tidak perlu diisi manual.
-            Tanggal jatuh tempo di bawah dipakai untuk pengingat otomatis.
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p class="font-semibold text-ink-900 text-sm">Rincian Item Biaya Masuk</p>
+              <p class="mt-1 text-[12px] text-ink-500">
+                Susun sendiri item yang harus dibayar siswa — nama dan nominalnya bebas, bisa diubah sewaktu-waktu.
+                Total daftar ini otomatis menjadi Biaya Masuk.
+              </p>
+            </div>
+            <button type="button" class="btn btn-outline shrink-0" id="rincian-tambah"><?= icon('add') ?> Tambah Item</button>
+          </div>
+
+          <div id="rincian-rows" class="mt-3 space-y-2">
+            <?php foreach ($rincianTampil as $r): ?>
+              <div class="flex items-center gap-2" data-rincian-row>
+                <input name="rincian_label[]" class="input flex-1 min-w-0" maxlength="60"
+                       placeholder="Nama item, mis. Infaq 3 Tahun" value="<?= e($r['label']) ?>">
+                <input name="rincian_nominal[]" type="number" min="0" step="1000" class="input w-40 text-right font-semibold"
+                       placeholder="0" value="<?= $r['nominal'] !== '' ? e((string) (0 + $r['nominal'])) : '' ?>">
+                <button type="button" class="btn btn-outline shrink-0" data-rincian-hapus
+                        aria-label="Hapus item rincian"><?= icon('delete', 'text-[18px]') ?></button>
+              </div>
+            <?php endforeach; ?>
+          </div>
+
+          <template id="rincian-row-tpl">
+            <div class="flex items-center gap-2" data-rincian-row>
+              <input name="rincian_label[]" class="input flex-1 min-w-0" maxlength="60"
+                     placeholder="Nama item, mis. Sumbangan Pembinaan Pendidikan" value="">
+              <input name="rincian_nominal[]" type="number" min="0" step="1000" class="input w-40 text-right font-semibold"
+                     placeholder="0" value="">
+              <button type="button" class="btn btn-outline shrink-0" data-rincian-hapus
+                      aria-label="Hapus item rincian"><?= icon('delete', 'text-[18px]') ?></button>
+            </div>
+          </template>
+
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2">
+            <label class="label mb-0" for="estimasi_uang_masuk">Total &nbsp;=&nbsp; Biaya Masuk</label>
+            <input id="estimasi_uang_masuk" name="estimasi_uang_masuk" type="number" min="0" step="1000"
+                   class="input w-40 text-right font-bold" value="<?= e($f['estimasi_uang_masuk']) ?>">
+          </div>
+          <p class="hint" id="rincian-catatan">
+            <?php if ($rincianSimpan): ?>
+              Biaya Masuk terisi otomatis dari total rincian di atas. Kosongkan seluruh baris untuk mengetik angkanya manual.
+            <?php else: ?>
+              Belum ada rincian — Biaya Masuk masih diketik manual. Isi satu baris saja untuk memakainya.
+            <?php endif; ?>
           </p>
-          <?php
-          $totalTampil = max(0, (float) ($f['estimasi_uang_masuk'] ?? 0));
-          $angsuran1Tampil = $totalTampil > 0 ? round($totalTampil / 2) : 0;
-          $angsuran2Tampil = $totalTampil > 0 ? $totalTampil - $angsuran1Tampil : 0;
-          ?>
+        </div>
+
+        <?php
+        /* Rincian tagihan dihitung dari dua input di atas — kolom nominal angsuran
+         * tidak diisi manual, jadi angka ini selalu sama dengan yang dilihat siswa.
+         * Dasar tagihan = Biaya Masuk − Biaya Formulir (sudah dibayar saat registrasi). */
+        $biayaMasukTampil = max(0, (float) $f['estimasi_uang_masuk']);
+        $formulirTampil   = max(0, (float) $f['biaya_formulir']);
+        $potonganTampil   = min($formulirTampil, $biayaMasukTampil);
+        $sisaTampil       = $biayaMasukTampil - $potonganTampil;
+        $angsuran1Tampil  = $sisaTampil > 0 ? round($sisaTampil / 2) : 0;
+        $angsuran2Tampil  = $sisaTampil > 0 ? $sisaTampil - $angsuran1Tampil : 0;
+        ?>
+        <div class="mt-4 rounded-2xl border border-line p-4">
+          <p class="font-semibold text-ink-900 text-sm">Tagihan Setelah Lulus &amp; Dapat Kelas</p>
+          <p class="mt-1 text-[12px] text-ink-500">
+            Siswa yang sudah dinyatakan lulus dan mendapat pembagian kelas hanya membayar
+            <strong>sisa Biaya Masuk</strong> — Biaya Formulir yang sudah dibayar saat registrasi menjadi potongan.
+          </p>
+
+          <div class="mt-3 rounded-xl bg-canvas border border-line px-3.5 py-3 space-y-1.5 text-[13px]">
+            <div class="flex justify-between gap-3">
+              <span class="text-ink-500">Biaya Masuk</span>
+              <span id="r_biaya_masuk" class="font-semibold text-ink-900"><?= e(rupiah($biayaMasukTampil)) ?></span>
+            </div>
+            <div class="flex justify-between gap-3">
+              <span class="text-ink-500">− Biaya Formulir (sudah dibayar)</span>
+              <span id="r_potongan" class="font-semibold text-ink-900"><?= e(rupiah($potonganTampil)) ?></span>
+            </div>
+            <div class="flex justify-between gap-3 border-t border-line pt-2">
+              <span class="font-semibold text-ink-900">= Sisa Biaya Masuk</span>
+              <span id="r_sisa" class="font-extrabold text-primary"><?= e(rupiah($sisaTampil)) ?></span>
+            </div>
+            <p id="r_perhatian" class="text-[12px] text-red-600" <?= $sisaTampil > 0 ? 'hidden' : '' ?>>
+              Biaya Formulir sama atau lebih besar dari Biaya Masuk — tidak ada sisa yang ditagih.
+            </p>
+          </div>
+
           <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div class="rounded-xl bg-canvas border border-line px-3.5 py-3">
               <p class="text-[12px] text-ink-500">Angsuran 1 (otomatis)</p>
-              <p class="font-bold text-ink-900 mt-0.5"><?= rupiah($angsuran1Tampil) ?></p>
+              <p id="r_angsuran_1" class="font-bold text-ink-900 mt-0.5"><?= e(rupiah($angsuran1Tampil)) ?></p>
               <input id="angsuran_1_jatuh_tempo" name="angsuran_1_jatuh_tempo" type="date" class="input mt-2" value="<?= e($f['angsuran_1_jatuh_tempo']) ?>" aria-label="Jatuh tempo angsuran 1">
               <p class="hint">Jatuh tempo angsuran 1 — kosong berarti tanpa pengingat.</p>
             </div>
             <div class="rounded-xl bg-canvas border border-line px-3.5 py-3">
               <p class="text-[12px] text-ink-500">Angsuran 2 (otomatis)</p>
-              <p class="font-bold text-ink-900 mt-0.5"><?= rupiah($angsuran2Tampil) ?></p>
+              <p id="r_angsuran_2" class="font-bold text-ink-900 mt-0.5"><?= e(rupiah($angsuran2Tampil)) ?></p>
               <input id="angsuran_2_jatuh_tempo" name="angsuran_2_jatuh_tempo" type="date" class="input mt-2" value="<?= e($f['angsuran_2_jatuh_tempo']) ?>" aria-label="Jatuh tempo angsuran 2">
               <p class="hint">Jatuh tempo angsuran 2 — kosong berarti tanpa pengingat.</p>
             </div>
           </div>
+          <p class="mt-3 text-[12px] text-ink-500">
+            Siswa juga boleh memilih <strong>bayar lunas</strong> sekaligus. Nominal angsuran terbagi dua sama besar
+            dari sisa tagihan (bila ganjil, angsuran 1 kelebihan satu rupiah) dan berubah otomatis saat Biaya Masuk atau
+            Biaya Formulir diedit — tidak perlu diisi manual.
+          </p>
+
           <div class="mt-3 rounded-xl bg-canvas border border-line px-3.5 py-3">
             <p class="text-[12px] font-semibold uppercase tracking-wider text-ink-400">Pengingat Jatuh Tempo</p>
             <div class="mt-2 grid gap-4 sm:grid-cols-2">
@@ -1037,13 +1157,14 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <p class="hint">Nama yang tampil di kartu biaya landing page, misal: "SPP Bulanan".</p>
           </div>
         </div>
-        <!-- PROGRAM BEASISWA — opsional; kosong = tidak tampil di halaman publik -->
+        <!-- PROMO — opsional; kosong = kartu promo tidak tampil di halaman publik -->
         <div class="mt-4">
-          <label class="label" for="teks_beasiswa">Teks Program Beasiswa (opsional)</label>
+          <label class="label" for="teks_beasiswa">Teks Promo (opsional)</label>
           <textarea id="teks_beasiswa" name="teks_beasiswa" class="textarea" rows="2"
             placeholder="Contoh: Potongan SPP 50% bagi hafidz 5 juz — ajukan melalui panitia SPMB."><?= e($f['teks_beasiswa']) ?></textarea>
-          <p class="hint">Bila <strong>dikosongkan</strong>, kartu program beasiswa tidak tampil di halaman pendaftaran.
-            Saat sekolah belum menjalankan program beasiswa, biarkan kosong — jangan promosikan yang belum ada.</p>
+          <p class="hint">Bila <strong>dikosongkan</strong>, kartu promo tidak tampil di halaman pendaftaran.
+            Saat sekolah belum menjalankan program promo, biarkan kosong — jangan promosikan yang belum ada.
+            (Kolom penyimpanan lama tetap <code>teks_beasiswa</code>.)</p>
         </div>
       </section>
 
@@ -1416,6 +1537,79 @@ require __DIR__ . '/../../includes/partials/topbar.php';
     document.querySelectorAll('[data-warna]').forEach(function (b) {
       b.addEventListener('click', function () { sinkron(b.dataset.warna); });
     });
+  })();
+  (function () {
+    /* Rincian Biaya SPMB — salinan rumus angsuran_skema() di
+     * includes/queries/pembayaran.php agar angka di layar sama dengan yang
+     * dilihat siswa sebelum formulir ini disimpan. */
+    var masuk = document.getElementById('estimasi_uang_masuk');
+    var formulir = document.getElementById('biaya_formulir');
+    var keluar = {
+      masuk: document.getElementById('r_biaya_masuk'),
+      potongan: document.getElementById('r_potongan'),
+      sisa: document.getElementById('r_sisa'),
+      a1: document.getElementById('r_angsuran_1'),
+      a2: document.getElementById('r_angsuran_2'),
+      hati: document.getElementById('r_perhatian')
+    };
+    if (!masuk || !formulir || !keluar.sisa) return;
+    function rp(n) {
+      return 'Rp ' + Math.round(n).toLocaleString('id-ID').replace(/,/g, '.');
+    }
+    function nilai(el) {
+      var v = parseFloat(el.value);
+      return isFinite(v) && v > 0 ? v : 0;
+    }
+    function hitung() {
+      var bm = nilai(masuk), bf = nilai(formulir);
+      var potong = Math.min(bf, bm);
+      var sisa = bm - potong;
+      var a1 = sisa > 0 ? Math.round(sisa / 2) : 0;
+      keluar.masuk.textContent = rp(bm);
+      keluar.potongan.textContent = rp(potong);
+      keluar.sisa.textContent = rp(sisa);
+      keluar.a1.textContent = rp(a1);
+      keluar.a2.textContent = rp(sisa - a1);
+      if (keluar.hati) keluar.hati.hidden = sisa > 0;
+    }
+    masuk.addEventListener('input', hitung);
+    formulir.addEventListener('input', hitung);
+
+    /* Daftar rincian: total item menjadi nilai Biaya Masuk. */
+    var rows = document.getElementById('rincian-rows');
+    var tambah = document.getElementById('rincian-tambah');
+    var tpl = document.getElementById('rincian-row-tpl');
+    if (!rows || !tambah || !tpl) return;
+    function totalRincian() {
+      var t = 0;
+      rows.querySelectorAll('[data-rincian-row]').forEach(function (r) {
+        var nama = r.querySelector('input[name="rincian_label[]"]');
+        var nom = r.querySelector('input[name="rincian_nominal[]"]');
+        if (nama && nom && nama.value.trim() !== '') t += nilai(nom);
+      });
+      return t;
+    }
+    function sinkronTotal() {
+      var t = totalRincian();
+      if (t > 0) masuk.value = String(Math.round(t));
+      masuk.readOnly = t > 0;
+      masuk.classList.toggle('bg-canvas', t > 0);
+      hitung();
+    }
+    rows.addEventListener('input', sinkronTotal);
+    tambah.addEventListener('click', function () {
+      rows.insertAdjacentHTML('beforeend', tpl.innerHTML);
+      var baru = rows.querySelector('[data-rincian-row]:last-child input[name="rincian_label[]"]');
+      if (baru) baru.focus();
+      sinkronTotal();
+    });
+    rows.addEventListener('click', function (e) {
+      var hapus = e.target.closest('[data-rincian-hapus]');
+      if (!hapus) return;
+      hapus.closest('[data-rincian-row]').remove();
+      sinkronTotal();
+    });
+    sinkronTotal();
   })();
 </script>
 </body>

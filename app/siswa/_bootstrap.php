@@ -60,7 +60,9 @@ $toneBayar = [
 ];
 
 $tagihanFormulir = (float) ($PENGATURAN['biaya_formulir'] ?? 0);
-$tagihanUangMasuk = (float) ($PENGATURAN['estimasi_uang_masuk'] ?? 0);
+/* Nilai awal = sisa Biaya Masuk dari skema; untuk siswa yang belum lulus
+ * nilai ini dinolkan di bawah. */
+$tagihanUangMasuk = (float) angsuran_skema()['total'];
 $bayarFormulir = ['tagihan' => 0, 'verified' => 0, 'pending' => 0, 'pending_bukti' => 0, 'rejected' => 0, 'sisa' => 0, 'label' => 'Belum Ada Data', 'tone' => 'gray', 'rows' => []];
 $bayarUangMasuk = $bayarFormulir;
 $ringkasAngsuran = null;
@@ -107,9 +109,11 @@ if ($siswa) {
     $siswaDiterima = $pengumumanAktif && ($siswa['status_seleksi'] ?? '') === 'LULUS';
     $siswaAktif = $siswaDiterima;
 
-    /* Tagihan biaya pendaftaran hanya aktif setelah LULUS + diumumkan. */
+    /* Tagihan biaya masuk aktif begitu siswa LULUS dan punya penempatan kelas
+     * (atau hasil resminya sudah diumumkan). */
     $ringkasAngsuran = angsuran_ringkas($siswa['id']);
-    $tagihanUangMasuk = $siswaDiterima ? $ringkasAngsuran['total'] : 0;
+    $tagihanAktif = tagihan_pendaftaran_aktif($siswa);
+    $tagihanUangMasuk = $tagihanAktif ? $ringkasAngsuran['total'] : 0;
 
     $bayarFormulir   = siswa_ringkas_bayar($pembayaran, 'FORMULIR', $tagihanFormulir);
     $bayarUangMasuk  = siswa_ringkas_bayar($pembayaran, 'UANG_MASUK', $tagihanUangMasuk);

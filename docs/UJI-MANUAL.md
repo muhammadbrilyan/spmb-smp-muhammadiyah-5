@@ -198,7 +198,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | L2 | Buka landing publik / footer / kartu hasil | Alamat yang baru tersimpan ikut berubah — nilai `$PENGATURAN` = isi database |
 | L3 | Kosongkan satu kolom (mis. Email) lalu **Simpan** | Kolom itu jadi **NULL** di DB, bukan terisi ulang nilai contoh dari `includes/dummy.php`; formulir menampilkannya kosong |
 | L4 | Isi ulang kolom tersebut → Simpan | Nilai kembali tersimpan; kolom lain tidak ikut berubah (logo, banner, QRIS, jalur, S&K tetap) |
-| L5 | Ubah Estimasi Biaya Pendaftaran | Angsuran 1 & 2 otomatis terbagi dua sama besar (sisa pembulatan ke angsuran 2) |
+| L5 | Ubah **Biaya Masuk** atau **Biaya Formulir** di kartu Rincian Biaya SPMB | Baris rincian & nominal Angsuran 1/2 langsung ikut berubah di layar tanpa Simpan (lihat bagian Q) |
 | L6 | **Simpan** padahal DB tertinggal satu migrasi (buang kolom contoh: `ALTER TABLE pengaturan_sekolah DROP COLUMN pengingat_angsuran_wa`) | Toast merah menyebut "Struktur basis data belum lengkap (… Unknown column …) — jalankan database/migrations/"; **tidak ada** perubahan yang tersimpan separuh |
 | L7 | `php tools/cek-proyek.php` sesudah langkah L6 | Pemeriksaan 5 **GAGAL**: `1 kolom ada di seed tapi belum ada di DB: pengaturan_sekolah.pengingat_angsuran_wa`; pulihkan dengan `mysql -u root < database/migrations/20261031_pengingat_angsuran.sql` → 8 PASS |
 | L8 | Simpan dengan token Fonnte kosong di form (tidak mengetik ulang) | Token tersimpan **tidak terhapus**; penghapusan hanya lewat checkbox "Hapus token dari database" |
@@ -248,6 +248,85 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | N14 | Tekan **Kirim Sekarang** | Satu WA per wali siswa berisi SELURUH jadwal (bukan satu WA per kegiatan) + satu baris `notifikasi_siswa` tipe `JADWAL_UJIAN` (judul "Jadwal Tes SPMB (N kegiatan)", tautan `app/siswa/ppdb.php?tab=jadwal`) + baris `wa_log` tipe `JADWAL_UJIAN`. Flash: "N wali siswa menerima satu pesan berisi X jadwal" |
 | N15 | Tekan **Kirim Sekarang** dua kali berturut-turut tanpa mengubah jadwal | Kirim kedua = `lewati` semua penerima (ref_id = sidik jari susunan jadwal). Pendaftar yang WA-nya tercatat GAGAL saja yang dicoba ulang, tanpa menduplikasi baris notifikasinya |
 | N16 | Ubah tanggal salah satu jadwal, lalu kirim lagi | Sidik jari berubah → pengumuman dianggap baru dan terkirim lagi. Di portal siswa, pesan tampil utuh dengan baris-barisnya (`whitespace-pre-line` di `app/siswa/notifikasi.php`) dan lonceng bertambah 1 |
+
+## O. Peserta Ujian & Navbar Portal Siswa (rombak 2026-11-01)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| O1 | Operator → sidebar **Seleksi & Penerimaan → Peserta Ujian** | 200; **tidak ada dropdown pilihan jadwal lagi** dan URL tidak memakai `?j=`. Semua jadwal berstatus Terjadwal tampil sekaligus sebagai kartu, diurutkan tanggal + jam |
+| O2 | Bandingkan isi kartu dengan status di Kelola Jadwal | Jadwal Draft/Selesai **tidak** punya kartu; hanya disebut pada catatan "N jadwal berstatus Draft/Selesai tidak dikelola di sini…" lengkap dengan kode, status, dan jumlah peserta yang sudah terlanjur ada |
+| O3 | Lihat satu kartu | Judul kegiatan + badge kode; baris meta tanggal Indonesia · jam–jam WIB · metode · ruangan; angka "peserta/kapasitas" di kanan; bar kapasitas terisi; baris sisa kuota — dan peringatan kuning "N peserta belum punya nomor WA orang tua" hanya bila memang ada |
+| O4 | Penuhi kapasitas satu jadwal (atur otomatis pada jadwal berkapasitas kecil) | Badge **Kapasitas penuh** muncul, tombol *Atur Peserta Otomatis* dan *Tambah* jadi `disabled` (`.btn:disabled` = pudar & tidak bisa diklik), *Kirim WA Jadwal* tetap aktif |
+| O5 | Jadwal Terjadwal yang pesertanya masih 0 | *Kirim WA Jadwal* `disabled`; badan kartu menampilkan empty state "Belum ada peserta pada jadwal ini" |
+| O6 | Tekan **Atur Peserta Otomatis** / **Kirim WA Jadwal** pada salah satu kartu | `confirm()` menyebut kode jadwal itu saja; setelah PRG, halaman kembali ke daftar penuh (bukan ke satu jadwal terpilih) dan flash tetap terbaca |
+| O7 | Tambah manual pada dua kartu sekaligus | Tiap kartu punya `<select>` sendiri dengan id unik `pm-<id jadwal>`; pilihan yang sama (pendaftar BERKAS_TERVERIFIKASI yang belum punya jadwal mana pun, terarsip dikecualikan) dan otomatis berkurang setelah dipakai |
+| O8 | Perkecil jendela sampai ~400 px | Daftar peserta memakai `<ul>` vertikal (nomor peserta rata kiri, nama + no. pendaftaran + asal sekolah, nomor WA, ikon hapus) — **tanpa scrollbar horizontal**, pengganti tabel `min-w-[760px]` lama |
+| O9 | Buka portal siswa (peran `siswa`) | Topbar sama persis dengan topbar peran sekolah: hanya chip tahun ajaran + lonceng + `?` + avatar. **Tidak ada** breadcrumb "Portal Siswa › …" dan **tidak ada** chip "Gateway WA dikonfigurasi — % terkirim bulan ini" |
+| O10 | Lihat sidebar siswa | Satu grup **Portal Saya** berisi Dashboard, Notifikasi & Pengumuman, Data Siswa, Keuangan, PPDB & Seleksi, Pengaturan Akun. Menu *Akademik* hanya muncul bila siswa itu sudah dinyatakan diterima. Tidak ada tombol CTA "Info SPMB" (ikon `?` di topbar tetap mengarah ke Info SPMB) dan kaki sidebar hanya berisi **Keluar** — tautan *Ganti Password* dibuang karena `app/staf/ganti-password.php` menolak peran siswa; ganti sandal ada di **Pengaturan Akun** |
+| O11 | Login sebagai operator/bendahara/kepsek setelah perubahan O9–O10 | Sidebar & kaki mereka tidak berubah (CTA Pendaftaran Manual operator, *Ganti Password* tetap ada untuk peran sekolah) |
+
+## P. Tabel Agenda pada Kartu Peserta (`app/siswa/ppdb.php?tab=jadwal`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| P1 | Siswa yang sudah punya kartu peserta → tab **Jadwal Tes** | Desain kartu tidak berubah (logo + nama sekolah, No. Pendaftaran, Nama Peserta, kotak NOMOR PESERTA, catatan hadir 15 menit). Hanya blok detail `Kegiatan / Tanggal / Jam / Lokasi` yang **diganti tabel Agenda Tes** bergaris dengan kolom **Tanggal · Kegiatan · Waktu · Lokasi / Ruangan** — tanpa kolom No dan tanpa kolom foto |
+| P2 | Bandingkan isi tabel dengan pesan WA "Jadwal Tes SPMB" yang diterima wali siswa | Jumlah baris dan isinya SAMA — keduanya dibaca dari `jadwal_terjadwal()` (hanya status Terjadwal). Kolom Kegiatan menampilkan nama + kode, Waktu menampilkan jam + "WIB · metode", Lokasi memakai `jadwal_lokasi_teks()` (Ruangan lebih dulu, lalu Lokasi, lalu bawaan per metode) |
+| P3 | Perhatikan kolom Tanggal & Waktu pada layar sempit | Tanggal "18 Okt" + tahun di baris kedua, jam "08:00–11:00" + "WIB · Offline" di baris kedua — tabel `w-full border-collapse` tanpa `min-w-`, sehingga tidak ada gulir samping (`scrollWidth == clientWidth`) |
+| P4 | Siswa yang kartunya tercatat pada jadwal yang statusnya belum Terjadwal | Tabel tetap terisi satu baris: kegiatan milik kartu itu sendiri (`$agendaBaris = $agendaTes ?: [$kartuUjian]`), jadi kartu tidak pernah kehilangan informasi intinya |
+| P5 | Lebih dari satu baris agenda | Muncul keterangan "Nomor peserta di atas berlaku pada kegiatan …; seluruh kegiatan lain tetap wajib diikuti sesuai barisnya masing-masing" — karena satu pendaftar hanya memegang satu nomor peserta (`uq_peserta_pendaftar`) |
+| P6 | Tekan **Cetak** pada kartu | Tabel agenda ikut tercetak: `cetakKartu()` menyalin `#kartu-peserta` ke `#print-area`, dan aturan baru `#print-area .overflow-x-auto { overflow: visible }` mencegah kolomnya terpotong di kertas |
+
+## Q. Rincian Biaya SPMB & Promo (rombak 2026-11-01)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| Q1 | Operator → **Pengaturan Sistem** → kartu ke-4 | Judul kartu **Rincian Biaya SPMB** (bukan "Struktur Tarif & Biaya SPMB"); ada **daftar item biaya** (nama + nominal) dan label **Biaya Masuk** (bukan "Estimasi Biaya Pendaftaran") |
+| Q2 | Lihat blok **Tagihan Setelah Lulus & Dapat Kelas** | Tiga baris: Biaya Masuk → − Biaya Formulir (sudah dibayar) → **= Sisa Biaya Masuk** dengan angka dari DB (mis. 1.250.000 − 200.000 = **1.050.000**) dan dua kartu Angsuran 1/2 otomatis 525.000 + tanggal jatuh tempo |
+| Q3 | Ubah Biaya Formulir jadi 250.000, atau ubah salah satu nominal item rincian (jangan Simpan) | Rincian & angsuran ikut berubah seketika (mis. sisa 1.750.000, angsuran 875.000/875.000) — rumus JS sama dengan `angsuran_skema()` |
+| Q4 | Buat Biaya Formulir ≥ Biaya Masuk | Sisa & kedua angsuran jadi **Rp 0** dan muncul catatan merah "Biaya Formulir sama atau lebih besar dari Biaya Masuk — tidak ada sisa yang ditagih." |
+| Q5 | Isi Biaya Masuk 1.000.001 dengan Biaya Formulir 200.000 (jangan Simpan) | Sisa 800.001 → Angsuran 1 = **400.001** dan Angsuran 2 = **400.000**; pembulatan selisih satu rupiah selalu jatuh ke angsuran 1 (`round()` membulatkan ke atas) |
+| Q6 | Muat landing publik → kartu "Rincian SOP & Biaya Pendaftaran" | Biaya Masuk penuh, lalu daftar **Terdiri dari** (setiap item rincian + nominal), kemudian rantai potongan: − Biaya Formulir, **= Sisa setelah lulus**, dan kalimat "…2 angsuran Rp 525.000 per tahap" |
+| Q7 | Portal siswa (siswa LULUS yang hasil sudah diumumkan **atau** sudah punya penempatan kelas) → tab Keuangan | Panel **Rincian Biaya & Sisa Pembayaran**: daftar item, Total Biaya Masuk, − Sudah dibayar & diverifikasi, **= Sisa yang harus dibayar**, plus kalimat opsi lunas / 2 angsuran dan jatuh tempo angsuran 1. "Total Tagihan" = Biaya Formulir + sisa Biaya Masuk |
+| Q8 | Dashboard & rekap cetak Bendahara | Baris "Biaya Pendaftaran" = biaya masuk penuh, ada baris **Sisa ditagih** = dasar angsuran; catatan kaki rekap berbunyi "… — sisa yang ditagih setelah lulus: Rp 1.050.000 (angsuran 2× Rp 525.000 per tahap)." |
+| Q9 | Bayar lewat Midtrans (sandbox) untuk siswa lulus | Nominal yang ditagihkan = sisa angsuran berikutnya dari skema baru, bukan biaya masuk penuh (`app/api/snap-token.php` membaca `angsuran_skema()`) |
+| Q10 | Kosongkan **Teks Promo (opsional)** → Simpan, lalu buka halaman pendaftaran | Tidak ada badge "Promo Tersedia" dan tidak ada blok "Program Promo" sama sekali (perilaku lama "Beasiswa" sudah digantikan; kolom DB tetap `teks_beasiswa`) |
+| Q11 | Isi Teks Promo satu baris → Simpan | Badge hijau **Promo Tersedia** di sudut kartu + blok **Program Promo** berisi teks tersebut (baris baru tampil sebagai `<br>`) |
+| Q12 | Isi Teks Promo lebih dari 300 karakter | Pesan galat: "Teks promo maksimal 300 karakter (saat ini N)." |
+
+## R. Manajemen Kelas (`app/operator/kelas.php`, rombak 2026-11-01)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| R1 | Lihat kartu **Tambah Kelas Baru** | Dua kolom per baris (Kode Kelas · Nama Kelas · Kuota · Wali Kelas) masing-masing dengan hint, lalu satu baris aksi: checkbox **Aktif** (label kini benar-benar mengikat ke checkbox) + tombol **Tambah Kelas** rata kanan. Tidak ada lagi grid 6 kolom yang membuat field penyot |
+| R2 | Tambah kelas tanpa mencentang Aktif | Kelas tersimpan `is_aktif = 0` dan tidak menambah "Total Kuota Aktif" di header |
+| R3 | Lihat **Daftar Rombel** | **Tidak ada tombol Simpan per baris** lagi; kolom Aksi hanya berisi ikon hapus. Satu tombol **Simpan Semua** di kanan atas kartu |
+| R4 | Ubah kuota satu baris, lalu ubah wali kelas baris lain (tanpa menekan apa pun) | Chip kuning **"Belum disimpan"** muncul di samping tombol Simpan Semua |
+| R5 | Tekan **Simpan Semua** | Satu POST (`aksi=simpan_massal`) mengirim seluruh baris; flash hijau "N kelas tersimpan." dan muat ulang menampilkan semua perubahan sekaligus. Chip hilang |
+| R6 | Buat dua baris memakai kode yang sama (mis. baris 1 diisi kode milik baris 3) lalu Simpan Semua | Muncul daftar "Periksa isian berikut:" dengan pesan berawalan kode — `7C — Kode kelas "7C" sudah dipakai.` dan `7C — kode yang sama dipakai pada lebih dari satu baris.` — pesan yang sama tidak ditulis dua kali |
+| R7 | Setelah galat pada R6, periksa database | **Tidak ada satu baris pun yang berubah** — simpan massal bersifat all-or-nothing, dan tabel menampilkan nilai lama dari DB |
+| R8 | Tutup tab saat chip "Belum disimpan" masih tampil | Browser menanyakan konfirmasi keluar (`beforeunload`) |
+| R9 | Muat halaman tanpa flash tertinggal | Toast tidak menampilkan pesan sukses lama — `kelas.php` mengambil flash sekali lewat `flash()` sehingga pesan tidak terputar ulang |
+
+## S. Daftar Item Biaya & Input Hasil Seleksi (rombak 2026-11-02)
+
+Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_rincian_biaya.sql`
+(kolom `rincian_biaya` dan `ambang_kelulusan`).
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| S1 | Pengaturan Sistem → blok **Rincian Item Biaya Masuk** | Baris berisi nama item + nominal + tombol hapus, tombol **Tambah Item**, dan baris **Total = Biaya Masuk** di bawahnya |
+| S2 | Isi contoh sekolah: Formulir Pendaftaran 200.000 · Fortasi/MPLS 150.000 · SPP 350.000 · Infaq 3 Tahun 350.000 · Kontribusi IPM 3 Tahun 200.000 | Total otomatis **1.250.000**, kolom Biaya Masuk ikut terisi dan menjadi *read-only* (abu-abu), blok tagihan menampilkan sisa **1.050.000** = 2 × 525.000 |
+| S3 | Tekan **Simpan** | `pengaturan_sekolah.rincian_biaya` berisi JSON `[{"l":"Formulir Pendaftaran","n":200000}, …]`, `estimasi_uang_masuk` = 1250000.00, `angsuran_*_nominal` = 525000.00. Muat ulang → kelima baris tampil kembali |
+| S4 | Kosongkan seluruh baris rincian → Simpan | `rincian_biaya` kembali NULL, kolom Biaya Masuk **bisa diketik manual** dan hint berubah menjadi "Belum ada rincian — Biaya Masuk masih diketik manual." |
+| S5 | Isi nama item tanpa nominal (atau sebaliknya) → Simpan | Galat "Nominal "…" harus lebih dari 0." / "Rincian biaya baris N belum ada nama itemnya." dan **tidak ada** perubahan tersimpan |
+| S6 | Tambah lebih dari 15 item | Galat "Rincian biaya maksimal 15 item." |
+| S7 | Operator → **Input Hasil Seleksi** | Tabel hanya berisi No. Pendaftaran · Nama · CBT · BTQ · Wawancara · Nilai Akhir · Keputusan. **Tidak ada kolom Jadwal Tes** dan **tidak ada tombol Hitung Ulang Otomatis** |
+| S8 | Ketik CBT 80, BTQ 60, Wawancara 55 | Nilai Akhir seketika **65,0** dan Keputusan otomatis **Tidak Lulus** (ambang 70) |
+| S9 | Ubah Ambang Kelulusan menjadi 65 (tanpa tombol apa pun) | Baris yang sudah bernilai dihitung ulang → Keputusan menjadi **Lulus**; baris yang masih kosong tetap "—" / Proses |
+| S10 | Kosongkan kembali ketiga nilai satu baris | Nilai Akhir menjadi **—** dan Keputusan kembali ke **Proses** (baris seperti ini dilewati saat simpan) |
+| S11 | Tekan **Simpan Hasil Seleksi** dengan ambang 70 → muat ulang halaman | Flash menyebut "…(ambang kelulusan 70)." dan kolom `ambang_kelulusan` = 70.00; nilai yang tersimpan di tabel `seleksi` tidak berubah |
+| S12 | Bandingkan `seleksi.jadwal_id` sebelum & sesudah simpan nilai | Tetap sama — jadwal tidak dihapus oleh halaman ini meskipun kolomnya tidak ditampilkan |
+| S13 | Siswa LULUS yang sudah punya penempatan kelas tetapi hasil **belum** diumumkan → portal siswa → Keuangan | Panel **Rincian Biaya & Sisa Pembayaran** sudah tampil beserta kelasnya (mis. "Anda diterima di kelas 7C"), sisa = total biaya masuk − yang sudah diverifikasi |
 
 ## Skenario Penyalahgunaan (wajib lolos)
 

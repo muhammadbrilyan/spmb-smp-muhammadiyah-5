@@ -7,30 +7,85 @@
  * SKEMA TAGIHAN PENDAFTARAN (TAHAP 3)
  *
  * Biaya pendaftaran hanya ditagihkan setelah siswa dinyatakan LULUS dan
- * hasil seleksi resmi diumumkan. Siswa memilih bayar lunas atau angsuran
- * 2 kali (nominal otomatis setengah) saat membayar.
+ * hasil seleksi resmi diumumkan. Yang ditagih adalah sisa Biaya Masuk —
+ * Biaya Formulir yang sudah dibayar saat registrasi dihitung sebagai potongan.
+ * Siswa memilih bayar lunas atau angsuran 2 kali (nominal otomatis setengah)
+ * saat membayar.
  * ================================================================== */
 
 /**
+ * Rincian item biaya yang bisa disusun bebas oleh operator di
+ * Pengaturan Sistem → Rincian Biaya SPMB (kolom JSON rincian_biaya).
+ * Bentuk tersimpan: [{"l":"Formulir Pendaftaran","n":200000}, ...]
+ * @return array<int,array{label:string,nominal:float}>
+ */
+function rincian_biaya_list()
+{
+    $mentah = trim((string) ($GLOBALS['PENGATURAN']['rincian_biaya'] ?? ''));
+    if ($mentah === '') {
+        return [];
+    }
+    $data = json_decode($mentah, true);
+    if (!is_array($data)) {
+        return [];
+    }
+    $keluar = [];
+    foreach ($data as $baris) {
+        if (!is_array($baris)) {
+            continue;
+        }
+        $label = trim((string) ($baris['l'] ?? ''));
+        $nominal = max(0, (float) ($baris['n'] ?? 0));
+        if ($label === '' || $nominal <= 0) {
+            continue;
+        }
+        $keluar[] = ['label' => $label, 'nominal' => $nominal];
+    }
+    return $keluar;
+}
+
+/** Encode daftar rincian menjadi JSON tersimpan; daftar kosong = NULL. */
+function rincian_biaya_json(array $rincian)
+{
+    $isi = [];
+    foreach ($rincian as $r) {
+        $label = trim((string) ($r['label'] ?? ''));
+        if ($label === '') {
+            continue;
+        }
+        $isi[] = ['l' => $label, 'n' => round(max(0, (float) ($r['nominal'] ?? 0)), 2)];
+    }
+    return $isi ? json_encode($isi, JSON_UNESCAPED_UNICODE) : null;
+}
+
+/**
  * Skema angsuran dari Pengaturan Sistem.
+ * Dasar tagihan = Sisa Biaya Masuk (Biaya Masuk dikurangi Biaya Formulir),
+ * bukan Biaya Masuk utuh — biaya formulir sudah dibayar saat registrasi awal.
  * Opsi 2 angsuran selalu tersedia dan nominalnya otomatis dibagi dua sama
- * besar (sisa pembulatan masuk ke angsuran 2). Pengaturan hanya menyimpan
+ * besar (bila sisanya ganjil, angsuran 1 kelebihan satu rupiah). Pengaturan hanya menyimpan
  * jatuh tempo; nominal angsuran tidak lagi diisi manual.
- * @return array{aktif:bool,total:float,angsuran:array<int,array{ke:int,nominal:float,jatuh_tempo:?string}>}
+ * @return array{aktif:bool,total:float,biaya_masuk:float,potongan_formulir:float,rincian:array<int,array{label:string,nominal:float}>,angsuran:array<int,array{ke:int,nominal:float,jatuh_tempo:?string}>}
  */
 function angsuran_skema()
 {
-    $total = max(0, (float) ($GLOBALS['PENGATURAN']['estimasi_uang_masuk'] ?? 0));
-    $d1    = trim((string) ($GLOBALS['PENGATURAN']['angsuran_1_jatuh_tempo'] ?? ''));
-    $d2    = trim((string) ($GLOBALS['PENGATURAN']['angsuran_2_jatuh_tempo'] ?? ''));
+    $biayaMasuk = max(0, (float) ($GLOBALS['PENGATURAN']['estimasi_uang_masuk'] ?? 0));
+    $formulir   = max(0, (float) ($GLOBALS['PENGATURAN']['biaya_formulir'] ?? 0));
+    $potongan   = min($formulir, $biayaMasuk);
+    $total      = $biayaMasuk - $potongan;
+    $d1         = trim((string) ($GLOBALS['PENGATURAN']['angsuran_1_jatuh_tempo'] ?? ''));
+    $d2         = trim((string) ($GLOBALS['PENGATURAN']['angsuran_2_jatuh_tempo'] ?? ''));
 
     $aktif = $total > 0;
     $a1    = $aktif ? round($total / 2) : 0.0;
     $a2    = $aktif ? $total - $a1 : 0.0;
 
     return [
-        'aktif'    => $aktif,
-        'total'    => $total,
+        'aktif'             => $aktif,
+        'total'             => $total,
+        'biaya_masuk'       => $biayaMasuk,
+        'potongan_formulir' => $potongan,
+        'rincian'           => rincian_biaya_list(),
         'angsuran' => $aktif ? [
             1 => ['ke' => 1, 'nominal' => $a1, 'jatuh_tempo' => $d1 !== '' ? $d1 : null],
             2 => ['ke' => 2, 'nominal' => $a2, 'jatuh_tempo' => $d2 !== '' ? $d2 : null],
@@ -38,11 +93,23 @@ function angsuran_skema()
     ];
 }
 
-/** Tagihan biaya pendaftaran baru aktif setelah LULUS dan hasil diumumkan resmi. */
+/**
+ * Tagihan biaya pendaftaran aktif untuk siswa yang sudah pasti diterima:
+ * berstatus LULUS dan sudah punya penempatan kelas, atau hasil resminya
+ * sudah diumumkan. Penempatan dipakai sebagai syarat karena sekolah
+ * menetapkan kelas sebelum pengumuman — begitu kelasnya ada, sisa biaya
+ * masuk boleh langsung dilihat dan dibayar siswa.
+ */
 function tagihan_pendaftaran_aktif($pendaftar)
 {
     if (!is_array($pendaftar) || ($pendaftar['status_seleksi'] ?? '') !== 'LULUS') {
         return false;
+    }
+    if (!empty($pendaftar['punya_penempatan'])) {
+        return true;
+    }
+    if (function_exists('penempatan_siswa') && penempatan_siswa($pendaftar['id'] ?? null)) {
+        return true;
     }
     $p = function_exists('pengumuman_status') ? pengumuman_status() : [];
     return !empty($p['diumumkan']);

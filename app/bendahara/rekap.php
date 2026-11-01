@@ -212,15 +212,20 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
     <!-- ====================== CATATAN & TANDA TANGAN ====================== -->
     <div class="mt-4 rounded-xl bg-canvas border border-line p-4 text-[12px] text-ink-500">
+      <?php
+      $skemaRekap  = angsuran_skema();
+      $adaTempo    = !empty($PENGATURAN['angsuran_1_jatuh_tempo']) || !empty($PENGATURAN['angsuran_2_jatuh_tempo']);
+      $catatanBiaya = 'Biaya formulir: ' . rupiah($PENGATURAN['biaya_formulir'])
+          . ' · ' . label_biaya_pendaftaran() . ': ' . rupiah($skemaRekap['biaya_masuk'])
+          . ' — sisa yang ditagih setelah lulus: ' . rupiah($skemaRekap['total'])
+          . ($adaTempo ? ' (angsuran 2× ' . rupiah($skemaRekap['angsuran'][1]['nominal'] ?? 0) . ' per tahap)' : '')
+          . '.';
+      ?>
       <p>
         Rekening tujuan: <strong class="text-ink-900"><?= e($PENGATURAN['nama_bank']) ?> — <?= e($PENGATURAN['no_rekening']) ?></strong>
         a.n. <?= e($PENGATURAN['atas_nama_rekening']) ?>.
         Dana terverifikasi mencakup status Terverifikasi, Angsuran 1, Angsuran 2, dan Lunas.
-        Biaya formulir: <?= rupiah($PENGATURAN['biaya_formulir']) ?> ·
-        <?= e(label_biaya_pendaftaran()) ?>: <?= rupiah($PENGATURAN['estimasi_uang_masuk']) ?>
-        <?php if (!empty($PENGATURAN['angsuran_1_jatuh_tempo']) || !empty($PENGATURAN['angsuran_2_jatuh_tempo'])): ?>
-          (angsuran 2×: <?= rupiah(((float) $PENGATURAN['estimasi_uang_masuk']) / 2) ?> per tahap)
-        <?php endif; ?>.
+        <?= e($catatanBiaya) ?>
       </p>
     </div>
 

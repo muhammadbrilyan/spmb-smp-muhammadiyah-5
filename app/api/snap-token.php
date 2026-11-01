@@ -95,7 +95,8 @@ if ($payToken !== '') {
     }
     rate_limit_catat('snap_token');
 
-    /* Tagihan biaya pendaftaran hanya terbuka setelah LULUS & diumumkan.
+    /* Tagihan biaya pendaftaran terbuka untuk siswa LULUS yang sudah punya
+     * penempatan kelas (atau hasilnya sudah diumumkan).
      * Mode LUNAS membayar seluruh sisa tagihan; mode ANGSURAN membayar
      * angsuran berikutnya (setengah tagihan) bila skema 2 angsuran aktif. */
     if ($jenis === 'UANG_MASUK') {

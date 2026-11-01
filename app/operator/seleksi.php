@@ -11,11 +11,13 @@ $USER_LOGIN = [
 ];
 
 $title = 'Input Hasil Seleksi';
-$desc  = 'Input nilai CBT, BTQ, dan wawancara "” keputusan LULUS/TIDAK_LULUS .';
+$desc  = 'Input nilai CBT, BTQ, dan wawancara — nilai akhir dan keputusan LULUS/TIDAK_LULUS dihitung otomatis.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
-/* Ambang nilai kelulusan (bisa diubah per simpan). */
+/* Ambang nilai kelulusan — tersimpan di Pengaturan Sekolah, default 70. */
 $AMBANG_DEFAULT = 70.0;
+$ambangSimpan   = isset($PENGATURAN['ambang_kelulusan']) && $PENGATURAN['ambang_kelulusan'] !== ''
+    ? (float) $PENGATURAN['ambang_kelulusan'] : $AMBANG_DEFAULT;
 
 $galat = [];
 $tersimpan = 0;
@@ -177,7 +179,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     /* --- Simpan tabel input manual (struktur nilai tidak berubah) --- */
-    $ambang = (float) ($_POST['ambang'] ?? $AMBANG_DEFAULT);
+    $ambang = (float) ($_POST['ambang'] ?? $ambangSimpan);
     if ($ambang < 0 || $ambang > 100) {
         $galat[] = 'Ambang nilai harus antara 0 dan 100.';
     }
@@ -190,6 +192,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $hasils = (array) ($_POST['hasil'] ?? []);
 
     if (!$galat && $aksiPost === 'simpan_tabel') {
+        /* Ambang ikut disimpan agar tetap sama saat halaman dibuka lagi. */
+        q_exec('UPDATE pengaturan_sekolah SET ambang_kelulusan = ? WHERE id = 1', [$ambang]);
         foreach ($ids as $i => $pid) {
             $pid = trim((string) $pid);
             if ($pid === '') {
@@ -212,14 +216,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $tersimpan++;
             }
         }
-        flash('sukses', $tersimpan . ' data hasil seleksi berhasil disimpan.');
+        flash('sukses', $tersimpan . ' data hasil seleksi berhasil disimpan (ambang kelulusan '
+            . rtrim(rtrim(number_format($ambang, 1, ',', ''), '0'), ',') . ').');
         header('Location: ' . url('app/operator/seleksi.php'));
         exit;
     }
 }
 
 $pendaftarList = pendaftar_untuk_nilai();
-$jadwalList    = daftar_jadwal_tes_admin();
 $jmlLulusTanpaKelas = lulus_belum_ditempatkan_jumlah();
 
 require_once __DIR__ . '/../../includes/partials/head.php';
@@ -351,18 +355,21 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <?= csrf_field() ?>
       <input type="hidden" name="aksi" value="simpan_tabel">
 
-      <div class="mt-5 card p-4 flex flex-wrap items-center gap-4">
+      <div class="mt-5 card p-4 flex flex-wrap items-end gap-4">
         <div>
           <label class="label" for="ambang">Ambang Kelulusan (nilai akhir minimal)</label>
-          <input id="ambang" name="ambang" type="number" min="0" max="100" step="0.5" value="<?= e($GLOBALS['seleksi_ambang'] ?? $AMBANG_DEFAULT) ?>" class="input w-28" data-ambang>
+          <input id="ambang" name="ambang" type="number" min="0" max="100" step="0.5" value="<?= e((string) $ambangSimpan) ?>" class="input w-28" data-ambang>
         </div>
-        <p class="hint flex-1 min-w-[200px] mb-1">Ubah ambang lalu tekan "Hitung Ulang Otomatis" bila ingin menentukan ulang keputusan berdasarkan ambang baru.</p>
-        <button type="button" class="btn btn-outline" id="btn-hitung"><?= icon('calculate', 'text-[18px]') ?> Hitung Ulang Otomatis</button>
+        <p class="hint flex-1 min-w-[200px] mb-1">
+          Nilai Akhir terhitung otomatis dari rata-rata CBT, BTQ, dan Wawancara. Bila mencapai ambang,
+          keputusan terisi <strong>Lulus</strong> — masih bisa diubah manual per siswa sebelum disimpan.
+          Angka ambang ikut tersimpan saat menekan <strong>Simpan Hasil Seleksi</strong>.
+        </p>
       </div>
 
       <div class="mt-4 card overflow-hidden">
         <div class="overflow-x-auto scroll-thin">
-          <table class="w-full min-w-[1000px] border-collapse">
+          <table class="w-full min-w-[760px] border-collapse">
             <thead class="thead">
               <tr>
                 <th class="th">No. Pendaftaran</th>
@@ -370,8 +377,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 <th class="th text-center">CBT</th>
                 <th class="th text-center">BTQ</th>
                 <th class="th text-center">Wawancara</th>
-                <th class="th text-center">Akhir</th>
-                <th class="th">Jadwal Tes</th>
+                <th class="th text-center">Nilai Akhir</th>
                 <th class="th text-center">Keputusan</th>
               </tr>
             </thead>
@@ -386,25 +392,18 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 ?>
                 <tr class="tr-hover" data-baris>
                   <input type="hidden" name="pendaftar_id[]" value="<?= e($p['id']) ?>">
+                  <?php /* Jadwal tidak ditampilkan di halaman ini, tetapi jangan sampai
+                          * tertimpa NULL saat nilai disimpan. */ ?>
+                  <input type="hidden" name="jadwal_id[]" value="<?= e($p['jadwal_id'] ?? '') ?>">
                   <td class="td font-mono text-[13px] text-primary"><?= e($p['no_pendaftaran']) ?></td>
                   <td class="td">
                     <div class="font-semibold text-ink-900"><?= e($p['nama_siswa']) ?></div>
-                    <div class="text-[12px] text-ink-500">Jalur <?= e($p['jalur'] ?: 'Reguler') ?> '· <?= e($p['status_verifikasi']) ?></div>
+                    <div class="text-[12px] text-ink-500">Jalur <?= e($p['jalur'] ?: 'Reguler') ?> · <?= e($p['status_verifikasi']) ?></div>
                   </td>
                   <td class="td text-center"><input name="nilai_cbt[]" type="number" min="0" max="100" step="0.5" value="<?= $cbt ?: '' ?>" class="input w-20 text-center mx-auto" data-nilai></td>
                   <td class="td text-center"><input name="nilai_btq[]" type="number" min="0" max="100" step="0.5" value="<?= $btq ?: '' ?>" class="input w-20 text-center mx-auto" data-nilai></td>
                   <td class="td text-center"><input name="nilai_wawancara[]" type="number" min="0" max="100" step="0.5" value="<?= $waw ?: '' ?>" class="input w-20 text-center mx-auto" data-nilai></td>
                   <td class="td text-center"><span class="text-base font-extrabold text-ink-900" data-akhir><?= number_format($akhir, 1, ',', '.') ?></span></td>
-                  <td class="td">
-                    <select name="jadwal_id[]" class="select h-9 w-full min-w-[160px]">
-                      <option value="">"” tanpa jadwal "”</option>
-                      <?php foreach ($jadwalList as $j): ?>
-                        <option value="<?= e($j['id']) ?>" <?= ($p['jadwal_id'] ?? '') === $j['id'] ? 'selected' : '' ?>>
-                          <?= e($j['kode']) ?> '· <?= e($j['nama_kegiatan']) ?>
-                        </option>
-                      <?php endforeach; ?>
-                    </select>
-                  </td>
                   <td class="td text-center">
                     <select name="hasil[]" class="select h-9 w-36 mx-auto" data-hasil>
                       <option value="PROSES" <?= $hasilSaatIni === 'PROSES' ? 'selected' : '' ?>>Proses</option>
@@ -415,7 +414,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 </tr>
               <?php endforeach; ?>
               <?php if (!$pendaftarList): ?>
-                <tr><td colspan="8" class="td text-center text-ink-400">Belum ada pendaftar untuk dinilai.</td></tr>
+                <tr><td colspan="7" class="td text-center text-ink-400">Belum ada pendaftar untuk dinilai.</td></tr>
               <?php endif; ?>
             </tbody>
           </table>
@@ -435,25 +434,46 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 <script>
   window.APP_FLASH = <?= json_encode($_SESSION['flash'] ?? null, JSON_UNESCAPED_UNICODE) ?>;
   (function () {
-    var btn = document.getElementById('btn-hitung');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var ambangEl = document.querySelector('[data-ambang]');
-      var ambang = parseFloat(ambangEl ? ambangEl.value : '70') || 70;
-      document.querySelectorAll('[data-baris]').forEach(function (tr) {
-        var inputs = tr.querySelectorAll('[data-nilai]');
-        var cbt = parseFloat(inputs[0] && inputs[0].value) || 0;
-        var btq = parseFloat(inputs[1] && inputs[1].value) || 0;
-        var waw = parseFloat(inputs[2] && inputs[2].value) || 0;
-        var akhir = (cbt + btq + waw) / 3;
-        var elAkhir = tr.querySelector('[data-akhir]');
-        if (elAkhir) elAkhir.textContent = akhir.toFixed(1).replace('.', ',');
-        var sel = tr.querySelector('[data-hasil]');
-        if (sel && (cbt || btq || waw)) {
-          sel.value = akhir >= ambang ? 'LULUS' : 'TIDAK_LULUS';
-        }
+    /* Nilai Akhir & keputusan dihitung langsung saat angka diketik — tidak
+     * ada tombol hitung ulang. Baris yang masih kosong dibiarkan "Proses". */
+    var ambangEl = document.querySelector('[data-ambang]');
+    var baris = [].slice.call(document.querySelectorAll('[data-baris]'));
+    if (!ambangEl || !baris.length) return;
+    function ambang() {
+      var v = parseFloat(ambangEl.value);
+      return isFinite(v) ? v : 70;
+    }
+    function ambil(el) {
+      var v = parseFloat(el.value);
+      return isFinite(v) ? Math.max(0, Math.min(100, v)) : null;
+    }
+    function hitungBaris(tr) {
+      var inputs = tr.querySelectorAll('[data-nilai]');
+      var elAkhir = tr.querySelector('[data-akhir]');
+      var sel = tr.querySelector('[data-hasil]');
+      var jumlah = 0, ada = 0;
+      inputs.forEach(function (el) {
+        var n = ambil(el);
+        if (n !== null) { jumlah += n; ada++; }
       });
-      showToast('Keputusan dihitung ulang dari ambang nilai.', 'sukses');
+      if (!ada) {
+        if (elAkhir) elAkhir.textContent = '—';
+        if (sel) sel.value = 'PROSES';
+        return;
+      }
+      var akhir = jumlah / inputs.length;
+      if (elAkhir) elAkhir.textContent = akhir.toFixed(1).replace('.', ',');
+      if (sel) sel.value = akhir >= ambang() ? 'LULUS' : 'TIDAK_LULUS';
+    }
+    baris.forEach(function (tr) {
+      tr.querySelectorAll('[data-nilai]').forEach(function (el) {
+        el.addEventListener('input', function () { hitungBaris(tr); });
+      });
+    });
+    ambangEl.addEventListener('input', function () {
+      baris.forEach(function (tr) {
+        if (tr.querySelector('[data-nilai]').value !== '') hitungBaris(tr);
+      });
     });
   })();
 </script>

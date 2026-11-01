@@ -301,6 +301,61 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           </article>
         </section>
 
+        <?php /* Rincian item biaya + sisa yang harus dibayar — muncul begitu siswa
+               * lulus dan sudah punya penempatan kelas. */ ?>
+        <?php if ($pendaftaranTerbuka && $skemaAngsuran['biaya_masuk'] > 0): ?>
+          <section class="mt-4 card p-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 class="font-bold text-ink-900">Rincian Biaya &amp; Sisa Pembayaran</h2>
+                <p class="mt-1 text-[13px] text-ink-500">
+                  <?php if (!empty($penempatan)): ?>
+                    Anda diterima di kelas <strong><?= e($penempatan['kode']) ?></strong> —
+                    sisa biaya di bawah sudah bisa dibayar sekarang.
+                  <?php else: ?>
+                    Rincian biaya yang harus diselesaikan setelah Anda dinyatakan lulus.
+                  <?php endif; ?>
+                </p>
+              </div>
+              <?php if (!empty($penempatan)): ?>
+                <span class="badge badge-blue"><?= icon('school', 'text-[13px]') ?> <?= e($penempatan['kode']) ?></span>
+              <?php endif; ?>
+            </div>
+
+            <div class="mt-4 space-y-1.5 text-[13px]">
+              <?php foreach ($skemaAngsuran['rincian'] as $r): ?>
+                <div class="flex justify-between gap-3">
+                  <span class="text-ink-500"><?= e($r['label']) ?></span>
+                  <span class="text-ink-700"><?= rupiah($r['nominal']) ?></span>
+                </div>
+              <?php endforeach; ?>
+              <div class="flex justify-between gap-3 border-t border-line pt-2">
+                <span class="font-semibold text-ink-900">Total Biaya Masuk</span>
+                <span class="font-semibold text-ink-900"><?= rupiah($skemaAngsuran['biaya_masuk']) ?></span>
+              </div>
+              <div class="flex justify-between gap-3">
+                <span class="text-ink-500">− Sudah dibayar &amp; diverifikasi</span>
+                <span class="text-ink-700"><?= rupiah($totalTerverifikasi) ?></span>
+              </div>
+              <div class="flex justify-between gap-3 border-t border-line pt-2">
+                <span class="font-bold text-ink-900">= Sisa yang harus dibayar</span>
+                <span class="font-extrabold <?= $totalSisa > 0 ? 'text-[#B45309]' : 'text-[#0E9F6E]' ?>"><?= rupiah($totalSisa) ?></span>
+              </div>
+            </div>
+
+            <?php if ($skemaAngsuran['aktif']): ?>
+              <p class="mt-3 text-[12px] text-ink-500">
+                Sisa <?= rupiah($skemaAngsuran['total']) ?> bisa dibayar <strong>lunas sekaligus</strong> atau
+                <strong>2 angsuran</strong> masing-masing <?= rupiah($skemaAngsuran['angsuran'][1]['nominal'] ?? 0) ?>.
+                <?php if (!empty($skemaAngsuran['angsuran'][1]['jatuh_tempo'])): ?>
+                  Jatuh tempo angsuran 1: <?= e(bulan($skemaAngsuran['angsuran'][1]['jatuh_tempo'])) ?>.
+                <?php endif; ?>
+                Status lunas hanya setelah bendahara memverifikasi bukti pembayaran.
+              </p>
+            <?php endif; ?>
+          </section>
+        <?php endif; ?>
+
         <!-- Tagihan per jenis — hanya tagihan yang belum lunas -->
         <?php
         $tampilUangMasuk = $pendaftaranTerbuka
@@ -321,9 +376,11 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             $kartu[] = [
                 'jenis' => 'UANG_MASUK',
                 'judul' => label_biaya_pendaftaran(),
-                'ket'   => $angsuranAktif
-                    ? 'Pilih bayar lunas sekali atau angsuran 2 kali (otomatis setengah). Status lunas hanya setelah bendahara memverifikasi.'
-                    : 'Dibayar setelah hasil seleksi diumumkan dan Anda dinyatakan lulus.',
+                'ket'   => 'Sisa ' . label_biaya_pendaftaran() . ' ' . rupiah($skemaAngsuran['biaya_masuk'])
+                    . ' setelah dikurangi Biaya Formulir ' . rupiah($skemaAngsuran['potongan_formulir'])
+                    . ($angsuranAktif
+                        ? ' — pilih bayar lunas sekali atau angsuran 2 kali (otomatis setengah). Status lunas hanya setelah bendahara memverifikasi.'
+                        : '. Dibayar setelah hasil seleksi diumumkan dan Anda dinyatakan lulus.'),
                 'data'  => $bayarUangMasuk,
                 'boleh' => $angsuranAktif ? $bolehAngsuran : $bolehUangMasuk,
             ];

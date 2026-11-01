@@ -35,6 +35,14 @@ if (!empty($jadwalSiswa['tautan_video'])) {
     }
 }
 
+/* Agenda = SELURUH jadwal berstatus Terjadwal, fungsi yang sama dipakai tombol
+ * "Umumkan Semua Jadwal" operator — sehingga tabel pada kartu ini dan pesan
+ * WhatsApp wali siswa tidak pernah berbeda isi. Bila jadwal siswa sendiri
+ * belum berstatus Terjadwal, kartunya tetap ditampilkan sebagai satu baris. */
+$labelMetode = ['OFFLINE' => 'Offline', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video Call'];
+$agendaTes   = $siswa ? jadwal_terjadwal() : [];
+$agendaBaris = $agendaTes ?: ($kartuUjian ? [$kartuUjian] : []);
+
 require_once __DIR__ . '/../../includes/partials/head.php';
 $activeMenu = 'ppdb';
 require __DIR__ . '/../../includes/partials/sidebar.php';
@@ -209,24 +217,46 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                   </div>
                 </div>
 
-                <dl class="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm border-t border-line-soft pt-4">
-                  <div class="flex justify-between gap-3">
-                    <dt class="text-ink-500">Kegiatan</dt>
-                    <dd class="font-semibold text-ink-900 text-right"><?= e($kartuUjian['kode']) ?> — <?= e($kartuUjian['nama_kegiatan']) ?></dd>
+                <div class="mt-4 border-t border-line-soft pt-4">
+                  <p class="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Agenda Tes</p>
+                  <div class="mt-2 overflow-x-auto scroll-thin">
+                    <table class="w-full border-collapse text-[13px]">
+                      <thead>
+                        <tr>
+                          <th class="border border-line bg-canvas px-2 py-1.5 text-left font-semibold text-ink-700">Tanggal</th>
+                          <th class="border border-line bg-canvas px-2 py-1.5 text-left font-semibold text-ink-700">Kegiatan</th>
+                          <th class="border border-line bg-canvas px-2 py-1.5 text-left font-semibold text-ink-700">Waktu</th>
+                          <th class="border border-line bg-canvas px-2 py-1.5 text-left font-semibold text-ink-700">Lokasi / Ruangan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach ($agendaBaris as $ag): ?>
+                          <tr>
+                            <td class="border border-line px-2 py-1.5 align-top whitespace-nowrap">
+                              <span class="font-semibold text-ink-900"><?= e(bulan_pendek($ag['tanggal'])) ?></span>
+                              <span class="text-[11px] text-ink-500"><?= e(date('Y', strtotime((string) $ag['tanggal']))) ?></span>
+                            </td>
+                            <td class="border border-line px-2 py-1.5 align-top">
+                              <span class="font-semibold text-ink-900"><?= e($ag['nama_kegiatan']) ?></span>
+                              <span class="block text-[11px] text-ink-500 font-mono"><?= e($ag['kode']) ?></span>
+                            </td>
+                            <td class="border border-line px-2 py-1.5 align-top whitespace-nowrap">
+                              <span class="font-semibold text-ink-900"><?= e(substr((string) $ag['jam_mulai'], 0, 5)) ?>–<?= e(substr((string) $ag['jam_selesai'], 0, 5)) ?></span>
+                              <span class="block text-[11px] text-ink-500">WIB · <?= e($labelMetode[$ag['mode']] ?? $ag['mode']) ?></span>
+                            </td>
+                            <td class="border border-line px-2 py-1.5 align-top"><?= e(jadwal_lokasi_teks($ag)) ?></td>
+                          </tr>
+                        <?php endforeach; ?>
+                      </tbody>
+                    </table>
                   </div>
-                  <div class="flex justify-between gap-3">
-                    <dt class="text-ink-500">Tanggal</dt>
-                    <dd class="font-semibold text-ink-900"><?= e(bulan($kartuUjian['tanggal'])) ?></dd>
-                  </div>
-                  <div class="flex justify-between gap-3">
-                    <dt class="text-ink-500">Jam</dt>
-                    <dd class="font-semibold text-ink-900"><?= e(substr((string) $kartuUjian['jam_mulai'], 0, 5)) ?>–<?= e(substr((string) $kartuUjian['jam_selesai'], 0, 5)) ?> WIB</dd>
-                  </div>
-                  <div class="flex justify-between gap-3">
-                    <dt class="text-ink-500">Lokasi / Ruangan</dt>
-                    <dd class="font-semibold text-ink-900 text-right"><?= e($kartuUjian['ruangan'] ?: ($kartuUjian['lokasi'] ?: 'Sekolah')) ?></dd>
-                  </div>
-                </dl>
+                  <?php if (count($agendaBaris) > 1): ?>
+                    <p class="mt-2 text-[12px] text-ink-500">
+                      Nomor peserta di atas berlaku pada kegiatan <strong><?= e($kartuUjian['nama_kegiatan']) ?></strong>;
+                      seluruh kegiatan lain tetap wajib diikuti sesuai barisnya masing-masing.
+                    </p>
+                  <?php endif; ?>
+                </div>
 
                 <p class="mt-4 text-[12px] text-ink-500 border-t border-line-soft pt-3">
                   Mohon hadir 15 menit lebih awal. Bawa kartu ini &amp; alat tulis. Simpan kartu sampai proses seleksi selesai.

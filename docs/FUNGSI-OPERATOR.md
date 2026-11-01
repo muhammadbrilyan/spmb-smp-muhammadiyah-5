@@ -110,17 +110,28 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | # | Fungsi | Status |
 |---|---|---|
 | 1 | Atur Peserta Otomatis (transaksi + `FOR UPDATE`, cek kapasitas, nomor peserta unik) | ✅ **Paling rapi di seluruh aplikasi** |
-| 2 | Tambah peserta manual | ✅ |
+| 2 | Tambah peserta manual | ✅ satu dropdown per jadwal |
 | 3 | Hapus peserta | ✅ |
 | 4 | Kirim WA jadwal ke peserta | ✅ |
+| 5 | Semua jadwal Terjadwal tampil sekaligus (tanpa dropdown pilih jadwal) | ✅ kartu bertumpuk, berisi meta kegiatan, kapasitas & bar terpakai, sisa kuota, peringatan peserta tanpa nomor WA orang tua |
+
+> **2026-11-01 — halaman dirombak.** Dropdown "Jadwal Tes" dihapus: yang bisa
+> dikelola hanyalah jadwal berstatus **Terjadwal**, karena hanya status itu yang
+> dikirim ke calon siswa lewat *Umumkan Semua Jadwal* (§6). Jadwal Draft/Selesai
+> kini hanya disebut sekilas di catatan bawah beserta jumlah pesertanya, supaya
+> operator tidak menempatkan peserta pada jadwal yang tidak akan sampai ke siswa.
+> Tabel mendatar `min-w-[760px]` (harus digulir ke samping di ponsel) diganti
+> daftar peserta vertikal. Tombol dinonaktifkan bila tidak ada yang bisa
+> dilakukan: *Atur Peserta Otomatis* saat kapasitas penuh, *Kirim WA Jadwal* saat
+> peserta masih kosong.
 
 ### 8. Data & Status Tes — `app/operator/seleksi.php`
 
 | # | Fungsi | Status |
 |---|---|---|
-| 1 | Input nilai manual (CBT/BTQ/wawancara) + nilai akhir otomatis | ✅ |
+| 1 | Input nilai manual (CBT/BTQ/wawancara) + nilai akhir otomatis | ✅ sejak 2026-11-02: hanya kolom hasil tes yang tampil (kolom **Jadwal Tes** dihapus — `jadwal_id` lama dipertahankan lewat hidden input), Nilai Akhir dan Keputusan terhitung **langsung saat angka diketik** |
 | 2 | Impor CSV nilai + pratinjau | ⚠️ Nilai di luar 0–100 **di-clip diam-diam** jadi 100/0, bukan ditandai galat (`seleksi.php:74-76`) |
-| 3 | Ambang kelulusan | ⚠️ Tidak pernah **disimpan** (selalu reset ke 70) dan tidak dipakai server-side |
+| 3 | Ambang kelulusan | ✅ sejak 2026-11-02: ambang (default **70**) tersimpan di `pengaturan_sekolah.ambang_kelulusan` dan dipakai menghitung keputusan LULUS/TIDAK_LULUS; tombol "Hitung Ulang Otomatis" dihapus karena perhitungan sudah otomatis |
 | 4 | Status LULUS / TIDAK_LULUS | ✅ |
 
 ### 9. Pengumuman & Status Penerimaan — `app/operator/pengumuman.php`
@@ -156,8 +167,8 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 
 | # | Fungsi | Status |
 |---|---|---|
-| 1 | Tambah kelas + kuota + wali + status aktif | ✅ |
-| 2 | Edit kelas (inline) | ✅ *diperbaiki* — form baris sempat kosong |
+| 1 | Tambah kelas + kuota + wali + status aktif | ✅ formulir dirombak 2026-11-01: 4 field + hint per field, label <em>Aktif</em> kini benar-benar menandai checkbox-nya |
+| 2 | Edit kelas | ✅ **Simpan Semua** (2026-11-01) — seluruh baris Daftar Rombel ditautkan ke satu `<form id="rombel-all">` lewat atribut `form` pada tiap input, jadi satu tombol menyimpan semua perubahan (`aksi=simpan_massal`). Tidak ada tombol Simpan per baris lagi; chip "Belum disimpan" + pengingat `beforeunload` menandai edits yang belum dikirim. Bila satu baris tidak valid, **tidak ada** yang tersimpan dan pesan galat diberi awalan kode kelasnya |
 | 3 | Hapus kelas | ✅ *diperbaiki* — dulu kelas berpenghuni bisa dihapus dan `ON DELETE CASCADE` menghapus penempatan siswa diam-diam |
 | 4 | Kolom "Terisi" & progress bar | ✅ *diperbaiki* — dulu membaca kolom yang tak pernah ditulis |
 
@@ -189,7 +200,7 @@ Satu `<form>` berisi **11 section isian + 1 kartu tautan** — semua isian **ter
 | 1 | Identitas & Kontak Institusi | ✅ |
 | 2 | Aset Visual & Warna Tema (unggah logo, banner, **color picker**) | ✅ warna → `head.php` |
 | 3 | Running Text / Ticker | ⚠️ Salah kunci baca: `ticker_header` vs `ticker` → selalu kosong di 2 halaman |
-| 4 | Tarif / Biaya: biaya formulir, SPP, estimasi **Biaya Pendaftaran** (+ nama labelnya) & **teks program beasiswa** | ✅ label biaya dipakai seluruh aplikasi lewat `label_biaya_pendaftaran()`; `teks_beasiswa` kosong = kartu beasiswa tidak tampil di halaman publik |
+| 4 | **Rincian Biaya SPMB**: Biaya Formulir, SPP, **daftar item biaya masuk yang bisa disusun bebas**, **Biaya Masuk** (+ nama labelnya) dan **Teks Promo** | ✅ sejak 2026-11-01, daftar item sejak 2026-11-02. Operator menambah/menghapus item "nama + nominal" (maks 15) — tersimpan sebagai JSON di `pengaturan_sekolah.rincian_biaya` dan **totalnya otomatis menjadi Biaya Masuk** (`estimasi_uang_masuk`), jadi `angsuran_skema()` di `queries/pembayaran.php` tetap satu-satunya sumber angka. Kartu "Tagihan Setelah Lulus" menampilkan `Biaya Masuk − Biaya Formulir = Sisa` yang dibagi 2 angsuran sama besar (`angsuran_*_nominal` tidak dibaca lagi); nilai berubah langsung saat operator mengetik. Daftar dikosongkan = Biaya Masuk diketik manual. Rincian ikut tampil di kartu biaya halaman publik dan di panel **Rincian Biaya & Sisa Pembayaran** portal siswa. `teks_beasiswa` (label barunya **Teks Promo**) kosong = kartu promo tidak tampil di halaman publik; kolom DB-nya tidak diganti |
 | 5 | Rekening Bank | ✅ dipakai di footer & halaman bayar |
 | 6 | Gelombang Pendaftaran | ✅ |
 | 7 | Kredensial WhatsApp Fonnte | ✅ Token diuji otomatis ke Fonnte (`/device`, tanpa kirim WA) saat form disimpan + badge sumber token (`.env`/DB) — lihat catatan di bawah |
@@ -299,6 +310,14 @@ Untuk kondisi awal di mana **belum ada** akun staf yang bisa login (semua
 | 15 | **Nilai contoh `includes/dummy.php` bocor ke database** | Formulir CMS dulu diisi dari `$PENGATURAN` (dummy ditimpa DB). Kolom yang kosong di DB ikut terganti alamat/rekening/telepon contoh setiap kali operator menekan Simpan, sehingga perubahan kelihatan "kembali sendiri". Kini lewat `cms.php::pengaturan_baris()` (baris mentah database) — kolom yang dikosongkan tersimpan NULL. Kolom gambar tetap dari `$PENGATURAN` karena nilainya sudah dinormalisasi menjadi URL absolut |
 | 16 | Sebutan **"Kampus"** pada teks yang dilihat pengguna | `includes/dummy.php` langkah 3, badge jadwal di dashboard operator, dan `alt` di dua halaman login → "sekolah" / "Gedung SMP Muhammadiyah 5 Kota Tangerang". Nama berkas `assets/img/kampus.png` tidak diubah |
 | 17 | **Dua menu verifikasi yang dikerjakan berurutan digabung** (2026-11-01) | `berkas.php` + `verifikasi-data.php` → satu halaman `app/operator/verifikasi.php` dengan tab **Berkas Persyaratan / Data Siswa / Koreksi Data**. Satu pendaftar dibuka di satu layar (berkas + keputusan per berkas, identitas, orang tua, ringkasan, keputusan verifikasi data, koreksi, retensi yang kini ditutup rapi di `<details>`). Sidebar operator 14 → 13 menu. `berkas.php` & `verifikasi-data.php` tetap ada sebagai pengalih 302 (tautan lama di notifikasi/WA/markah tidak mati); semua tautan internal ikut dipindah ke `verifikasi.php?tab=…` |
+| 18 | **Peserta Ujian harus memilih jadwal dulu** (2026-11-01) | Dropdown `?j=` dihapus — halaman menampilkan semua jadwal **Terjadwal** sekaligus sebagai kartu (meta kegiatan, kapasitas & bar terpakai, sisa kuota, peserta tanpa nomor WA) dengan tombol *Atur Peserta Otomatis*/*Kirim WA Jadwal* per kartu. Jadwal Draft/Selesai tidak lagi bisa diisi peserta dari sini karena tidak pernah dikirim ke calon siswa. Tabel `min-w-[760px]` → daftar vertikal tanpa gulir samping |
+| 19 | **Portal calon siswa lebih ramai daripada portal sekolah** (2026-11-01) | Topbar kini seragam untuk semua peran: breadcrumb "Portal Siswa › …" dan chip "Gateway WA dikonfigurasi — % terkirim bulan ini" dihapus (status gateway dibaca di Kesiapan Rilis, dan bukan informasi untuk calon siswa). Sidebar siswa dua grup → satu grup "Portal Saya", menu *Akademik* hanya muncul bila siswa sudah diterima, CTA "Info SPMB" dihapus (ikon `?` di topbar sudah mengarah ke sana), dan tautan *Ganti Password* di kaki sidebar disembunyikan untuk peran siswa — halaman `app/staf/ganti-password.php` menolak peran itu, siswa ganti sandal lewat **Pengaturan Akun** |
+| 20 | **Tagihan pendaftar terhitung biaya masuk penuh** (2026-11-01) | Dasar tagihan kini **sisa Biaya Masuk**: `angsuran_skema()` memotong Biaya Formulir (sudah dibayar saat registrasi) dari Biaya Masuk — contoh 1.250.000 − 200.000 = 1.050.000 → 2 × 525.000. Satu perubahan ini otomatis membetulkan portal siswa, verifikasi bendahara, monitoring kepsek, dan nominal Midtrans (`snap-token`) karena semuanya sudah membaca fungsi yang sama. Label "Estimasi Biaya Pendaftaran" → **Biaya Masuk**; kartu landing, dashboard bendahara, dan rekap cetak menampilkan rantai rincianya |
+| 21 | **"Beasiswa" dipromosikan padahal programnya belum ada** (2026-11-01) | Field CMS diganti namanya menjadi **Teks Promo (opsional)** (kolom tetap `teks_beasiswa`, tanpa migrasi) dan kartu publik ikut berubah menjadi badge *Promo Tersedia* + blok *Program Promo*. Bila field dikosongkan, kartu hilang. Di `kelas.php`, formulir *Tambah Kelas Baru* disederhanakan (4 field + hint) dan **Daftar Rombel kini punya satu tombol "Simpan Semua"** — tidak ada lagi simpan per baris |
+| 22 | **Halaman Input Hasil Seleksi mencampur urusan nilai dan jadwal** (2026-11-02) | Kolom **Jadwal Tes** dihapus (penjadwalan memang bukan urusan halaman ini) — `jadwal_id` siswa tetap dikirim sebagai hidden input supaya tidak tertimpa NULL saat nilai disimpan. Tombol **Hitung Ulang Otomatis** dihapus: Nilai Akhir dan Keputusan kini terhitung per baris setiap angka diketik, dan berubah lagi begitu ambang diedit. Baris kosong tetap "Proses" (dilewati saat simpan). Galat teks `” tanpa jadwal ”` ikut hilang |
+| 23 | **Ambang kelulusan tidak pernah tersimpan** (2026-11-02) | Kolom baru `pengaturan_sekolah.ambang_kelulusan` (default **70**) — nilai dibaca saat halaman dibuka dan ditulis ulang saat "Simpan Hasil Seleksi", jadi ambang tetap sama di sesi berikutnya. Migrasi `database/migrations/20261102_rincian_biaya.sql` |
+| 24 | **Biaya masuk hanya satu angka bulat** (2026-11-02) | CMS → Rincian Biaya SPMB kini punya **daftar item bebas** (nama + nominal, tambah/hapus, maks 15 baris) yang tersimpan sebagai JSON di `pengaturan_sekolah.rincian_biaya`; totalnya otomatis menjadi Biaya Masuk. Contoh sekolah: Formulir 200.000 + Fortasi/MPLS 150.000 + SPP 350.000 + Infaq 3 Tahun 350.000 + Kontribusi IPM 3 Tahun 200.000 = **1.250.000**, sisa setelah formulir **1.050.000** = 2 × 525.000. Rincian yang sama tampil di kartu biaya halaman publik dan di panel baru **Rincian Biaya & Sisa Pembayaran** pada portal siswa |
+| 25 | **Siswa lulus & sudah dapat kelas tidak melihat sisa tagihannya** (2026-11-02) | Gerbang tagihan `tagihan_pendaftaran_aktif()` diperluas: LULUS **dan punya penempatan kelas** sudah cukup (sebelumnya wajib menunggu tombol "Umumkan Sekarang" ditekan). Portal siswa menampilkan panel sisa pembayaran — total biaya masuk, item rincian, yang sudah dibayar, sisa, dan opsi lunas/2 angsuran beserta jatuh temponya |
 
 ---
 

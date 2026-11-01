@@ -15,6 +15,26 @@ $desc  = 'CRUD rombel kelas dan alokasi kuota per kelas.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 /* ---------- Proses POST (sebelum output HTML) ---------- */
+
+/** Pesan galat untuk satu isian kelas (dipakai form tambah, ubah, dan simpan massal). */
+function kelas_pesan_galat($kode, $nama, $kuota, $kecualiId = null)
+{
+    $pesan = [];
+    if ($kode === '' || !preg_match('/^[A-Z0-9]{1,10}$/', $kode)) {
+        $pesan[] = 'Kode kelas wajib diisi (huruf/angka, maks 10 karakter), contoh: 7A.';
+    }
+    if ($nama === '') {
+        $pesan[] = 'Nama kelas wajib diisi.';
+    }
+    if ($kuota < 1 || $kuota > 500) {
+        $pesan[] = 'Kuota harus antara 1 dan 500.';
+    }
+    if (!$pesan && kelas_kode_dipakai($kode, $kecualiId)) {
+        $pesan[] = 'Kode kelas "' . e($kode) . '" sudah dipakai.';
+    }
+    return $pesan;
+}
+
 $galat = [];
 $flashx = null;
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
@@ -34,19 +54,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $kuota   = (int) ($_POST['kuota'] ?? 0);
         $aktif   = !empty($_POST['is_aktif']) ? 1 : 0;
 
-        if ($kode === '' || !preg_match('/^[A-Z0-9]{1,10}$/', $kode)) {
-            $galat[] = 'Kode kelas wajib diisi (huruf/angka, maks 10 karakter), contoh: 7A.';
-        }
-        if ($nama === '') {
-            $galat[] = 'Nama kelas wajib diisi.';
-        }
-        if ($kuota < 1 || $kuota > 500) {
-            $galat[] = 'Kuota harus antara 1 dan 500.';
-        }
-        $kecuali = $aksi === 'ubah' ? $id : null;
-        if (!$galat && kelas_kode_dipakai($kode, $kecuali)) {
-            $galat[] = 'Kode kelas "' . e($kode) . '" sudah dipakai.';
-        }
+        $galat = kelas_pesan_galat($kode, $nama, $kuota, $aksi === 'ubah' ? $id : null);
 
         if (!$galat) {
             if ($aksi === 'tambah') {
@@ -67,6 +75,65 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             exit;
         }
         $flashx = $galat;
+    } elseif ($aksi === 'simpan_massal') {
+        /* Seluruh baris Daftar Rombel dikirim sekali tekan. Bila ada satu baris
+         * yang tidak valid, tidak ada yang disimpan — operator memperbaiki
+         * baris tersebut lalu menekan Simpan Semua lagi. */
+        $kirim = is_array($_POST['rows'] ?? null) ? $_POST['rows'] : [];
+        $siap  = [];
+        foreach ($kirim as $r) {
+            if (!is_array($r)) {
+                continue;
+            }
+            $id = trim((string) ($r['id'] ?? ''));
+            if ($id === '') {
+                continue;
+            }
+            $siap[$id] = [
+                'kode'  => strtoupper(trim((string) ($r['kode'] ?? ''))),
+                'nama'  => trim((string) ($r['nama_kelas'] ?? '')),
+                'wali'  => trim((string) ($r['wali_kelas'] ?? '')),
+                'kuota' => (int) ($r['kuota'] ?? 0),
+                'aktif' => !empty($r['is_aktif']) ? 1 : 0,
+            ];
+        }
+
+        $jumlahKode = array_count_values(array_column($siap, 'kode'));
+        $pesan      = [];
+        foreach ($siap as $id => $d) {
+            $penanda = $d['kode'] !== '' ? $d['kode'] : '(baris tanpa kode)';
+            foreach (kelas_pesan_galat($d['kode'], $d['nama'], $d['kuota'], $id) as $g) {
+                $pesan[] = $penanda . ' — ' . $g;
+            }
+        }
+        foreach ($jumlahKode as $kode => $n) {
+            if ($kode !== '' && $n > 1) {
+                $pesan[] = $kode . ' — kode yang sama dipakai pada lebih dari satu baris.';
+            }
+        }
+        $pesan = array_values(array_unique($pesan));
+
+        if ($pesan) {
+            $flashx = $pesan;
+        } else {
+            if (!$siap) {
+                flash('error', 'Tidak ada data kelas yang dikirim.');
+            } else {
+                $berhasil = 0;
+                foreach ($siap as $id => $d) {
+                    if (kelas_ubah($id, $d['kode'], $d['nama'], $d['wali'], $d['kuota'], $d['aktif'])) {
+                        $berhasil++;
+                    }
+                }
+                if ($berhasil === count($siap)) {
+                    flash('sukses', count($siap) . ' kelas tersimpan.');
+                } else {
+                    flash('error', 'Sebagian kelas gagal tersimpan (' . $berhasil . ' dari ' . count($siap) . ').');
+                }
+            }
+            header('Location: ' . url('app/operator/kelas.php'));
+            exit;
+        }
     } elseif ($aksi === 'hapus') {
         $id = trim((string) ($_POST['id'] ?? ''));
         if (kelas_hapus($id)) {
@@ -88,6 +155,8 @@ foreach ($kelasList as $k) {
         $totalTerisi += (int) $k['terisi'];
     }
 }
+
+$flashToast = flash(); /* diambil sekali agar pesan sukses tidak tampil lagi */
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 $activeMenu = 'kelas';
@@ -130,37 +199,69 @@ require __DIR__ . '/../../includes/partials/topbar.php';
     <!-- Form tambah -->
     <section class="mt-6 card p-5 sm:p-6">
       <h2 class="font-bold text-ink-900">Tambah Kelas Baru</h2>
-      <form method="post" action="<?= url('app/operator/kelas.php') ?>" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-end">
+      <p class="mt-1 text-[13px] text-ink-500">
+        Isi kode, nama, dan kuota kelas. Kelas yang tidak dicentang <em>Aktif</em> tetap tersimpan
+        tetapi tidak dihitung sebagai kuota pendaftaran.
+      </p>
+      <form method="post" action="<?= url('app/operator/kelas.php') ?>" class="mt-4 grid gap-4 sm:grid-cols-2">
         <?= csrf_field() ?>
         <input type="hidden" name="aksi" value="tambah">
         <div>
-          <label class="label" for="kode">Kode <span class="text-red-600">*</span></label>
+          <label class="label" for="kode">Kode Kelas <span class="text-red-600">*</span></label>
           <input id="kode" name="kode" class="input font-mono uppercase" placeholder="7D" maxlength="10" required>
-        </div>
-        <div class="lg:col-span-2">
-          <label class="label" for="nama_kelas">Nama Kelas <span class="text-red-600">*</span></label>
-          <input id="nama_kelas" name="nama_kelas" class="input" placeholder="Kelas VII-D (Reguler)" required>
+          <p class="hint">Huruf dan angka, maksimal 10 karakter.</p>
         </div>
         <div>
-          <label class="label" for="wali_kelas">Wali Kelas</label>
-          <input id="wali_kelas" name="wali_kelas" class="input" placeholder="Nama wali">
+          <label class="label" for="nama_kelas">Nama Kelas <span class="text-red-600">*</span></label>
+          <input id="nama_kelas" name="nama_kelas" class="input" placeholder="Kelas VII-D (Reguler)" required>
+          <p class="hint">Nama lengkap yang tampil di kartu penempatan siswa.</p>
         </div>
         <div>
           <label class="label" for="kuota">Kuota <span class="text-red-600">*</span></label>
           <input id="kuota" name="kuota" type="number" min="1" max="500" value="30" class="input" required>
+          <p class="hint">Jumlah siswa maksimal kelas ini (1–500).</p>
         </div>
-        <div class="flex items-center gap-2 pb-2">
-          <input type="checkbox" name="is_aktif" value="1" checked class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
-          <label for="is_aktif" class="text-sm text-ink-700">Aktif</label>
-          <button type="submit" class="btn btn-primary ml-auto shadow-drop"><?= icon('add') ?> Tambah</button>
+        <div>
+          <label class="label" for="wali_kelas">Wali Kelas</label>
+          <input id="wali_kelas" name="wali_kelas" class="input" placeholder="Nama wali (opsional)">
+        </div>
+        <div class="sm:col-span-2 flex flex-wrap items-center gap-3">
+          <label class="inline-flex items-center gap-2 text-sm text-ink-700" for="is_aktif">
+            <input id="is_aktif" type="checkbox" name="is_aktif" value="1" checked class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
+            Aktif
+          </label>
+          <button type="submit" class="btn btn-primary shadow-drop ml-auto"><?= icon('add') ?> Tambah Kelas</button>
         </div>
       </form>
     </section>
 
     <!-- Tabel kelas -->
+    <?php /* Seluruh baris menjadi satu formulir (aksi=simpan_massal). Kolom
+           * "Aksi" hanya berisi tombol hapus — menyimpan tidak lagi per baris.
+           * Atribut form pada tiap input menautkannya ke <form id="rombel-all">
+           * yang berada di luar tabel, sehingga struktur <tr> tetap valid. */ ?>
     <section class="mt-6 card p-5 sm:p-6">
-      <h2 class="font-bold text-ink-900">Daftar Rombel</h2>
-      <div class="mt-4 overflow-x-auto">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 class="font-bold text-ink-900">Daftar Rombel</h2>
+          <p class="mt-1 text-[13px] text-ink-500">
+            Ubah beberapa kelas sekaligus, lalu tekan <strong>Simpan Semua</strong>.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="rombel-berubah" class="badge badge-amber" hidden>Belum disimpan</span>
+          <button type="submit" form="rombel-all" data-simpan-all class="btn btn-primary shadow-drop" <?= !$kelasList ? 'disabled' : '' ?>>
+            <?= icon('save', 'text-[15px]') ?> Simpan Semua
+          </button>
+        </div>
+      </div>
+
+      <form id="rombel-all" method="post" action="<?= url('app/operator/kelas.php') ?>">
+        <?= csrf_field() ?>
+        <input type="hidden" name="aksi" value="simpan_massal">
+      </form>
+
+      <div class="mt-4 overflow-x-auto" id="rombel-tabel">
         <table class="w-full min-w-[860px]">
           <thead class="thead">
             <tr>
@@ -177,19 +278,14 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <tbody>
             <?php $noBaris = 0; ?>
             <?php foreach ($kelasList as $k): $persen = $k['kuota'] > 0 ? round($k['terisi'] / $k['kuota'] * 100) : 0; ?>
-              <?php
-              /* [PERBAIKAN] <form> tidak boleh jadi anak <tr> (lihat catatan di
-               * app/operator/jadwal.php). Form Simpan & Hapus kini berada di dalam
-               * <td> aksi; input yang tersebar di sel lain memakai form="id". */
-              $noBaris++;
-              $fEdit  = 'kf-' . $noBaris;
-              $fHapus = 'kh-' . $noBaris;
-              ?>
+              <?php $noBaris++; ?>
               <tr class="tr-hover">
-                <td class="td"><input form="<?= e($fEdit) ?>" name="kode" value="<?= e($k['kode']) ?>" class="input h-8 font-mono uppercase w-20" maxlength="10" required></td>
-                <td class="td"><input form="<?= e($fEdit) ?>" name="nama_kelas" value="<?= e($k['nama_kelas']) ?>" class="input h-8 w-full min-w-[180px]" required></td>
-                <td class="td"><input form="<?= e($fEdit) ?>" name="wali_kelas" value="<?= e($k['wali_kelas']) ?>" class="input h-8 w-full min-w-[140px]"></td>
-                <td class="td text-right"><input form="<?= e($fEdit) ?>" name="kuota" type="number" min="1" max="500" value="<?= (int) $k['kuota'] ?>" class="input h-8 w-20 text-right ml-auto" required></td>
+                <?php /* Semua input memakai nama rows[<n>][...] agar satu kiriman
+                       * membawa seluruh daftar dan dapat diproses sekali loop. */ ?>
+                <td class="td"><input form="rombel-all" name="rows[<?= $noBaris ?>][kode]" value="<?= e($k['kode']) ?>" class="input h-8 font-mono uppercase w-20" maxlength="10" required></td>
+                <td class="td"><input form="rombel-all" name="rows[<?= $noBaris ?>][nama_kelas]" value="<?= e($k['nama_kelas']) ?>" class="input h-8 w-full min-w-[180px]" required></td>
+                <td class="td"><input form="rombel-all" name="rows[<?= $noBaris ?>][wali_kelas]" value="<?= e($k['wali_kelas']) ?>" class="input h-8 w-full min-w-[140px]"></td>
+                <td class="td text-right"><input form="rombel-all" name="rows[<?= $noBaris ?>][kuota]" type="number" min="1" max="500" value="<?= (int) $k['kuota'] ?>" class="input h-8 w-20 text-right ml-auto" required></td>
                 <td class="td text-right font-semibold"><?= number_format((int) $k['terisi']) ?></td>
                 <td class="td min-w-[120px]">
                   <div class="flex items-center gap-2">
@@ -201,23 +297,18 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 </td>
                 <td class="td">
                   <label class="inline-flex items-center gap-1.5 text-[13px]">
-                    <input form="<?= e($fEdit) ?>" type="checkbox" name="is_aktif" value="1" <?= $k['is_aktif'] ? 'checked' : '' ?> class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
+                    <input form="rombel-all" type="checkbox" name="rows[<?= $noBaris ?>][is_aktif]" value="1" <?= $k['is_aktif'] ? 'checked' : '' ?> class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
                     <?= $k['is_aktif'] ? 'Aktif' : 'Nonaktif' ?>
                   </label>
                 </td>
                 <td class="td text-right whitespace-nowrap">
                   <div class="flex items-center justify-end gap-1.5">
-                    <form id="<?= e($fEdit) ?>" method="post" action="<?= url('app/operator/kelas.php') ?>">
-                      <?= csrf_field() ?>
-                      <input type="hidden" name="aksi" value="ubah">
-                      <input type="hidden" name="id" value="<?= e($k['id']) ?>">
-                      <button type="submit" class="btn btn-sm btn-outline"><?= icon('save', 'text-[15px]') ?> Simpan</button>
-                    </form>
-                    <form id="<?= e($fHapus) ?>" method="post" action="<?= url('app/operator/kelas.php') ?>" onsubmit="return confirm('Hapus kelas <?= e($k['kode']) ?>?');">
+                    <input form="rombel-all" type="hidden" name="rows[<?= $noBaris ?>][id]" value="<?= e($k['id']) ?>">
+                    <form method="post" action="<?= url('app/operator/kelas.php') ?>" onsubmit="return confirm('Hapus kelas <?= e($k['kode']) ?>?');">
                       <?= csrf_field() ?>
                       <input type="hidden" name="aksi" value="hapus">
                       <input type="hidden" name="id" value="<?= e($k['id']) ?>">
-                      <button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus"><?= icon('delete', 'text-[17px]') ?></button>
+                      <button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus kelas <?= e($k['kode']) ?>"><?= icon('delete', 'text-[17px]') ?></button>
                     </form>
                   </div>
                 </td>
@@ -238,7 +329,30 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>
 <script src="<?= asset('assets/js/app.js') ?>"></script>
 <script>
-  window.APP_FLASH = <?= json_encode($_SESSION['flash'] ?? null, JSON_UNESCAPED_UNICODE) ?>;
+  window.APP_FLASH = <?= json_encode($flashToast, JSON_UNESCAPED_UNICODE) ?>;
+  (function () {
+    /* Input pada tabel tidak berada di dalam <form>, jadi perubahan ditangkap
+     * dari pembungkus tabel untuk menandai adanya edits yang belum disimpan. */
+    var ruang = document.getElementById('rombel-tabel');
+    var chip  = document.getElementById('rombel-berubah');
+    var tombol = document.querySelectorAll('[data-simpan-all]');
+    if (!ruang || !chip) return;
+    function tandai() {
+      chip.hidden = false;
+      tombol.forEach(function (b) { b.disabled = false; });
+    }
+    ruang.addEventListener('input', tandai);
+    ruang.addEventListener('change', tandai);
+    document.querySelectorAll('form').forEach(function (f) {
+      f.addEventListener('submit', function () { chip.hidden = true; });
+    });
+    window.addEventListener('beforeunload', function (ev) {
+      if (!chip.hidden) {
+        ev.preventDefault();
+        ev.returnValue = '';
+      }
+    });
+  })();
 </script>
 </body>
 </html>

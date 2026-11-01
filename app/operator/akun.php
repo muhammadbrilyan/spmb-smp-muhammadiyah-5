@@ -231,7 +231,7 @@ $jmlGagal = count($hasilProses) - $jmlOk;
               <?php if (!empty($h['kred'])): ?>
                 <div class="mt-3 rounded-xl bg-white border border-line p-3">
                   <p class="text-[12px] font-semibold text-ink-500 uppercase tracking-wide">Kredensial (salin manual bila WA gagal)</p>
-                  <p class="mt-1.5 text-sm">Username: <span class="font-mono font-bold"><?= e($h['kred']['username']) ?></span> '· Password: <span class="font-mono font-bold select-all"><?= e($h['kred']['password']) ?></span></p>
+                  <p class="mt-1.5 text-sm">Username: <span class="font-mono font-bold"><?= e($h['kred']['username']) ?></span> · Password: <span class="font-mono font-bold select-all"><?= e($h['kred']['password']) ?></span></p>
                 </div>
               <?php endif; ?>
             </div>

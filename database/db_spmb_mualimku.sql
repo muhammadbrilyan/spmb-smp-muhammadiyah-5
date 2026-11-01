@@ -309,6 +309,8 @@ CREATE TABLE `pengaturan_sekolah` (
   `biaya_formulir` decimal(12,2) DEFAULT 200000.00,
   `biaya_spp` decimal(12,2) DEFAULT 0.00,
   `estimasi_uang_masuk` decimal(12,2) DEFAULT 0.00,
+  `rincian_biaya` text DEFAULT NULL,
+  `ambang_kelulusan` decimal(5,2) NOT NULL DEFAULT 70.00,
   `angsuran_1_nominal` decimal(12,2) NOT NULL DEFAULT 0.00,
   `angsuran_2_nominal` decimal(12,2) NOT NULL DEFAULT 0.00,
   `angsuran_1_jatuh_tempo` date DEFAULT NULL,

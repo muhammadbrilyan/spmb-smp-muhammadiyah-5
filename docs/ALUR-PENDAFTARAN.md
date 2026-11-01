@@ -81,6 +81,7 @@ flowchart TD
 - `peserta_ujian` (pendaftar_id UNIQUE, jadwal_id, nomor_peserta UNIQUE, ruangan)
 - `peserta_atur_otomatis()` (transaksi DB, urut no_pendaftaran, penuhi kapasitas)
 - `peserta_kartu_siswa()` — Kartu Peserta + CSS print di portal siswa
+- Blok detail pada kartu peserta kini berupa **tabel Agenda Tes** (`jadwal_terjadwal()` — fungsi yang sama dipakai tombol "Umumkan Semua Jadwal"): seluruh jadwal Terjadwal dalam kolom Tanggal · Kegiatan · Waktu · Lokasi/Ruangan, ikut tercetak oleh `cetakKartu()`
 - Halaman: `app/operator/peserta-ujian.php`
 
 ### Fase 7 — Seleksi

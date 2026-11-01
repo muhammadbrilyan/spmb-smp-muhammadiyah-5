@@ -32,23 +32,25 @@ $menuItem = function ($key, $icon, $label, $href, $badge = '') {
 $navGrup = [];
 
 if ($role === 'siswa') {
+    /* Menu calon siswa diringkas seperti peran sekolah: satu grup tanpa CTA
+     * "Info SPMB" (sudah ada di ikon "?" topbar) dan tanpa "Akademik" selama
+     * belum diterima — halaman itu memang kosong untuk calon siswa. */
+    $menuSiswa = [
+        $menuItem('dashboard', 'dashboard', 'Dashboard', url('app/siswa/index.php')),
+        $menuItem('notifikasi', 'notifications', 'Notifikasi & Pengumuman', url('app/siswa/notifikasi.php')),
+        $menuItem('siswa', 'badge', 'Data Siswa', url('app/siswa/data-siswa.php')),
+        $menuItem('keuangan', 'account_balance_wallet', 'Keuangan', url('app/siswa/keuangan.php')),
+        $menuItem('ppdb', 'how_to_reg', 'PPDB & Seleksi', url('app/siswa/ppdb.php')),
+    ];
+    if (!empty($siswaDiterima)) {
+        $menuSiswa[] = $menuItem('akademik', 'menu_book', 'Akademik', url('app/siswa/akademik.php'));
+    }
+    $menuSiswa[] = $menuItem('akun', 'manage_accounts', 'Pengaturan Akun', url('app/siswa/akun.php'));
+
     $navGrup = [
         [
             'judul' => 'Portal Saya',
-            'menu'  => [
-                $menuItem('dashboard', 'dashboard', 'Dashboard', url('app/siswa/index.php')),
-                $menuItem('notifikasi', 'notifications', 'Notifikasi & Pengumuman', url('app/siswa/notifikasi.php')),
-                $menuItem('siswa', 'badge', 'Data Siswa', url('app/siswa/data-siswa.php')),
-                $menuItem('keuangan', 'account_balance_wallet', 'Keuangan', url('app/siswa/keuangan.php')),
-                $menuItem('ppdb', 'how_to_reg', 'PPDB & Seleksi', url('app/siswa/ppdb.php')),
-                $menuItem('akademik', 'menu_book', 'Akademik', url('app/siswa/akademik.php')),
-            ],
-        ],
-        [
-            'judul' => 'Akun',
-            'menu'  => [
-                $menuItem('akun', 'manage_accounts', 'Pengaturan Akun', url('app/siswa/akun.php')),
-            ],
+            'menu'  => $menuSiswa,
         ],
     ];
 } elseif ($role === 'operator') {
@@ -185,13 +187,9 @@ foreach ($navGrup as $gNav) {
         <?= icon('add_circle') ?> Pendaftaran Manual
       </a>
     </div>
-  <?php elseif ($role === 'siswa'): ?>
-    <div class="sidebar-cta px-4 pt-4">
-      <a href="<?= url('app/spmb/index.php') ?>" class="btn btn-outline btn-block" target="_blank" rel="noopener">
-        <?= icon('language') ?> Info SPMB
-      </a>
-    </div>
   <?php endif; ?>
+  <?php /* [PERBAIKAN] CTA "Info SPMB" untuk calon siswa dihapus — tautan yang
+          sama sudah ada di ikon "?" topbar. */ ?>
 
   <!-- Navigasi berkelompok -->
   <nav class="nav-penuh flex-1 overflow-y-auto scroll-thin px-4 py-4 space-y-4">
@@ -262,9 +260,14 @@ foreach ($navGrup as $gNav) {
        yang sama sudah tampil di topbar, dan kartu itu hanya memakan tinggi
        sidebar. Yang tersisa: dua aksi yang benar-benar dipakai. -->
   <div class="sidebar-kaki px-4 pb-4 pt-3 border-t border-line">
-    <a href="<?= url('app/staf/ganti-password.php') ?>" class="nav-link" title="Ganti Password">
-      <span class="ms text-[20px] text-ink-400">lock</span> <span class="sidebar-teks">Ganti Password</span>
-    </a>
+    <?php if ($role !== 'siswa'): ?>
+      <a href="<?= url('app/staf/ganti-password.php') ?>" class="nav-link" title="Ganti Password">
+        <span class="ms text-[20px] text-ink-400">lock</span> <span class="sidebar-teks">Ganti Password</span>
+      </a>
+    <?php endif; ?>
+    <?php /* [PERBAIKAN] "Ganti Password" disembunyikan untuk calon siswa —
+            halaman staf itu menolak peran siswa. Siswa ganti sandal lewat
+            menu Pengaturan Akun. */ ?>
     <form method="post" action="<?= url('app/auth/logout.php') ?>">
       <?= csrf_field() ?>
       <button type="submit" class="nav-link w-full text-red-600 hover:text-red-700 hover:bg-red-50" title="Keluar">

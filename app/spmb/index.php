@@ -325,12 +325,15 @@ if (strpos($waPanitia, '0') === 0) {
       </div>
 
       <!-- Kartu 2: Rincian biaya pendaftaran -->
-      <?php /* Program beasiswa hanya tampil bila operator mengisi teksnya di
-              * Pengaturan Sistem → Struktur Tarif (kolom teks_beasiswa). */ ?>
-      <?php $beasiswa = trim((string) ($PENGATURAN['teks_beasiswa'] ?? '')); ?>
+      <?php /* Kartu promo hanya tampil bila operator mengisi "Teks Promo" di
+              * Pengaturan Sistem → Rincian Biaya SPMB (kolom teks_beasiswa). */ ?>
+      <?php
+      $promo  = trim((string) ($PENGATURAN['teks_beasiswa'] ?? ''));
+      $skema  = angsuran_skema();
+      ?>
       <div class="card p-6 flex flex-col relative ring-2 ring-accent/40">
-        <?php if ($beasiswa !== ''): ?>
-          <span class="absolute -top-3 left-6 badge badge-green bg-[#0E9F6E]! text-white! border-[#0E9F6E]!">Beasiswa Tersedia</span>
+        <?php if ($promo !== ''): ?>
+          <span class="absolute -top-3 left-6 badge badge-green"><?= icon('local_offer', 'text-[13px]') ?> Promo Tersedia</span>
         <?php endif; ?>
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Investasi Pendidikan</span>
@@ -341,12 +344,39 @@ if (strpos($waPanitia, '0') === 0) {
         <div class="mt-4 space-y-3">
           <div class="rounded-xl border border-line p-4">
             <div class="flex items-center justify-between">
-              <!-- Label bisa diganti operator di CMS Pengaturan → Struktur Tarif -->
+              <!-- Label bisa diganti operator di CMS Pengaturan → Rincian Biaya SPMB -->
               <span class="text-sm font-medium text-ink-700"><?= e(label_biaya_pendaftaran()) ?></span>
-              <button class="text-ink-400 hover:text-primary" title="Estimasi dari CMS (pengaturan_sekolah)"><?= icon('info', 'text-[17px]') ?></button>
+              <button class="text-ink-400 hover:text-primary" title="Rincian dari CMS (pengaturan_sekolah)"><?= icon('info', 'text-[17px]') ?></button>
             </div>
-            <div class="mt-1 font-bold text-ink-900"><?= rupiah($PENGATURAN['estimasi_uang_masuk']) ?></div>
-            <div class="text-[11px] text-ink-400">Estimasi <?= e(label_biaya_pendaftaran()) ?> sesuai pengaturan CMS.</div>
+            <div class="mt-1 font-bold text-ink-900"><?= rupiah($skema['biaya_masuk']) ?></div>
+            <div class="text-[11px] text-ink-400">Total biaya masuk — sudah termasuk Biaya Formulir.</div>
+            <?php if ($skema['rincian']): ?>
+              <div class="mt-3 space-y-1.5 text-[12px] border-t border-line pt-2">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Terdiri dari</p>
+                <?php foreach ($skema['rincian'] as $r): ?>
+                  <div class="flex justify-between gap-2">
+                    <span class="text-ink-500"><?= e($r['label']) ?></span>
+                    <span class="text-ink-700"><?= rupiah($r['nominal']) ?></span>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+            <?php if ($skema['potongan_formulir'] > 0): ?>
+              <div class="mt-3 border-t border-line pt-2 space-y-1.5">
+                <div class="flex justify-between gap-2 text-[12px]">
+                  <span class="text-ink-500">− Biaya Formulir (dibayar saat registrasi)</span>
+                  <span class="text-ink-700"><?= rupiah($skema['potongan_formulir']) ?></span>
+                </div>
+                <div class="flex justify-between gap-2 text-[12px]">
+                  <span class="font-semibold text-ink-900">= Sisa setelah lulus</span>
+                  <span class="font-bold text-primary"><?= rupiah($skema['total']) ?></span>
+                </div>
+                <p class="text-[11px] text-ink-400">
+                  Setelah lulus dan mendapat pembagian kelas, sisa ini bisa dibayar lunas
+                  atau 2 angsuran <?= rupiah($skema['angsuran'][1]['nominal'] ?? 0) ?> per tahap.
+                </p>
+              </div>
+            <?php endif; ?>
           </div>
           <div class="rounded-xl border border-line p-4">
             <div class="flex items-center justify-between">
@@ -357,12 +387,12 @@ if (strpos($waPanitia, '0') === 0) {
             <div class="mt-1 font-bold text-ink-900"><?= rupiah($PENGATURAN['biaya_spp']) ?></div>
             <div class="text-[11px] text-ink-400">Sesuai kebijakan yayasan &amp; pengaturan CMS.</div>
           </div>
-          <?php if ($beasiswa !== ''): ?>
+          <?php if ($promo !== ''): ?>
             <div class="rounded-xl bg-[#ECFDF5] border border-[#A7F3D0] p-4">
               <div class="flex items-center gap-2 text-[#065F46] font-semibold text-sm">
-                <?= icon('volunteer_activism', 'text-[18px]') ?> Program Beasiswa
+                <?= icon('local_offer', 'text-[18px]') ?> Program Promo
               </div>
-              <p class="mt-1 text-[11px] leading-relaxed text-[#065F46]/90"><?= nl2br(e($beasiswa)) ?></p>
+              <p class="mt-1 text-[11px] leading-relaxed text-[#065F46]/90"><?= nl2br(e($promo)) ?></p>
             </div>
           <?php endif; ?>
         </div>
