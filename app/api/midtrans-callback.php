@@ -194,7 +194,7 @@ if ($terverifikasi) {
         );
         $info = $info ? $info[0] : null;
         if ($info !== null) {
-            $tautanVerif = url_abs('app/bendahara/index.php');
+            $tautanVerif = url_abs('app/bendahara/pembayaran.php');
             notif_operator(
                 $statusBaru === 'LUNAS' ? 'PEMBAYARAN_GATEWAY_LUNAS' : 'PEMBAYARAN_GATEWAY_MASUK',
                 $row['pendaftar_id'],

@@ -48,24 +48,27 @@ $rows = q_all(
       LIMIT ' . $perH . ' OFFSET ' . $offset
 ) ?: [];
 
-/* Tautan per tipe — tambah baris di sini saat tipe baru muncul. */
-function notif_tautan($tipe)
+/* Sasaran tombol "Buka" per tipe — tambah baris di sini saat tipe baru muncul.
+ * `peran` menentukan siapa yang boleh membukanya: papan ini juga read-only
+ * untuk bendahara/kepsek, jadi tanpa cek ini mereka dilontarkan require_role()
+ * ke app/portal/index.php dan tidak tahu kenapa. */
+function notif_sasaran($tipe)
 {
     switch ($tipe) {
         case 'BUKTI_BAYAR_MASUK':
         case 'PEMBAYARAN_GATEWAY_LUNAS':
         case 'PEMBAYARAN_GATEWAY_MASUK':
         case 'PENOLAKAN_BAYAR':
-            return url('app/bendahara/index.php');
+            return ['tautan' => url('app/bendahara/pembayaran.php'), 'peran' => ['bendahara', 'admin'], 'punya' => 'Bendahara'];
         case 'BERKAS_DISUBMIT':
         case 'BERKAS_REVISI':
-            return url('app/operator/verifikasi.php?tab=berkas');
+            return ['tautan' => url('app/operator/verifikasi.php?tab=berkas'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
         case 'VERIFIKASI_DATA':
-            return url('app/operator/verifikasi.php?tab=data');
+            return ['tautan' => url('app/operator/verifikasi.php?tab=data'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
         case 'KOREKSI_DATA':
-            return url('app/operator/verifikasi.php?tab=koreksi');
+            return ['tautan' => url('app/operator/verifikasi.php?tab=koreksi'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
         default:
-            return url('app/operator/notifikasi.php');
+            return ['tautan' => '', 'peran' => [], 'punya' => ''];
     }
 }
 
@@ -135,8 +138,9 @@ $halTotal = max(1, (int) ceil($total / $perH));
       <?php endif; ?>
 
       <?php foreach ($rows as $r):
-        $sudah = $r['dibaca_at'] !== null;
-        $tautan = notif_tautan($r['tipe']);
+        $sudah   = $r['dibaca_at'] !== null;
+        $sasaran = notif_sasaran($r['tipe']);
+        $bolehBuka = $sasaran['tautan'] !== '' && in_array($me['role'], $sasaran['peran'], true);
       ?>
         <article class="card p-4 sm:p-5 <?= $sudah ? 'opacity-70' : '' ?>">
           <div class="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
@@ -154,9 +158,15 @@ $halTotal = max(1, (int) ceil($total / $perH));
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
-              <a href="<?= e($tautan) ?>" class="btn btn-outline btn-sm">
-                <?= icon('open_in_new') ?> Buka
-              </a>
+              <?php if ($bolehBuka): ?>
+                <a href="<?= e($sasaran['tautan']) ?>" class="btn btn-outline btn-sm">
+                  <?= icon('open_in_new') ?> Buka
+                </a>
+              <?php elseif ($sasaran['punya'] !== ''): ?>
+                <span class="badge badge-gray" title="Halaman ini hanya terbuka untuk peran <?= e($sasaran['punya']) ?>">
+                  <?= icon('lock', 'text-[14px]') ?> Ruang Kerja <?= e($sasaran['punya']) ?>
+                </span>
+              <?php endif; ?>
               <?php if (!$sudah): ?>
                 <form method="post" action="notifikasi.php">
                   <?= csrf_field() ?>

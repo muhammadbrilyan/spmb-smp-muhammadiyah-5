@@ -200,6 +200,23 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | L7 | `php tools/cek-proyek.php` sesudah langkah L6 | Pemeriksaan 5 **GAGAL**: `1 kolom ada di seed tapi belum ada di DB: pengaturan_sekolah.pengingat_angsuran_wa`; pulihkan dengan `mysql -u root < database/migrations/20261031_pengingat_angsuran.sql` → 8 PASS |
 | L8 | Simpan dengan token Fonnte kosong di form (tidak mengetik ulang) | Token tersimpan **tidak terhapus**; penghapusan hanya lewat checkbox "Hapus token dari database" |
 
+## M. Bendahara — Dashboard & Verifikasi Pembayaran
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| M1 | Login bendahara → sidebar **Keuangan SPMB** | Tiga menu terpisah: **Dashboard Bendahara**, **Verifikasi Pembayaran**, **Rekap Keuangan** (hanya satu yang tersorot aktif per halaman) |
+| M2 | Buka **Dashboard Bendahara** (`app/bendahara/index.php`) | 200; 4 kartu statistik (pendaftar, dana terverifikasi, menunggu, ditolak) + bar **Progres Pemeriksaan Bukti** + panel **Perlu Tindakan** (manual vs gateway + umur bukti terlama) + tabel **Perolehan per Jenis** + grafik **Aliran Dana 14 hari** + **Keputusan Terbaru**; **tidak ada** tabel antrean/action bendahara di sini |
+| M3 | Klik kartu "Menunggu Verifikasi" → **Perlu Tindakan**, atau tombol **Verifikasi Pembayaran** di judul | Mendarat di `app/bendahara/pembayaran.php`; hanya bukti `PENDING` yang tampil; chip jumlah ikut (mis. `Menunggu 3`) |
+| M4 | Buka **Verifikasi Pembayaran** saat antrean kosong | Baris kosong berbunyi "Antrean kosong — semua bukti pembayaran sudah diputus."; ganti chip → "Tidak ada transaksi pada saringan ini." |
+| M5 | Pindah chip **Ditolak** / **Sudah Terverifikasi** / **Semua Transaksi** | URL `?s=REJECTED`, `?s=MASUK`, `?s=SEMUA`; `MASUK` menggabungkan `VERIFIED`+`LUNAS`+`ANGSURAN_1/2`; pencarian & paginasi 25/baris tetap jalan |
+| M6 | Setujui satu bukti dari saringan apa pun (mis. `?s=MASUK`) | POST ke `app/bendahara/verifikasi.php` membawa `saringan`; setelah PRG kembali ke saringan yang sama (`pembayaran.php?s=MASUK`) dengan flash sukses — bukan ke dashboard |
+| M7 | Tolak bukti lewat modal (alasan wajib) | Modal `modal-tolak` ikut mengirim `saringan`; alasan kosong ditolak; WA alasan tercatat |
+| M8 | Ketik nilai `saringan` asing (mis. `BOGA'x`) pada POST | Disaring daftar putih `[PENDING, REJECTED, MASUK, SEMUA]` → kembali ke `pembayaran.php` tanpa parameter, data tidak berubah |
+| M9 | Operator membuka `app/bendahara/pembayaran.php` | Tetap ditolak (`require_role(['bendahara','admin'])`) → flash "tidak memiliki hak akses" ke `app/portal/index.php`; **admin** sekarang boleh membuka (setara dengan halaman keuangan lain) |
+| M10 | Notifikasi `BUKTI_BAYAR_MASUK` di `app/operator/notifikasi.php` | Bagi operator/kepsek/bendahara yang bukan pemilik halaman, tombol **Buka** tidak dipasang — diganti chip "Ruang Kerja Bendahara" (judul tooltip); hanya bendahara/admin yang melihat tombol **Buka** → `app/bendahara/pembayaran.php` |
+| M11 | Tombol **Kirim Pengingat Jatuh Tempo** (ada di dashboard & panel antrean) | Keduanya POST ke `index.php`; flash hasil berjalan; tetap tinggal di halaman asal |
+| M12 | Operator mem-POST langsung ke `app/bendahara/verifikasi.php` (URL endpoint diketahui) | Ditolak — gerbang endpoint disamakan dengan halamannya (`bendahara`/`admin`), dahulu `operator` ikut diizinkan sehingga keputusan bayar bisa ditulis dari luar halaman bendahara |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |

@@ -63,13 +63,13 @@ if ($jabatanTtd === '') {
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 
-$activeMenu = 'keuangan';
+$activeMenu = 'rekap';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 
 $breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null];
 /* Dashboard bendahara khusus bendahara; tautan itu jadi jalan buntu bagi kepsek/admin. */
 if ($me['role'] === 'bendahara') {
-    $breadcrumbs['Keuangan & Verifikasi'] = url('app/bendahara/index.php');
+    $breadcrumbs['Dashboard Bendahara'] = url('app/bendahara/index.php');
 }
 $breadcrumbs['Cetak Rekap Keuangan'] = null;
 $pageActions = '<button type="button" class="btn btn-primary shadow-drop" onclick="window.print()">'

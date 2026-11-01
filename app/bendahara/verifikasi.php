@@ -12,9 +12,17 @@
  *                         kredensial WA + tahap AKUN_TERKIRIM → MELENGKAPI_BERKAS
  */
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['bendahara', 'operator']);
+/* Gerbang disamakan dengan halaman antreannya — dahulu ikut membuka
+ * 'operator' padahal aksinya menulis keputusan bayar (kewenangan bendahara). */
+require_role(['bendahara', 'admin']);
 
-$balik = url('app/bendahara/index.php');
+/* Kembali ke antrean pembayaran (lihat app/bendahara/pembayaran.php).
+ * ?saringan dari form dipertahankan selama nilainya dikenal — selain itu
+ * jatuh ke saringan bawaan. */
+$FILTER_SAHIH = ['PENDING', 'REJECTED', 'MASUK', 'SEMUA'];
+$saringan     = strtoupper(trim((string) ($_POST['saringan'] ?? $_GET['s'] ?? '')));
+$balik        = url('app/bendahara/pembayaran.php')
+              . (in_array($saringan, $FILTER_SAHIH, true) && $saringan !== 'PENDING' ? '?s=' . $saringan : '');
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     header('Location: ' . $balik);

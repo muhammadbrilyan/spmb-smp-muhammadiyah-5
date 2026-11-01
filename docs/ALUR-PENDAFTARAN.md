@@ -61,6 +61,8 @@ flowchart TD
 - `pendaftar.tahap` nilai `BAYAR_TERVERIFIKASI` & `AKUN_TERKIRIM`
 - Idempoten: `verifikasi_kirim_akun()` — klik ulang tidak dobel
 - Pemicu: `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_LUNAS`
+- Halaman: `app/bendahara/pembayaran.php` (antrean setujui/tolak, saringan `?s=`)
+  dan `app/bendahara/index.php` (dashboard angka) — dahulu keduanya disatukan di `index.php`
 
 ### Fase 5 — Berkas Dinamis
 - `jenis_dokumen` (nama, kode, wajib, format, maks_kb, is_aktif; seed 6 jenis)

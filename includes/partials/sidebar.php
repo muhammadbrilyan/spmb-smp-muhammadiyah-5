@@ -103,7 +103,11 @@ if ($role === 'siswa') {
         [
             'judul' => 'Keuangan SPMB',
             'menu'  => [
-                $menuItem('keuangan', 'dashboard', 'Dashboard & Verifikasi Pembayaran', url('app/bendahara/index.php')),
+                /* Pemantauan dipisah dari pekerjaan: dashboard = angka,
+                 * verifikasi pembayaran = antrean yang harus diputus. */
+                $menuItem('dashboard', 'dashboard', 'Dashboard Bendahara', url('app/bendahara/index.php')),
+                $menuItem('pembayaran', 'fact_check', 'Verifikasi Pembayaran', url('app/bendahara/pembayaran.php')),
+                $menuItem('rekap', 'account_balance_wallet', 'Rekap Keuangan', url('app/bendahara/rekap.php')),
                 $menuItem('notifikasi', 'notifications', 'Notifikasi', url('app/operator/notifikasi.php')),
                 $menuItem('panduan', 'support_agent', 'Panduan & SOP', url('app/operator/panduan.php')),
                 $menuItem('ganti-pass', 'lock', 'Ganti Password', url('app/staf/ganti-password.php')),
@@ -117,7 +121,7 @@ if ($role === 'siswa') {
             'menu'  => [
                 $menuItem('dashboard', 'dashboard', 'Dashboard Kepala Sekolah', url('app/kepsek/index.php')),
                 $menuItem('penetapan', 'how_to_reg', 'Persetujuan Hasil', url('app/kepsek/penetapan.php')),
-                $menuItem('keuangan', 'account_balance_wallet', 'Rekap Keuangan', url('app/bendahara/rekap.php')),
+                $menuItem('rekap', 'account_balance_wallet', 'Rekap Keuangan', url('app/bendahara/rekap.php')),
                 $menuItem('pembiayaan', 'request_quote', 'Pembiayaan & Tunggakan', url('app/kepsek/keuangan.php')),
                 $menuItem('notifikasi', 'notifications', 'Notifikasi', url('app/operator/notifikasi.php')),
                 $menuItem('panduan', 'support_agent', 'Panduan & SOP', url('app/operator/panduan.php')),

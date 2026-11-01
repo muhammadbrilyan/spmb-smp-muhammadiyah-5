@@ -1,9 +1,17 @@
 <?php
+/* ==================================================================
+ * DASHBOARD BENDAHARA — angka keuangan SPMB.
+ *   Halaman pantau: perolehan dana, antrean yang menunggu, aliran dana
+ *   harian, dan keputusan terbaru.
+ *   Tempat bekerja (setujui / tolak bukti) ada di Verifikasi Pembayaran
+ *   (app/bendahara/pembayaran.php).
+ * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
 
-/* Hak akses: KHUSUS bendahara (keputusan 2026-10-28 — verifikasi
- * pembayaran adalah kewenangan bendahara, operator hanya melihat status). */
-require_role(['bendahara']);
+/* Hak akses: bendahara (keputusan 2026-10-28 — verifikasi pembayaran adalah
+ * kewenangan bendahara, operator hanya melihat status) + admin sebagai
+ * superuser yang dipakai halaman keuangan lainnya. */
+require_role(['bendahara', 'admin']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -39,30 +47,67 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['aksi'] ?? '') === 
     exit;
 }
 
-$title = 'Verifikasi Pembayaran & ' . label_biaya_pendaftaran() . ' SPMB';
-$desc  = 'Dashboard bendahara: verifikasi pembayaran formulir, status ' . label_biaya_pendaftaran() . ', dan rekap keuangan SPMB.';
+$title     = 'Dashboard Keuangan Bendahara SPMB';
+$desc      = 'Pantau dana terverifikasi, antrean pembayaran, dan aliran keuangan SPMB ' . label_biaya_pendaftaran() . '.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
+
+$stat       = stat_bendahara();
+$perJenis   = bendahara_per_jenis();
+$tindak     = bendahara_antrean_tindak();
+$aliran     = bendahara_aliran_harian(14);
+$aktivitas  = bendahara_aktivitas(6);
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 
-$activeMenu = 'keuangan';
+$activeMenu = 'dashboard';
 $badgeRole  = 'BENDAHARA';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 
-$breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Keuangan & Verifikasi' => null];
+$breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Dashboard Bendahara' => null];
 $pageActions = '
-  <a href="' . url('app/operator/export.php?rekap=pembayaran') . '" class="btn btn-outline hidden md:inline-flex">' . icon('download') . ' Export CSV</a>
+  <a href="' . url('app/bendahara/rekap.php') . '" class="btn btn-outline hidden md:inline-flex">' . icon('print') . ' Cetak Rekap Keuangan</a>
 ';
 require __DIR__ . '/../../includes/partials/topbar.php';
 
-$flash      = flash();
-$pembayaran = daftar_pembayaran();
-$stat       = stat_bendahara();
+$flash = flash();
+
+/* Tanggal yang wajib muncul pada grafik (14 hari terakhir) agar sumbu waktu
+ * tidak bolong saat satu hari tidak ada transaksi. */
+$petaAliran = [];
+foreach ($aliran as $a) {
+    $petaAliran[$a['tanggal']] = $a;
+}
+$deret = [];
+for ($i = 13; $i >= 0; $i--) {
+    $tgl   = date('Y-m-d', strtotime("-$i day"));
+    $deret[] = [
+        'tanggal' => $tgl,
+        'rp'      => $petaAliran[$tgl]['rp'] ?? 0.0,
+        'jml'     => $petaAliran[$tgl]['jml'] ?? 0,
+        'urutan'  => 13 - $i,
+    ];
+}
+$puncak = 0.0;
+foreach ($deret as $d) {
+    if ($d['rp'] > $puncak) {
+        $puncak = (float) $d['rp'];
+    }
+}
+$total14 = 0.0;
+foreach ($deret as $d) {
+    $total14 += (float) $d['rp'];
+}
 ?>
 
 <div class="lg:pl-[264px]">
 
   <main class="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1440px]">
+
+    <?php if ($flash): ?>
+      <div class="mb-5 rounded-xl border <?= in_array($flash['tipe'], ['sukses', 'success'], true) ? 'border-green-200 bg-green-50 text-green-800' : ($flash['tipe'] === 'info' ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-red-200 bg-red-50 text-red-800') ?> px-4 py-3 text-sm">
+        <?= e($flash['pesan']) ?>
+      </div>
+    <?php endif; ?>
 
     <!-- ====================== JUDUL ====================== -->
     <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
@@ -71,11 +116,10 @@ $stat       = stat_bendahara();
           <span class="badge badge-green"><?= dot('green') ?> Rekening Aktif: <?= e($PENGATURAN['nama_bank']) ?></span>
           <span class="badge badge-gray"><?= e($PENGATURAN['gelombang']) ?> · <?= e($PENGATURAN['tahun_ajaran']) ?></span>
         </div>
-        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Verifikasi Pembayaran &amp; <?= e(label_biaya_pendaftaran()) ?> SPMB</h1>
+        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Dashboard Keuangan SPMB</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          Periksa bukti transfer biaya formulir maupun <?= e(label_biaya_pendaftaran()) ?> (lunas atau angsuran),
-          tetapkan status <strong>TERVERIFIKASI</strong> / <strong>DITOLAK</strong>, dan pantau rekap keuangan
-          <?= e($PENGATURAN['gelombang']) ?>.
+          Ringkasan <strong class="text-ink-700"><?= e(label_biaya_pendaftaran()) ?></strong>, biaya formulir,
+          dan antrean verifikasi pembayaran <?= e($PENGATURAN['gelombang']) ?>.
         </p>
       </div>
 
@@ -88,8 +132,11 @@ $stat       = stat_bendahara();
             <?= icon('send') ?> Kirim Pengingat Jatuh Tempo
           </button>
         </form>
-        <a href="<?= url('app/bendahara/rekap.php') ?>" class="btn btn-primary shadow-drop">
-          <?= icon('print') ?> Cetak Rekap Keuangan
+        <a href="<?= url('app/bendahara/pembayaran.php') ?>" class="btn btn-primary shadow-drop whitespace-nowrap">
+          <?= icon('fact_check') ?> Verifikasi Pembayaran
+          <?php if ($stat['menunggu'] > 0): ?>
+            <span class="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[12px] font-bold"><?= (int) $stat['menunggu'] ?></span>
+          <?php endif; ?>
         </a>
       </div>
     </div>
@@ -121,7 +168,7 @@ $stat       = stat_bendahara();
         </div>
         <div class="mt-4 pt-3 border-t border-line-soft flex items-center justify-between text-xs">
           <span class="inline-flex items-center gap-1.5 text-[#065F46] font-semibold"><?= dot('green') ?> <?= (int) $stat['jml_masuk'] ?> pembayaran terverifikasi</span>
-          <span class="text-ink-400">Formulir &amp; pendaftaran</span>
+          <a href="<?= url('app/bendahara/pembayaran.php?s=MASUK') ?>" class="text-primary hover:underline shrink-0">Lihat</a>
         </div>
       </article>
 
@@ -135,7 +182,7 @@ $stat       = stat_bendahara();
         </div>
         <div class="mt-4 pt-3 border-t border-line-soft flex items-center justify-between text-xs">
           <span class="text-ink-600"><?= rupiah($stat['rp_menunggu']) ?> belum masuk</span>
-          <span class="badge badge-amber">Perlu Tindakan</span>
+          <a href="<?= url('app/bendahara/pembayaran.php') ?>" class="badge badge-amber">Perlu Tindakan</a>
         </div>
       </article>
 
@@ -147,332 +194,271 @@ $stat       = stat_bendahara();
           </div>
           <span class="icon-box bg-[#FEF2F2] text-[#B42318]"><?= icon('cancel', 'text-[20px]') ?></span>
         </div>
-        <div class="mt-4">
-          <div class="h-1.5 rounded-full bg-line-soft overflow-hidden">
-            <div class="h-full rounded-full bg-primary" style="width:<?= (float) $stat['persen'] ?>%"></div>
-          </div>
-          <div class="mt-2 flex items-center justify-between text-xs">
-            <span class="text-ink-500">Progres verifikasi</span>
-            <span class="font-semibold text-primary"><?= number_format((float) $stat['persen'], 1, ',', '.') ?>% selesai</span>
-          </div>
+        <div class="mt-4 pt-3 border-t border-line-soft flex items-center justify-between text-xs">
+          <span class="text-ink-600"><?= rupiah($stat['rp_ditolak']) ?> harus diunggah ulang</span>
+          <a href="<?= url('app/bendahara/pembayaran.php?s=REJECTED') ?>" class="text-primary hover:underline shrink-0">Lihat</a>
         </div>
       </article>
 
     </section>
 
-    <!-- ====================== TOOLBAR ====================== -->
-    <div class="mt-6 flex flex-col md:flex-row md:items-center gap-3">
-      <div class="relative flex-1 max-w-md">
-        <span class="ms absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-ink-400">search</span>
-        <input id="table-search" class="input pl-10" type="search" placeholder="Cari No. REG, nama siswa, nama bank...">
+    <!-- ====================== PROGRES VERIFIKASI ====================== -->
+    <section class="mt-4 card p-5">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <h2 class="font-bold text-ink-900 text-sm">Progres Pemeriksaan Bukti</h2>
+        <span class="text-[13px] font-semibold text-primary"><?= number_format((float) $stat['persen'], 1, ',', '.') ?>% selesai</span>
       </div>
-      <select class="select md:w-52" data-filter-status="data-status">
-        <option value="">Semua Status</option>
-        <option value="PENDING">Menunggu</option>
-        <option value="VERIFIED">Terverifikasi</option>
-        <option value="ANGSURAN_1">Angsuran 1</option>
-        <option value="ANGSURAN_2">Angsuran 2</option>
-        <option value="REJECTED">Ditolak</option>
-        <option value="LUNAS">Lunas</option>
-      </select>
-      <div class="flex-1"></div>
-      <span class="text-[13px] text-ink-500"><?= count($pembayaran) ?> transaksi pembayaran</span>
-    </div>
+      <div class="mt-3 h-2 rounded-full bg-line-soft overflow-hidden">
+        <div class="h-full rounded-full bg-primary" style="width:<?= (float) $stat['persen'] ?>%"></div>
+      </div>
+      <p class="mt-2.5 text-[12px] text-ink-500">
+        <?= (int) $stat['jml_masuk'] ?> terverifikasi + <?= (int) $stat['ditolak'] ?> ditolak dari
+        <?= (int) $stat['total_bayar'] ?> tagihan tercatat; <?= (int) $stat['menunggu'] ?> masih menunggu keputusan.
+      </p>
+    </section>
 
-    <!-- ====================== TABEL PEMBAYARAN ====================== -->
-    <div class="mt-4 card overflow-hidden">
-      <div class="overflow-x-auto scroll-thin">
-        <table id="data-table" class="w-full min-w-[960px] border-collapse">
-          <thead class="thead">
-            <tr>
-              <th class="th">No. Pendaftaran &amp; Waktu</th>
-              <th class="th">Calon Siswa &amp; Asal SD</th>
-              <th class="th">Jenis Pembayaran</th>
-              <th class="th">Nominal &amp; Bukti</th>
-              <th class="th">Status</th>
-              <th class="th text-right">Aksi Bendahara</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-line-soft">
-            <?php if (!$pembayaran): ?>
-              <tr>
-                <td class="td text-center text-ink-400" colspan="6">
-                  Belum ada data pembayaran. Database mungkin tidak aktif.
-                </td>
-              </tr>
+    <div class="mt-5 grid gap-5 lg:grid-cols-3">
+
+      <!-- ====================== KOLOM KIRI ====================== -->
+      <div class="lg:col-span-2 space-y-5">
+
+        <!-- Perlu tindakan -->
+        <section class="card p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h2 class="font-bold text-ink-900">Perlu Tindakan</h2>
+              <p class="mt-1 text-[13px] text-ink-500">
+                Bukti yang menunggu keputusan bendahara, dipecah menurut asal pembayaran.
+              </p>
+            </div>
+            <a href="<?= url('app/bendahara/pembayaran.php') ?>" class="btn btn-sm btn-primary whitespace-nowrap">
+              <?= icon('fact_check', 'text-[15px]') ?> Buka Antrean
+            </a>
+          </div>
+
+          <?php if ($tindak['menunggu'] === 0): ?>
+            <div class="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-[13px] text-green-800 flex items-center gap-2">
+              <?= icon('task_alt', 'text-[16px]') ?> Tidak ada bukti menunggu — semua transaksi sudah diputus.
+            </div>
+          <?php else: ?>
+            <dl class="mt-4 grid gap-4 sm:grid-cols-3">
+              <div class="rounded-xl border border-line px-4 py-3">
+                <dt class="text-[12px] text-ink-500">Transfer manual</dt>
+                <dd class="mt-1 text-xl font-bold text-ink-900"><?= (int) $tindak['jml_manual'] ?> bukti</dd>
+                <dd class="text-[11px] text-ink-400">cocokkan dengan rekening</dd>
+              </div>
+              <div class="rounded-xl border border-line px-4 py-3">
+                <dt class="text-[12px] text-ink-500">Gateway (Midtrans)</dt>
+                <dd class="mt-1 text-xl font-bold text-ink-900"><?= (int) $tindak['jml_gateway'] ?> bukti</dd>
+                <dd class="text-[11px] text-ink-400"><?= (int) $tindak['gateway_lunas'] ?> sudah lunas otomatis</dd>
+              </div>
+              <div class="rounded-xl border border-line px-4 py-3">
+                <dt class="text-[12px] text-ink-500">Menunggu nilai</dt>
+                <dd class="mt-1 text-xl font-bold text-ink-900"><?= rupiah($tindak['rp']) ?></dd>
+                <?php if ($tindak['tertua_hari'] !== null): ?>
+                  <dd class="text-[11px] <?= (int) $tindak['tertua_hari'] >= 3 ? 'text-[#B42318] font-semibold' : 'text-ink-400' ?>">
+                    terlama <?= (int) $tindak['tertua_hari'] ?> hari
+                  </dd>
+                <?php else: ?>
+                  <dd class="text-[11px] text-ink-400">&nbsp;</dd>
+                <?php endif; ?>
+              </div>
+            </dl>
+          <?php endif; ?>
+        </section>
+
+        <!-- Ringkasan per jenis pembayaran -->
+        <section class="card overflow-hidden">
+          <div class="px-5 sm:px-6 py-5 flex items-start justify-between gap-3 flex-wrap border-b border-line">
+            <div>
+              <h2 class="font-bold text-ink-900">Perolehan per Jenis Pembayaran</h2>
+              <p class="mt-1 text-[13px] text-ink-500">Dana terverifikasi, antrean, dan penolakan tiap jenis.</p>
+            </div>
+            <a href="<?= url('app/operator/export.php?rekap=pembayaran') ?>" class="btn btn-sm btn-outline whitespace-nowrap">
+              <?= icon('download', 'text-[15px]') ?> Export CSV
+            </a>
+          </div>
+          <div class="overflow-x-auto scroll-thin">
+            <table class="w-full min-w-[640px] border-collapse">
+              <thead class="thead">
+                <tr>
+                  <th class="th">Jenis</th>
+                  <th class="th text-right">Terverifikasi</th>
+                  <th class="th text-right">Menunggu</th>
+                  <th class="th text-right">Ditolak</th>
+                  <th class="th text-right">Total Tagihan</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line-soft">
+                <?php if (!$perJenis): ?>
+                  <tr><td class="td text-center text-ink-400" colspan="5">Belum ada transaksi pembayaran.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($perJenis as $kode => $j): ?>
+                  <tr class="tr-hover">
+                    <td class="td">
+                      <div class="font-semibold text-ink-900"><?= e($j['label']) ?></div>
+                      <div class="text-[11px] text-ink-400 font-mono"><?= e($kode) ?></div>
+                    </td>
+                    <td class="td text-right">
+                      <div class="font-bold text-ink-900"><?= rupiah($j['rp_masuk']) ?></div>
+                      <div class="text-[11px] text-ink-400"><?= (int) $j['jml_masuk'] ?> transaksi</div>
+                    </td>
+                    <td class="td text-right">
+                      <span class="badge badge-amber"><?= (int) $j['jml_pending'] ?></span>
+                      <div class="mt-1 text-[11px] text-ink-400"><?= rupiah($j['rp_pending']) ?></div>
+                    </td>
+                    <td class="td text-right">
+                      <span class="badge badge-red"><?= (int) $j['jml_tolak'] ?></span>
+                    </td>
+                    <td class="td text-right font-semibold text-ink-700"><?= (int) $j['jml'] ?> baris</td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Aliran dana 14 hari -->
+        <section class="card p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h2 class="font-bold text-ink-900">Aliran Dana Terverifikasi</h2>
+              <p class="mt-1 text-[13px] text-ink-500">14 hari terakhir — hari tanpa transaksi tampil kosong.</p>
+            </div>
+            <p class="text-right">
+              <span class="block text-[12px] text-ink-500">Total 14 hari</span>
+              <span class="block text-lg font-extrabold text-ink-900"><?= rupiah($total14) ?></span>
+            </p>
+          </div>
+
+          <?php if ($puncak <= 0): ?>
+            <p class="mt-5 rounded-xl border border-line bg-canvas px-4 py-6 text-center text-[13px] text-ink-400">
+              Belum ada dana terverifikasi pada 14 hari terakhir.
+            </p>
+          <?php else: ?>
+            <div class="mt-5 flex items-end gap-1.5 h-36">
+              <?php foreach ($deret as $d):
+                  $pct = $puncak > 0 ? max(2, (int) round($d['rp'] / $puncak * 100)) : 0;
+                  /* Tanggal digantinkan pada layar sempit agar 14 label tidak bertumpuk. */
+                  $kelasLabel = $d['urutan'] % 2 === 0
+                      ? 'text-[10px] text-ink-400'
+                      : 'text-[10px] text-ink-400 hidden sm:block';
+              ?>
+                <div class="flex-1 h-full flex flex-col justify-end items-center gap-1.5"
+                     title="<?= e(bulan($d['tanggal'])) ?>: <?= e(rupiah($d['rp'])) ?> · <?= (int) $d['jml'] ?> transaksi">
+                  <?php if ($d['rp'] > 0): ?>
+                    <span class="text-[10px] font-semibold text-ink-500"><?= (int) $d['jml'] ?></span>
+                  <?php endif; ?>
+                  <div class="w-full rounded-t <?= $d['rp'] > 0 ? 'bg-primary' : 'bg-line-soft' ?>" style="height:<?= $d['rp'] > 0 ? $pct : 2 ?>%"></div>
+                  <span class="<?= e($kelasLabel) ?>"><?= e(date('d/m', strtotime($d['tanggal']))) ?></span>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </section>
+
+      </div>
+
+      <!-- ====================== KOLOM KANAN ====================== -->
+      <div class="space-y-5">
+
+        <!-- Rekening -->
+        <section class="card p-5">
+          <h2 class="font-bold text-ink-900 text-sm">Rekening Penampungan</h2>
+          <dl class="mt-3 space-y-2.5 text-[13px]">
+            <div class="flex justify-between gap-3"><dt class="text-ink-500">Bank / Kanal</dt><dd class="font-semibold text-ink-900 text-right"><?= e($PENGATURAN['nama_bank'] ?: '—') ?></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-500">No. Rekening</dt><dd class="font-mono font-semibold text-ink-900 text-right"><?= e($PENGATURAN['no_rekening'] ?: '—') ?></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-500">Atas Nama</dt><dd class="font-semibold text-ink-900 text-right"><?= e($PENGATURAN['atas_nama_rekening'] ?: '—') ?></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-500">Biaya Formulir</dt><dd class="font-semibold text-ink-900 text-right"><?= e(rupiah((float) ($PENGATURAN['biaya_formulir'] ?? 0))) ?></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-ink-500"><?= e(label_biaya_pendaftaran()) ?></dt><dd class="font-semibold text-ink-900 text-right"><?= e(rupiah((float) ($PENGATURAN['estimasi_uang_masuk'] ?? 0))) ?></dd></div>
+          </dl>
+        </section>
+
+        <!-- Keputusan terbaru -->
+        <section class="card p-5">
+          <div class="flex items-start justify-between gap-2">
+            <h2 class="font-bold text-ink-900 text-sm">Keputusan Terbaru</h2>
+            <a href="<?= url('app/bendahara/pembayaran.php?s=MASUK') ?>" class="text-[12px] font-semibold text-primary hover:underline">Semua</a>
+          </div>
+          <div class="mt-3 space-y-3">
+            <?php if (!$aktivitas): ?>
+              <p class="text-sm text-ink-400">Belum ada keputusan pembayaran tercatat.</p>
             <?php endif; ?>
-
-            <?php foreach ($pembayaran as $p): ?>
-              <tr class="tr-hover" data-status="<?= e($p['status_raw']) ?>">
-                <td class="td">
-                  <button class="font-mono text-[13px] font-semibold text-primary hover:underline text-left"
-                          data-modal-open="modal-detail"
-                          data-md-reg="<?= e($p['reg']) ?>"
-                          data-md-nama="<?= e($p['nama']) ?>"
-                          data-md-nisn="<?= e($p['nisn']) ?>"
-                          data-md-sekolah="<?= e($p['sekolah']) ?>"
-                          data-md-wali="<?= e($p['wali']) ?>"
-                          data-md-wa="<?= e($p['wa']) ?>"
-                          data-md-jenis="<?= e($p['jenis']) ?>"
-                          data-md-nominal="<?= e(rupiah($p['nominal'])) ?>"
-                          data-md-status="<?= e($p['status']) ?>"
-                          data-md-keterangan="<?= e($p['keterangan'] ?: '—') ?>"
-                          data-md-verifier="<?= e($p['verifier'] ?: 'Belum diverifikasi') ?>"
-                          data-md-verified="<?= e($p['verified'] ? bulan($p['verified']) . ', ' . date('H:i', strtotime($p['verified'])) . ' WIB' : '—') ?>">
-                    <?= e($p['reg']) ?>
-                  </button>
-                  <div class="text-[11px] text-ink-400"><?= bulan($p['waktu']) ?></div>
-                </td>
-
-                <td class="td">
-                  <div class="font-semibold text-ink-900"><?= e($p['nama']) ?></div>
-                  <div class="text-[12px] text-ink-500"><?= e($p['sekolah']) ?> · WA <?= e($p['wa']) ?></div>
-                </td>
-
-                <td class="td">
-                  <span class="font-medium text-ink-700"><?= e($p['jenis']) ?></span>
-                  <div class="text-[11px] text-ink-400">Transfer <?= e($PENGATURAN['nama_bank']) ?></div>
-                </td>
-
-                <td class="td">
-                  <div class="font-bold text-ink-900"><?= rupiah($p['nominal']) ?></div>
-                  <?php if ($p['bukti']): ?>
-                    <?php
-                    $namaBukti = basename((string) $p['bukti']);
-                    $tipeBukti = strtolower(pathinfo($namaBukti, PATHINFO_EXTENSION)) === 'pdf' ? 'pdf' : 'gambar';
-                    ?>
-                    <button type="button"
-                            class="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:underline"
-                            data-pratinjau-url="<?= e(url('app/api/dokumen.php?f=' . rawurlencode($namaBukti))) ?>"
-                            data-pratinjau-nama="Bukti Transfer <?= e($p['reg']) ?>"
-                            data-pratinjau-tipe="<?= e($tipeBukti) ?>"
-                            data-pratinjau-meta="<?= e(($tipeBukti === 'pdf' ? 'PDF' : 'Gambar') . ' · ' . $p['jenis'] . ' · ' . rupiah($p['nominal']) . ' · dikirim ' . bulan($p['waktu'])) ?>">
-                      <?= icon('receipt', 'text-[15px]') ?> Lihat Bukti
-                    </button>
-                  <?php else: ?>
-                    <span class="mt-1 inline-flex items-center gap-1 text-[12px] text-ink-400">
-                      <?= icon('receipt', 'text-[15px]') ?> Bukti Belum Ada
-                    </span>
-                  <?php endif; ?>
-                </td>
-
-                <td class="td"><?= badge($p['status'], $p['tone']) ?></td>
-
-                <td class="td text-right">
-                  <?php if ($p['pending']): ?>
-                    <div class="inline-flex flex-wrap items-center gap-2 justify-end">
-                      <?php
-                      /* Fase 4: tombol satu klik hanya untuk pembayaran formulir
-                       * pendaftar yang belum punya akun & tahapnya masih menunggu verifikasi. */
-                      $bolehKirimAkun = ($p['jenis'] === 'Biaya Formulir')
-                          && empty($p['user_id'])
-                          && in_array($p['tahap'] ?? '', ['MENUNGGU_VERIFIKASI_BAYAR', 'BAYAR_TERVERIFIKASI'], true);
-                      ?>
-                      <?php if ($bolehKirimAkun): ?>
-                        <form method="post" action="<?= url('app/bendahara/verifikasi.php') ?>" class="inline"
-                              onsubmit="return confirm('Verifikasi pembayaran & kirim akun untuk <?= e($p['reg']) ?>? Kredensial dikirim via WhatsApp.')">
-                          <?= csrf_field() ?>
-                          <input type="hidden" name="pembayaran_id" value="<?= e($p['id']) ?>">
-                          <input type="hidden" name="aksi" value="verifikasi_kirim_akun">
-                          <button type="submit" class="btn btn-sm btn-primary shadow-drop" title="Setujui + buat akun + kirim kredensial WA">
-                            <?= icon('send', 'text-[15px]') ?> Verifikasi &amp; Kirim Akun
-                          </button>
-                        </form>
-                      <?php endif; ?>
-
-                      <form method="post" action="<?= url('app/bendahara/verifikasi.php') ?>" class="inline"
-                            onsubmit="return confirm('Verifikasi pembayaran <?= e($p['reg']) ?> — <?= e($p['jenis']) ?> sebesar <?= e(rupiah($p['nominal'])) ?>?')">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="pembayaran_id" value="<?= e($p['id']) ?>">
-                        <input type="hidden" name="aksi" value="verifikasi">
-                        <button type="submit" class="btn btn-sm btn-green"><?= icon('task_alt', 'text-[15px]') ?> Verifikasi</button>
-                      </form>
-
-                      <button class="btn btn-sm btn-danger"
-                              data-modal-open="modal-tolak"
-                              data-md-id="<?= e($p['id']) ?>"
-                              data-md-reg="<?= e($p['reg']) ?>"
-                              data-md-nama="<?= e($p['nama']) ?>">
-                        <?= icon('close', 'text-[15px]') ?> Tolak
-                      </button>
-                    </div>
-                  <?php else: ?>
-                    <button class="btn btn-sm btn-outline"
-                            data-modal-open="modal-detail"
-                            data-md-reg="<?= e($p['reg']) ?>"
-                            data-md-nama="<?= e($p['nama']) ?>"
-                            data-md-nisn="<?= e($p['nisn']) ?>"
-                            data-md-sekolah="<?= e($p['sekolah']) ?>"
-                            data-md-wali="<?= e($p['wali']) ?>"
-                            data-md-wa="<?= e($p['wa']) ?>"
-                            data-md-jenis="<?= e($p['jenis']) ?>"
-                            data-md-nominal="<?= e(rupiah($p['nominal'])) ?>"
-                            data-md-status="<?= e($p['status']) ?>"
-                            data-md-keterangan="<?= e($p['keterangan'] ?: '—') ?>"
-                            data-md-verifier="<?= e($p['verifier'] ?: 'Belum diverifikasi') ?>"
-                            data-md-verified="<?= e($p['verified'] ? bulan($p['verified']) . ', ' . date('H:i', strtotime($p['verified'])) . ' WIB' : '—') ?>">
-                      <?= icon('visibility', 'text-[15px]') ?> Detail
-                    </button>
-                  <?php endif; ?>
-                </td>
-              </tr>
+            <?php foreach ($aktivitas as $a): ?>
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-[13px] font-semibold text-ink-900 truncate">
+                    <a href="<?= url('app/bendahara/pembayaran.php?s=SEMUA') ?>" class="font-mono text-[12px] text-primary hover:underline"><?= e($a['reg']) ?></a>
+                    <?= e($a['nama']) ?>
+                  </p>
+                  <p class="text-[11px] text-ink-500 truncate"><?= e($a['jenis']) ?> · <?= e(rupiah($a['nominal'])) ?></p>
+                  <p class="text-[11px] text-ink-400"><?= e($a['verifikator']) ?> · <?= e(bulan($a['waktu'])) ?></p>
+                </div>
+                <?= badge($a['status'], $a['tone']) ?>
+              </div>
             <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </section>
 
-      <div class="px-4 py-3.5 border-t border-line bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
-        <p class="text-[13px] text-ink-500">
-          Menampilkan <strong class="text-ink-900"><?= count($pembayaran) ?></strong> transaksi ·
-          <strong class="text-ink-900"><?= (int) $stat['menunggu'] ?></strong> menunggu verifikasi
-        </p>
-        <span class="text-[13px] text-ink-500">Rekening: <strong class="font-mono text-ink-900"><?= e($PENGATURAN['no_rekening']) ?></strong> · a.n. <?= e($PENGATURAN['atas_nama_rekening']) ?></span>
-      </div>
-    </div>
+        <!-- Tautan kerja -->
+        <section class="card p-5">
+          <h2 class="font-bold text-ink-900 text-sm">Ruang Kerja Bendahara</h2>
+          <div class="mt-3 space-y-2">
+            <a href="<?= url('app/bendahara/pembayaran.php') ?>" class="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 hover:border-primary/40 hover:bg-canvas">
+              <span class="flex items-center gap-2.5 min-w-0">
+                <span class="icon-box bg-primary-light text-primary shrink-0"><?= icon('fact_check', 'text-[18px]') ?></span>
+                <span class="min-w-0">
+                  <span class="block text-[13px] font-semibold text-ink-900">Verifikasi Pembayaran</span>
+                  <span class="block text-[11px] text-ink-500">Setujui atau tolak bukti transfer</span>
+                </span>
+              </span>
+              <?= icon('arrow_forward', 'text-[16px] text-ink-400') ?>
+            </a>
+            <a href="<?= url('app/bendahara/rekap.php') ?>" class="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 hover:border-primary/40 hover:bg-canvas">
+              <span class="flex items-center gap-2.5 min-w-0">
+                <span class="icon-box bg-primary-light text-primary shrink-0"><?= icon('print', 'text-[18px]') ?></span>
+                <span class="min-w-0">
+                  <span class="block text-[13px] font-semibold text-ink-900">Cetak Rekap Keuangan</span>
+                  <span class="block text-[11px] text-ink-500">Laporan siap cetak / PDF</span>
+                </span>
+              </span>
+              <?= icon('arrow_forward', 'text-[16px] text-ink-400') ?>
+            </a>
+            <a href="<?= url('app/operator/panduan.php#verifikasi-pembayaran-bendahara') ?>" class="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 hover:border-primary/40 hover:bg-canvas">
+              <span class="flex items-center gap-2.5 min-w-0">
+                <span class="icon-box bg-primary-light text-primary shrink-0"><?= icon('support_agent', 'text-[18px]') ?></span>
+                <span class="min-w-0">
+                  <span class="block text-[13px] font-semibold text-ink-900">Panduan SOP Keuangan</span>
+                  <span class="block text-[11px] text-ink-500">Prosedur verifikasi &amp; penolakan</span>
+                </span>
+              </span>
+              <?= icon('arrow_forward', 'text-[16px] text-ink-400') ?>
+            </a>
+          </div>
+        </section>
 
-    <!-- Catatan SOP -->
-    <div class="mt-4 rounded-2xl bg-primary-light border border-primary/15 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-      <div class="flex items-start gap-3">
-        <span class="icon-box bg-primary text-white shrink-0"><?= icon('info') ?></span>
-        <div>
-          <p class="font-semibold text-ink-900 text-sm">Prosedur Verifikasi Pembayaran</p>
-          <p class="text-[13px] text-ink-500">
-            Cocokkan nominal &amp; rekening pengirim pada bukti transfer. Status <strong>VERIFIED</strong> menandakan
-            dana telah diterima; <strong>REJECTED</strong> mewajibkan alasan agar siswa dapat mengunggah ulang.
-            Untuk <?= e(label_biaya_pendaftaran()) ?>, sistem menjumlahkan seluruh dana terverifikasi: angsuran 1
-            berstatus <strong>ANGSURAN_1</strong>, dan tagihan menjadi <strong>LUNAS</strong> otomatis setelah totalnya
-            menutup biaya pendaftaran — baik lewat 2 angsuran maupun sekali bayar.
-          </p>
-        </div>
+        <!-- Skema angsuran -->
+        <?php $skema = angsuran_skema(); ?>
+        <?php if ($skema['aktif']): ?>
+          <section class="card p-5">
+            <h2 class="font-bold text-ink-900 text-sm">Skema <?= e(label_biaya_pendaftaran()) ?></h2>
+            <ul class="mt-3 space-y-2 text-[13px]">
+              <li class="flex justify-between gap-3"><span class="text-ink-500">Total ditagihkan</span><span class="font-semibold text-ink-900"><?= e(rupiah($skema['total'])) ?></span></li>
+              <?php foreach ($skema['angsuran'] as $a): ?>
+                <li class="flex justify-between gap-3">
+                  <span class="text-ink-500">Angsuran <?= (int) $a['ke'] ?><?= $a['jatuh_tempo'] ? ' · ' . e(bulan($a['jatuh_tempo'])) : '' ?></span>
+                  <span class="font-semibold text-ink-900"><?= e(rupiah($a['nominal'])) ?></span>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+            <p class="mt-3 text-[11px] text-ink-400">Tagihan berubah menjadi <strong>LUNAS</strong> otomatis setelah total dana terverifikasi menutup <?= e(label_biaya_pendaftaran()) ?>.</p>
+          </section>
+        <?php endif; ?>
+
       </div>
-      <a href="<?= url('app/operator/panduan.php#verifikasi-pembayaran-bendahara') ?>" class="btn btn-sm btn-outline shrink-0">Panduan SOP Keuangan <?= icon('arrow_forward', 'text-[16px]') ?></a>
     </div>
 
   </main>
-</div>
-
-<!-- ====================== MODAL DETAIL PEMBAYARAN ====================== -->
-<div id="modal-detail" class="modal-root hidden fixed inset-0 z-[60]">
-  <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px] animate-fade" data-modal-close></div>
-  <div class="relative h-full flex items-start sm:items-center justify-center p-4 sm:p-6 overflow-y-auto scroll-thin">
-    <div class="animate-pop w-full max-w-2xl bg-white rounded-2xl border border-line-mid shadow-modal overflow-hidden my-auto">
-
-      <div class="flex items-start justify-between gap-4 px-5 py-4 border-b border-line">
-        <div class="flex items-start gap-3 min-w-0">
-          <span class="icon-box bg-primary-light text-primary shrink-0"><?= icon('receipt_long') ?></span>
-          <div class="min-w-0">
-            <h3 class="font-bold text-ink-900 text-lg leading-tight">
-              Detail &amp; Verifikasi Bukti Pembayaran
-              <span data-md-fill="reg" class="font-mono text-primary text-sm">#REG</span>
-            </h3>
-            <p class="text-[13px] text-ink-500 truncate">Nama: <strong data-md-fill="nama" class="text-ink-700">—</strong></p>
-          </div>
-        </div>
-        <button class="icon-box border border-line text-ink-500 hover:text-red-600 shrink-0" data-modal-close aria-label="Tutup"><?= icon('close') ?></button>
-      </div>
-
-      <div class="p-5 grid sm:grid-cols-2 gap-4">
-        <div class="rounded-xl border border-line p-4">
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Data Calon Siswa</p>
-          <dl class="mt-3 space-y-2 text-sm">
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">NISN</dt><dd data-md-fill="nisn" class="font-semibold text-ink-900">—</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Asal Sekolah</dt><dd data-md-fill="sekolah" class="font-semibold text-ink-900 text-right">—</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Wali</dt><dd data-md-fill="wali" class="font-semibold text-ink-900">—</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">WhatsApp</dt><dd data-md-fill="wa" class="font-mono text-ink-900">—</dd></div>
-          </dl>
-        </div>
-
-        <div class="rounded-xl border border-line p-4">
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Rincian Pembayaran</p>
-          <dl class="mt-3 space-y-2 text-sm">
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Jenis</dt><dd data-md-fill="jenis" class="font-semibold text-ink-900">—</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Nominal</dt><dd data-md-fill="nominal" class="font-bold text-ink-900">—</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Status</dt><dd data-md-fill="status" class="font-semibold text-ink-900">—</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Verifikator</dt><dd data-md-fill="verifier" class="font-semibold text-ink-900 text-right">—</dd></div>
-          </dl>
-        </div>
-
-        <div class="sm:col-span-2 rounded-xl border border-line p-4">
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Bukti Transfer &amp; Catatan</p>
-          <div class="mt-3 rounded-xl bg-canvas border border-dashed border-line-mid p-4 flex items-center gap-3">
-            <span class="icon-box bg-white border border-line text-ink-400"><?= icon('image') ?></span>
-            <div class="text-sm">
-              <p class="font-medium text-ink-900">Pratinjau bukti transfer</p>
-              <p class="text-xs text-ink-400">Buka bukti ukuran penuh lewat tombol "Lihat Bukti" pada kolom Nominal &amp; Bukti.</p>
-            </div>
-          </div>
-          <dl class="mt-3 space-y-2 text-sm">
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Catatan</dt><dd data-md-fill="keterangan" class="font-semibold text-ink-900 text-right">—</dd></div>
-            <div class="flex justify-between gap-3"><dt class="text-ink-500">Diverifikasi</dt><dd data-md-fill="verified" class="font-semibold text-ink-900 text-right">—</dd></div>
-          </dl>
-        </div>
-      </div>
-
-      <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end">
-        <button class="btn btn-outline" data-modal-close>Tutup</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<!-- ====================== MODAL TOLAK ====================== -->
-<div id="modal-tolak" class="modal-root hidden fixed inset-0 z-[60]">
-  <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px] animate-fade" data-modal-close></div>
-  <div class="relative h-full flex items-center justify-center p-4 sm:p-6">
-    <form method="post" action="<?= url('app/bendahara/verifikasi.php') ?>"
-          class="animate-pop w-full max-w-lg bg-white rounded-2xl border border-line-mid shadow-modal overflow-hidden">
-      <?= csrf_field() ?>
-      <input type="hidden" name="aksi" value="tolak">
-      <input type="hidden" name="pembayaran_id" data-md-fill="id" value="">
-
-      <div class="flex items-start justify-between gap-4 px-5 py-4 border-b border-line">
-        <div class="flex items-start gap-3">
-          <span class="icon-box bg-[#FEF2F2] text-[#B42318] shrink-0"><?= icon('cancel') ?></span>
-          <div>
-            <h3 class="font-bold text-ink-900 text-lg leading-tight">Tolak Pembayaran</h3>
-            <p class="text-[13px] text-ink-500">
-              <span data-md-fill="reg" class="font-mono text-primary">#REG</span> — <span data-md-fill="nama">—</span>
-            </p>
-          </div>
-        </div>
-        <button type="button" class="icon-box border border-line text-ink-500 hover:text-red-600 shrink-0" data-modal-close aria-label="Tutup"><?= icon('close') ?></button>
-      </div>
-
-      <div class="p-5">
-        <label class="label" for="keterangan">Alasan penolakan <span class="text-red-600">*</span></label>
-        <textarea id="keterangan" name="keterangan" class="textarea" rows="3" required
-                  placeholder="Contoh: bukti transfer tidak terbaca / nominal tidak sesuai."></textarea>
-        <p class="hint">Alasan dikirim via WhatsApp ke orang tua, dan pendaftar dapat mengunggah ulang bukti.</p>
-      </div>
-
-      <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end">
-        <button type="button" class="btn btn-outline" data-modal-close>Batal</button>
-        <button type="submit" class="btn btn-danger"><?= icon('close') ?> Tolak Pembayaran</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ====================== MODAL PRATINJAU BUKTI ====================== -->
-<div id="modal-pratinjau-bukti" class="modal-root hidden fixed inset-0 pratinjau-modal" role="dialog" aria-modal="true" aria-labelledby="bukti-judul">
-  <div class="absolute inset-0 bg-ink-900/50 backdrop-blur-sm animate-fade" data-modal-close></div>
-  <div class="pratinjau-lapis">
-    <div class="pratinjau-panel card shadow-modal animate-pop">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
-          <h3 id="bukti-judul" class="font-bold text-sm text-ink-900 truncate">Bukti Pembayaran</h3>
-          <p id="bukti-meta" class="mt-0.5 text-[11px] text-ink-500 truncate"></p>
-        </div>
-        <button type="button" class="icon-box border border-line text-ink-500 hover:text-red-600 shrink-0"
-                data-modal-close aria-label="Tutup pratinjau"><?= icon('close') ?></button>
-      </div>
-      <div id="bukti-isi" class="pratinjau-isi"></div>
-      <div class="pratinjau-kaki">
-        <button type="button" class="btn btn-sm btn-outline" data-modal-close>Tutup</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>
@@ -480,65 +466,5 @@ $stat       = stat_bendahara();
 <script>window.APP_FLASH = <?= json_encode(['tipe' => $flash['tipe'], 'pesan' => $flash['pesan']], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php endif; ?>
 <script src="<?= asset('assets/js/app.js') ?>"></script>
-<script>
-  (function () {
-    var modal = document.getElementById('modal-pratinjau-bukti');
-    if (!modal) return;
-
-    var judul = document.getElementById('bukti-judul');
-    var meta  = document.getElementById('bukti-meta');
-    var isi   = document.getElementById('bukti-isi');
-    var tombolTutup = modal.querySelector('.icon-box[data-modal-close]');
-
-    function tutup() {
-      modal.classList.add('hidden');
-      document.body.classList.remove('overflow-hidden');
-      isi.innerHTML = '';
-    }
-
-    function buka(url, nama, tipe, keterangan) {
-      if (!url) return;
-
-      judul.textContent  = nama || 'Bukti Pembayaran';
-      meta.textContent   = keterangan || '';
-      isi.innerHTML      = '';
-
-      if (tipe === 'pdf') {
-        var bingkai = document.createElement('iframe');
-        bingkai.src = url;
-        bingkai.title = nama || 'Bukti Pembayaran';
-        bingkai.className = 'pratinjau-pdf';
-        isi.appendChild(bingkai);
-      } else {
-        var gambar = document.createElement('img');
-        gambar.src = url;
-        gambar.alt = nama || 'Bukti Pembayaran';
-        gambar.className = 'pratinjau-gambar';
-        isi.appendChild(gambar);
-      }
-
-      modal.classList.remove('hidden');
-      document.body.classList.add('overflow-hidden');
-      if (tombolTutup) tombolTutup.focus();
-    }
-
-    document.querySelectorAll('[data-pratinjau-url]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        buka(btn.getAttribute('data-pratinjau-url'),
-             btn.getAttribute('data-pratinjau-nama'),
-             btn.getAttribute('data-pratinjau-tipe'),
-             btn.getAttribute('data-pratinjau-meta'));
-      });
-    });
-
-    modal.querySelectorAll('[data-modal-close]').forEach(function (el) {
-      el.addEventListener('click', tutup);
-    });
-
-    document.addEventListener('keydown', function (ev) {
-      if (ev.key === 'Escape' && !modal.classList.contains('hidden')) tutup();
-    });
-  })();
-</script>
 </body>
 </html>

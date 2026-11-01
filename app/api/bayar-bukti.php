@@ -200,7 +200,7 @@ if ($pathLama !== null && $pathLama !== '' && $pathLama !== $pathRel) {
 
 /* Notifikasi operator (Fase 3) — tidak boleh menggagalkan unggahan. */
 try {
-    $tautanVerif = url_abs('app/bendahara/index.php');
+    $tautanVerif = url_abs('app/bendahara/pembayaran.php');
     notif_operator(
         'BUKTI_BAYAR_MASUK',
         $pendaftarId,

@@ -500,6 +500,176 @@ function stat_bendahara()
 }
 
 /* ==================================================================
+ * 6b. DASHBOARD BENDAHARA — panel rinci
+ *     Hanya dibaca; sumber angka kartu "Perlu tindakan", grafik aliran
+ *     dana, dan daftar keputusan terbaru di app/bendahara/index.php.
+ * ================================================================== */
+
+/** Status yang dihitung sebagai dana sudah masuk ke rekening. */
+function bayar_status_masuk()
+{
+    return ['VERIFIED', 'LUNAS', 'ANGSURAN_1', 'ANGSURAN_2'];
+}
+
+/**
+ * Ringkasan per jenis pembayaran (FORMULIR / UANG_MASUK).
+ * @return array<string,array{label:string,jml:int,rp_masuk:float,jml_masuk:int,rp_pending:float,jml_pending:int,jml_tolak:int}>
+ */
+function bendahara_per_jenis()
+{
+    $keluar = [];
+    if (!db_aktif()) {
+        return $keluar;
+    }
+    $masuk = implode(',', array_map(function ($s) { return "'" . $s . "'"; }, bayar_status_masuk()));
+    $baris = q_all(
+        "SELECT jenis_pembayaran AS kode,
+                COUNT(*) AS jml,
+                COALESCE(SUM(CASE WHEN status IN ($masuk) THEN nominal ELSE 0 END), 0) AS rp_masuk,
+                COALESCE(SUM(CASE WHEN status IN ($masuk) THEN 1 ELSE 0 END), 0)       AS jml_masuk,
+                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN nominal ELSE 0 END), 0) AS rp_pending,
+                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN 1 ELSE 0 END), 0)       AS jml_pending,
+                COALESCE(SUM(CASE WHEN status = 'REJECTED' THEN 1 ELSE 0 END), 0)      AS jml_tolak
+           FROM pembayaran
+          GROUP BY jenis_pembayaran"
+    );
+    if ($baris === null) {
+        return $keluar;
+    }
+    $label = ['FORMULIR' => 'Biaya Formulir', 'UANG_MASUK' => label_biaya_pendaftaran()];
+    foreach ($baris as $r) {
+        $keluar[$r['kode']] = [
+            'label'      => $label[$r['kode']] ?? $r['kode'],
+            'jml'        => (int) $r['jml'],
+            'rp_masuk'   => (float) $r['rp_masuk'],
+            'jml_masuk'  => (int) $r['jml_masuk'],
+            'rp_pending' => (float) $r['rp_pending'],
+            'jml_pending' => (int) $r['jml_pending'],
+            'jml_tolak'  => (int) $r['jml_tolak'],
+        ];
+    }
+    return $keluar;
+}
+
+/**
+ * Antrean yang menunggu tindakan, dipecah asal bukti (gateway vs transfer manual)
+ * beserta umur bukti tertua.
+ * @return array{menunggu:int,rp:int,jml_gateway:int,jml_manual:int,tertua_hari:?int,gateway_lunas:int}
+ */
+function bendahara_antrean_tindak()
+{
+    $kosong = ['menunggu' => 0, 'rp' => 0, 'jml_gateway' => 0, 'jml_manual' => 0, 'tertua_hari' => null, 'gateway_lunas' => 0];
+    if (!db_aktif()) {
+        return $kosong;
+    }
+    $s = q_all(
+        "SELECT COUNT(*) AS menunggu,
+                COALESCE(SUM(nominal), 0) AS rp,
+                COALESCE(SUM(CASE WHEN metode = 'GATEWAY' THEN 1 ELSE 0 END), 0) AS jml_gateway,
+                COALESCE(SUM(CASE WHEN metode IS NULL OR metode <> 'GATEWAY' THEN 1 ELSE 0 END), 0) AS jml_manual,
+                DATEDIFF(NOW(), MIN(created_at)) AS tertua_hari
+           FROM pembayaran
+          WHERE status = 'PENDING'"
+    );
+    $s = $s ? $s[0] : null;
+    if (!is_array($s)) {
+        return $kosong;
+    }
+    $keluar = [
+        'menunggu'     => (int) $s['menunggu'],
+        'rp'           => (float) $s['rp'],
+        'jml_gateway'  => (int) $s['jml_gateway'],
+        'jml_manual'   => (int) $s['jml_manual'],
+        'tertua_hari'  => $s['tertua_hari'] === null ? null : (int) $s['tertua_hari'],
+        'gateway_lunas' => (int) (q_col("SELECT COUNT(*) FROM pembayaran WHERE metode = 'GATEWAY' AND status = 'LUNAS'") ?? 0),
+    ];
+    return $keluar;
+}
+
+/**
+ * Aliran dana terverifikasi harian untuk grafik batang mini.
+ * Hari tanpa transaksi tidak dikembalikan — halaman pemanggil yang mengisi
+ * tanggal bolong agar sumbu waktunya utuh.
+ * @return array<int,array{tanggal:string,rp:float,jml:int}>
+ */
+function bendahara_aliran_harian($hari = 14)
+{
+    if (!db_aktif()) {
+        return [];
+    }
+    $masuk = implode(',', array_map(function ($s) { return "'" . $s . "'"; }, bayar_status_masuk()));
+    $baris = q_all(
+        'SELECT DATE(COALESCE(verified_at, paid_at, created_at)) AS tanggal,
+                COALESCE(SUM(nominal), 0) AS rp,
+                COUNT(*) AS jml
+           FROM pembayaran
+          WHERE status IN (' . $masuk . ')
+            AND COALESCE(verified_at, paid_at, created_at) >= DATE_SUB(CURDATE(), INTERVAL ' . ((int) $hari - 1) . ' DAY)
+       GROUP BY DATE(COALESCE(verified_at, paid_at, created_at))
+       ORDER BY tanggal'
+    );
+    if ($baris === null) {
+        return [];
+    }
+    $keluar = [];
+    foreach ($baris as $r) {
+        $keluar[] = [
+            'tanggal' => (string) $r['tanggal'],
+            'rp'      => (float) $r['rp'],
+            'jml'     => (int) $r['jml'],
+        ];
+    }
+    return $keluar;
+}
+
+/**
+ * Keputusan bendahara terbaru (setuju / tolak) — feed aktivitas di dashboard.
+ * @return array<int,array{reg:string,nama:string,jenis:string,nominal:float,status:string,tone:string,verifikator:string,waktu:?string}>
+ */
+function bendahara_aktivitas($jumlah = 6)
+{
+    if (!db_aktif()) {
+        return [];
+    }
+    $baris = q_all(
+        "SELECT p.no_pendaftaran, p.nama_siswa, b.jenis_pembayaran, b.angsuran_ke, b.nominal,
+                b.status, b.verified_at, u.nama_lengkap AS verifikator
+           FROM pembayaran b
+           JOIN pendaftar p ON p.id = b.pendaftar_id
+      LEFT JOIN users u ON u.id = b.verified_by
+          WHERE b.verified_at IS NOT NULL OR b.status = 'REJECTED'
+       ORDER BY COALESCE(b.verified_at, b.created_at) DESC
+          LIMIT " . (int) $jumlah
+    );
+    if ($baris === null) {
+        return [];
+    }
+    $labelJenis = ['FORMULIR' => 'Biaya Formulir', 'UANG_MASUK' => label_biaya_pendaftaran()];
+    $labelStat  = ['PENDING' => 'Menunggu', 'VERIFIED' => 'Terverifikasi', 'REJECTED' => 'Ditolak',
+                   'LUNAS' => 'Lunas', 'ANGSURAN_1' => 'Angsuran 1', 'ANGSURAN_2' => 'Angsuran 2'];
+    $toneStat   = ['PENDING' => 'amber', 'VERIFIED' => 'green', 'REJECTED' => 'red',
+                   'LUNAS' => 'green', 'ANGSURAN_1' => 'blue', 'ANGSURAN_2' => 'blue'];
+    $keluar = [];
+    foreach ($baris as $r) {
+        $jenis = $labelJenis[$r['jenis_pembayaran']] ?? $r['jenis_pembayaran'];
+        if ($r['jenis_pembayaran'] === 'UANG_MASUK' && $r['angsuran_ke'] !== null) {
+            $jenis .= ' · Angsuran ' . (int) $r['angsuran_ke'];
+        }
+        $keluar[] = [
+            'reg'         => (string) $r['no_pendaftaran'],
+            'nama'        => (string) $r['nama_siswa'],
+            'jenis'       => $jenis,
+            'nominal'     => (float) $r['nominal'],
+            'status'      => $labelStat[$r['status']] ?? (string) $r['status'],
+            'tone'        => $toneStat[$r['status']] ?? 'gray',
+            'verifikator' => trim((string) ($r['verifikator'] ?? '')) !== '' ? (string) $r['verifikator'] : 'Sistem (gateway)',
+            'waktu'       => $r['verified_at'],
+        ];
+    }
+    return $keluar;
+}
+
+/* ==================================================================
  * 7. HALAMAN SISWA "” profil berdasarkan user login
  * ================================================================== */
 
