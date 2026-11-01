@@ -198,17 +198,18 @@ if ($pathLama !== null && $pathLama !== '' && $pathLama !== $pathRel) {
     }
 }
 
-/* Notifikasi operator (Fase 3) — tidak boleh menggagalkan unggahan. */
+/* Notifikasi operator + bendahara (Fase 3) — tidak boleh menggagalkan unggahan. */
 try {
     $tautanVerif = url_abs('app/bendahara/pembayaran.php');
     notif_operator(
         'BUKTI_BAYAR_MASUK',
         $pendaftarId,
-        "Bukti pembayaran baru menunggu verifikasi.\n"
+        "Bukti pembayaran baru menunggu verifikasi (via tautan bayar).\n"
         . "Nama : {$baris['nama_siswa']}\n"
         . "No. Pendaftaran : {$baris['no_pendaftaran']}\n"
         . "Metode : {$metode}\n"
-        . "Verifikasi: {$tautanVerif}"
+        . "Nominal : " . rupiah((float) $baris['nominal']) . "\n"
+        . "Periksa: {$tautanVerif}"
     );
 } catch (Throwable $e) {
     /* abaikan */

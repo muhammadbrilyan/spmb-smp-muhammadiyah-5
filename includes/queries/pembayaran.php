@@ -1138,12 +1138,26 @@ function verifikasi_bayar_tolak($pembayaranId, $alasan, $verifierId = null)
     }
 
     /* WA ke orang tua — setelah commit, kegagalan tidak membatalkan penolakan.
-     * Fase 11 A6: token bayar polos tidak disimpan di DB — tautan unggah-ulang
-     * memakai halaman cek-status (punya tombol "Pulihkan Tautan"). */
+     * Fase 11 A6: token bayar polos tidak disimpan di DB, jadi untuk penolakan
+     * biaya formulir token dirotasi dulu agar tautan WA langsung menuju halaman
+     * unggah bukti (calon pendaftar belum punya akun portal, tidak perlu
+     * mampir ke cek-status). Tautan bayar lama memang ikut mati — bukti yang
+     * ditolak tidak seharusnya bisa dikirim ulang lewat tautan lama. */
+    $tautanUnggah = '';
+    if ($baris['jenis_pembayaran'] === 'FORMULIR') {
+        $tokenBaru = pendaftar_rotasi_pay_token($baris['pendaftar_id']);
+        if ($tokenBaru !== null) {
+            $tautanUnggah = url_abs('app/spmb/bayar.php?t=' . $tokenBaru);
+        }
+    }
+
     $waOk = false;
     $waPesan = '';
     if (!empty($baris['no_whatsapp'])) {
-        $tautan = url('app/spmb/cek-status.php');
+        $tautan = $tautanUnggah !== '' ? $tautanUnggah : url_abs('app/spmb/cek-status.php');
+        $petunjuk = $tautanUnggah !== ''
+            ? 'Silakan unggah ULANG bukti pembayaran yang benar melalui tautan berikut (tautan lama sudah tidak berlaku):'
+            : 'Silakan unggah ulang bukti pembayaran yang benar melalui tautan berikut:';
         $namaBiaya = $baris['jenis_pembayaran'] === 'UANG_MASUK'
             ? label_biaya_pendaftaran() . (($baris['jenis_pembayaran'] === 'UANG_MASUK' && !empty($baris['angsuran_ke'])) ? ' angsuran ' . (int) $baris['angsuran_ke'] : '')
             : 'biaya formulir';
@@ -1154,7 +1168,7 @@ function verifikasi_bayar_tolak($pembayaranId, $alasan, $verifierId = null)
             . "Nominal : " . rupiah($baris['nominal']) . "\n\n"
             . "BELUM DAPAT kami setujui.\n"
             . "Alasan : {$alasan}\n\n"
-            . "Silakan unggah ulang bukti pembayaran yang benar melalui tautan berikut:\n"
+            . "{$petunjuk}\n"
             . "{$tautan}\n\n"
             . "Terima kasih.\nPanitia SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5');
         $r = wa_kirim($baris['no_whatsapp'], $waPesan);
@@ -1166,6 +1180,7 @@ function verifikasi_bayar_tolak($pembayaranId, $alasan, $verifierId = null)
         'ok' => true, 'sudah' => false,
         'wa_ok' => $waOk, 'wa_pesan' => $waOk ? 'Terkirim.' : ($waPesan !== '' ? 'Gagal terkirim — tercatat di wa_log.' : 'Tidak ada nomor WA orang tua.'),
         'reg' => $baris['no_pendaftaran'], 'nama' => $baris['nama_siswa'],
+        'tautan_unggah' => $tautanUnggah,
     ];
 }
 

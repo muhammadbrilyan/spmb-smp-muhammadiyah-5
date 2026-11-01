@@ -37,6 +37,8 @@ Server uji: `php -S localhost:8099 -t <root proyek>` — ganti host/port sesuai 
 | B8 | Unggah sah dua kali (metode beda) | File lama **terhapus**, file baru tersimpan, `bukti_transfer_url` menunjuk yang baru |
 | B9 | Klik unggah 11× cepat | Rate limit 10/menit/IP aktif |
 | B10 | `hasil uji` → pastikan `storage/dokumen/` bersih (hanya `.gitkeep`) | Tidak ada file sisa |
+| B11 | Unggah bukti sah (transfer **atau** QRIS) di `app/spmb/bayar.php?t=…` | Popup "Bukti pembayaranmu sudah terkirim" berisi nama + No. Pendaftaran, tiga langkah berikutnya, imbauan tidak mengirim berulang, tautan Cek Status, tombol **Mengerti**. Setelah popup ditutup (tombol, klik latar, atau Esc) halaman dimuat ulang dan banner kuning "Bukti pembayaranmu sedang diperiksa" tampil |
+| B12 | Perangkat aktifkan `prefers-reduced-motion` | Popup tetap tampil penuh, hanya tanpa efek muncul/hilang |
 
 ## C. Rate Lintas IP & Pesan Seragam
 
@@ -92,6 +94,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | E15 | Halaman tautan bayar lama (`bayar.php?t=<token lama>`) | 404 / tidak mengarah ke pembayaran valid |
 | E16 | Pesan WA penolakan verifikasi dokumen | Tautan menuju **cek-status** (`app/spmb/cek-status.php`), bukan halaman bayar — ada tombol "Pulihkan Tautan" |
 | E17 | Telusuri sumber tampilan token bayar | Token polos hanya muncul di 3 tempat: sukses registrasi, pesan WA registrasi, hasil pemulihan cek-status |
+| E18 | Bendahara menolak bukti **formulir** (`verifikasi_bayar_tolak`) | WA ke orang tua berisi alasan + tautan **langsung** `app/spmb/bayar.php?t=<token baru>` — token lama mati karena dirotasi; halaman bayar menampilkan banner merah "Bukti pembayaran sebelumnya ditolak panitia" + alasan dan form unggah ulang tetap aktif. Non-formulir atau rotasi gagal → tetap fallback ke cek-status (E16) |
 
 ## F. Fase 11 — Instrumen Rilis (B1–B6)
 
@@ -216,6 +219,14 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | M10 | Notifikasi `BUKTI_BAYAR_MASUK` di `app/operator/notifikasi.php` | Bagi operator/kepsek/bendahara yang bukan pemilik halaman, tombol **Buka** tidak dipasang — diganti chip "Ruang Kerja Bendahara" (judul tooltip); hanya bendahara/admin yang melihat tombol **Buka** → `app/bendahara/pembayaran.php` |
 | M11 | Tombol **Kirim Pengingat Jatuh Tempo** (ada di dashboard & panel antrean) | Keduanya POST ke `index.php`; flash hasil berjalan; tetap tinggal di halaman asal |
 | M12 | Operator mem-POST langsung ke `app/bendahara/verifikasi.php` (URL endpoint diketahui) | Ditolak — gerbang endpoint disamakan dengan halamannya (`bendahara`/`admin`), dahulu `operator` ikut diizinkan sehingga keputusan bayar bisa ditulis dari luar halaman bendahara |
+| M13 | Calon pendaftar unggah bukti transfer/QRIS di `app/spmb/bayar.php?t=…` (atau siswa unggah di `app/siswa/keuangan.php`) saat `notif_wa_aktif=1` | Nomor di **Nomor WA Bendahara** (`notif_wa_bendahara`, Pengaturan Sistem → Notifikasi Operator) menerima WA berisi nama, No. Pendaftaran, metode, nominal, dan tautan `app/bendahara/pembayaran.php`; tercatat di `wa_log` bertipe `BUKTI_BAYAR_MASUK` walau **Nomor WA Operator** kosong |
+| M14 | **Nomor WA Bendahara** kosong | Salinan bukti bayar jatuh ke **Kontak WhatsApp Panitia SPMB** (`kontak_wa_panitia`) — tidak ada pemicu yang hilang diam-diam |
+| M15 | Nomor yang sama ada di daftar **Nomor WA Operator** dan **Nomor WA Bendahara** | Hanya satu pesan terkirim — tujuan dinormalisasi (`wa_normalize`) lalu dideduplikasi, tidak ada pesan dobel ke ponsel yang sama |
+| M16 | Pemicu bukan-bayar (mis. `BERKAS_DISUBMIT`) dengan hanya nomor bendahara yang terisi | Nomor bendahara TIDAK dikirimi — rute tambahan khusus tipe pembayaran (`BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`, `PEMBAYARAN_GATEWAY_LUNAS`); pemicu lain hanya lewat `notif_wa_operator` |
+| M17 | `notif_wa_aktif=0` | Tidak ada WA sama sekali (in-app notifikasi tetap tersimpan) — toggle tetap jadi sakelar induk |
+| M18 | CMS: toggle aktif, **Nomor WA Operator** dan **Nomor WA Bendahara** kosong, Kontak WhatsApp Panitia terisi → Simpan | Tersimpan (dahulu gagal dengan "daftar nomor tujuan masih kosong"); ditolak hanya bila ketiga nomor kosong. Format tiap daftar nomor divalidasi terpisah, pesalan galat menyebut "operator" atau "bendahara" |
+| M19 | Menerbitkan skema lama ke hosting | Wajib `mysql -u root < database/migrations/20261101_notif_wa_bendahara.sql` lebih dulu; tanpanya seluruh simpan Pengaturan Sistem batal (`1054 Unknown column 'notif_wa_bendahara'`) — terlihat sebagai GAGAL pada pemeriksaan 5 `tools/cek-proyek.php` |
+| M20 | Pembayaran selesai lewat gateway Midtrans (callback `PEMBAYARAN_GATEWAY_LUNAS` / `PEMBAYARAN_GATEWAY_MASUK`) saat **Nomor WA Operator** kosong | Nomor **WA Bendahara** tetap menerima salinan (pesan sudah berisi tautan `app/bendahara/pembayaran.php`) — dahulu tidak terkirim sama sekali karena rute bendahara hanya mengenali `BUKTI_BAYAR_MASUK` |
 
 ## Skenario Penyalahgunaan (wajib lolos)
 

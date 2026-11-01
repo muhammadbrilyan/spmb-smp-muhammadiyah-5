@@ -5,6 +5,7 @@
  *
  * YANG SERING DIUBAH:
  *   - Metode aktif → CMS Pengaturan Sistem → Pembayaran & S&K
+ *   - Teks popup "mohon menunggu" → cari "popup-bukti"
  *   - Teks bawah   → cari "Hubungi Panitia" di bagian HTML
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
@@ -97,6 +98,27 @@ require_once __DIR__ . '/../../includes/partials/head.php';
           <div class="mt-5 rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] p-4 text-sm text-[#166534] text-center" role="status">
             <span class="ms text-[18px] inline-block align-middle mr-1">check_circle</span>
             Pembayaran sudah terverifikasi. Silakan lanjut ke tahap berikutnya atau hubungi panitia.
+          </div>
+        <?php elseif ($pendaftar['bayar_status'] === 'REJECTED'):
+          $alasanTolak = trim((string) ($pendaftar['bayar_catatan'] ?? ''));
+        ?>
+          <div class="mt-5 rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]" role="status">
+            <p class="font-semibold flex items-center justify-center gap-1">
+              <span class="ms text-[18px]">error</span>
+              Bukti pembayaran sebelumnya ditolak panitia
+            </p>
+            <?php if ($alasanTolak !== ''): ?>
+              <p class="mt-2 text-center">Alasan: <span class="font-medium"><?= e($alasanTolak) ?></span></p>
+            <?php endif; ?>
+            <p class="mt-2 text-center">Silakan transfer ulang sesuai keterangan rekening di bawah, lalu unggah bukti pembayaran yang baru pada halaman ini.</p>
+          </div>
+        <?php elseif ($pendaftar['bayar_status'] === 'PENDING'): ?>
+          <div class="mt-5 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-4 text-sm text-[#92400E]" role="status">
+            <p class="font-semibold flex items-center justify-center gap-1">
+              <span class="ms text-[18px]">hourglass_top</span>
+              Bukti pembayaranmu sedang diperiksa
+            </p>
+            <p class="mt-2 text-center">Tidak perlu mengirim bukti yang sama berulang kali. Hasil pemeriksaan diumumkan melalui WhatsApp dan bisa dicek di halaman <a class="underline font-medium" href="<?= url('app/spmb/cek-status.php') ?>">Cek Status</a>.</p>
           </div>
         <?php endif; ?>
       </div>
@@ -295,7 +317,11 @@ require_once __DIR__ . '/../../includes/partials/head.php';
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d.ok) {
-            if (statusEl) { statusEl.textContent = 'Bukti terkirim! Menunggu verifikasi panitia.'; statusEl.className = 'text-xs text-center text-[#065F46] font-medium'; }
+            if (statusEl) { statusEl.classList.add('hidden'); }
+            /* Beri tahu lewat popup — bila popup tak terpasang,
+             * kembali ke teks inline agar pengiriman tetap terbalas. */
+            if (window.bukaPopupBukti && window.bukaPopupBukti()) { return; }
+            if (statusEl) { statusEl.textContent = 'Bukti terkirim! Menunggu verifikasi panitia.'; statusEl.className = 'text-xs text-center text-[#065F46] font-medium'; statusEl.classList.remove('hidden'); }
             setTimeout(function () { window.location.reload(); }, 1500);
           } else {
             if (statusEl) { statusEl.textContent = d.pesan || 'Gagal mengirim.'; statusEl.className = 'text-xs text-center text-[#991B1B]'; }
@@ -313,6 +339,85 @@ require_once __DIR__ . '/../../includes/partials/head.php';
   handleUpload('form-bukti-qris', 'qris-status');
 })();
 </script>
+
+<?php if (!$galat && $pendaftar): ?>
+  <!-- Popup "mohon menunggu" setelah bukti bayar terkirim -->
+  <style>
+    #popup-bukti{display:none;position:fixed;inset:0;z-index:90;align-items:center;justify-content:center;padding:1rem}
+    #popup-bukti.pb-buka{display:flex}
+    #popup-bukti .pb-kotak{max-height:calc(100vh - 2rem);overflow-y:auto;animation:pb-timbul .3s cubic-bezier(.22,.9,.3,1.2) both}
+    #popup-bukti.pb-pergi .pb-kotak{animation:pb-hilang .25s ease-in both}
+    @keyframes pb-timbul{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+    @keyframes pb-hilang{to{opacity:0;transform:translateY(10px) scale(.96)}}
+    @media (prefers-reduced-motion:reduce){#popup-bukti .pb-kotak{animation:none}}
+  </style>
+
+  <div id="popup-bukti" class="fixed inset-0">
+    <div id="pb-layer" class="absolute inset-0 bg-ink-900/55 backdrop-blur-sm"></div>
+    <div class="pb-kotak card relative w-full max-w-md p-6"
+         role="dialog" aria-modal="true" aria-labelledby="pb-judul">
+      <span class="icon-box bg-primary-light text-primary w-14 h-14 mx-auto"><?= icon('check_circle', 'text-[28px]') ?></span>
+      <h2 id="pb-judul" class="mt-3 text-center text-xl font-bold text-ink-900">Bukti pembayaranmu sudah terkirim</h2>
+      <p class="mt-2 text-sm text-ink-600 text-center">
+        Terima kasih, bukti pembayaran atas nama
+        <span class="font-semibold text-ink-900"><?= e($pendaftar['nama_siswa']) ?></span>
+        (<span class="font-mono text-[13px]"><?= e($pendaftar['no_pendaftaran']) ?></span>) sudah masuk ke daftar pemeriksaan bendahara.
+      </p>
+
+      <p class="mt-5 text-[13px] font-semibold uppercase tracking-wide text-ink-500">Yang terjadi selanjutnya</p>
+      <ol class="mt-2 space-y-2 text-sm text-ink-700 list-decimal list-inside">
+        <li>Bendahara memeriksa kecocokan nominal, tanggal transfer, dan nomor rekening pada bukti kamu.</li>
+        <li>Bila cocok, statusmu berubah menjadi terverifikasi dan kamu lanjut ke tahap berikutnya.</li>
+        <li>Bila belum cocok, kami kirim alasannya lewat WhatsApp agar kamu bisa mengunggah ulang bukti yang benar.</li>
+      </ol>
+
+      <div class="mt-5 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-[13px] text-[#92400E]">
+        <span class="font-semibold">Mohon menunggu.</span> Tidak perlu mengirim bukti yang sama berulang kali atau
+        menghubungi panitia berkali-kali — berkas diperiksa sesuai urutan masuk.
+      </div>
+
+      <p class="mt-3 text-xs text-ink-500 text-center">
+        Perkembangan bisa dicek kapan saja di
+        <a class="underline font-medium" href="<?= url('app/spmb/cek-status.php') ?>">Cek Status Pendaftaran</a>.
+      </p>
+
+      <button type="button" id="pb-tutup" class="btn btn-primary btn-block mt-5">Mengerti</button>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+    var shell = document.getElementById('popup-bukti');
+    var tutupBtn = document.getElementById('pb-tutup');
+    if (!shell || !tutupBtn) { return; }
+
+    var sedangMenutup = false;
+    function tutup() {
+      if (sedangMenutup) { return; }
+      sedangMenutup = true;
+      shell.classList.add('pb-pergi');
+      setTimeout(function () { window.location.reload(); }, 300);
+    }
+
+    /* Dipanggil skrip unggahan bukti setelah server membalas sukses. */
+    window.bukaPopupBukti = function () {
+      if (sedangMenutup) { return false; }
+      shell.classList.add('pb-buka');
+      document.body.classList.add('overflow-hidden');
+      shell.querySelector('.pb-kotak').scrollTop = 0;
+      tutupBtn.focus({ preventScroll: true });
+      return true;
+    };
+
+    tutupBtn.addEventListener('click', tutup);
+    document.getElementById('pb-layer').addEventListener('click', tutup);
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && shell.classList.contains('pb-buka')) { tutup(); }
+    });
+  })();
+  </script>
+<?php endif; ?>
 
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>
 <script src="<?= asset('assets/js/app.js') ?>"></script>

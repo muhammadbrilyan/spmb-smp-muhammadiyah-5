@@ -6,6 +6,10 @@
  *   1. Simpan pesan ke tabel `notifikasi` (lencana + halaman Notifikasi).
  *   2. Kirim WhatsApp via Fonnte ke nomor di pengaturan `notif_wa_operator`
  *      (beberapa nomor dipisah koma) BILA toggle `notif_wa_aktif` aktif.
+ *      Tipe pembayaran (BUKTI_BAYAR_MASUK, PEMBAYARAN_GATEWAY_MASUK,
+ *      PEMBAYARAN_GATEWAY_LUNAS) juga dikirim ke `notif_wa_bendahara`
+ *      (fallback: `kontak_wa_panitia`) supaya bendahara tahu begitu ada
+ *      transfer masuk.
  *   3. Hasil kirim (sukses/gagal) dicatat ke `wa_log`.
  *
  * PENTING: kegagalan apa pun (DB / Fonnte / jaringan) TIDAK BOLEH
@@ -19,6 +23,22 @@
  *   - BERKAS_DISUBMIT           → siswa submit berkas (Fase 5)
  *   - (Fase lanjutan: PENOLAKAN_BAYAR, BERKAS_REVISI, JADWAL_DITETAPKAN, dll.)
  */
+
+/**
+ * Nomor WA bendahara dari Pengaturan Sistem.
+ *
+ * Sumber utama: kolom `notif_wa_bendahara` (beberapa nomor dipisah koma).
+ * Bila belum diisi, jatuh ke `kontak_wa_panitia` — nomor admin yang sudah
+ * ada sejak dulu — supaya notifikasi bukti bayar tidak hilang diam-diam.
+ *
+ * @return string daftar nomor mentah (boleh kosong)
+ */
+function notif_nomor_bendahara()
+{
+    $P = $GLOBALS['PENGATURAN'];
+    $nomor = trim((string) ($P['notif_wa_bendahara'] ?? ''));
+    return $nomor !== '' ? $nomor : trim((string) ($P['kontak_wa_panitia'] ?? ''));
+}
 
 /**
  * Kirim notifikasi ke operator (in-app + WhatsApp).
@@ -54,11 +74,23 @@ function notif_operator($tipe, $pendaftarId, $pesan)
             return;
         }
         $daftar = (string) ($GLOBALS['PENGATURAN']['notif_wa_operator'] ?? '');
-        foreach (preg_split('/[,;]+/', $daftar) as $no) {
+        $tujuan = preg_split('/[,;]+/', $daftar) ?: [];
+        /* Semua pemicu uang masuk menjadi kerja bendahara — pastikan nomornya
+         * dari Pengaturan Sistem ikut menerima walau daftar operator kosong. */
+        if (in_array($tipe, ['BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS'], true)) {
+            $tujuan = array_merge($tujuan, preg_split('/[,;]+/', notif_nomor_bendahara()) ?: []);
+        }
+        $sudah = [];
+        foreach ($tujuan as $no) {
             $no = trim((string) $no);
             if ($no === '') {
                 continue;
             }
+            $kunci = wa_normalize($no);
+            if ($kunci === '' || isset($sudah[$kunci])) {
+                continue;
+            }
+            $sudah[$kunci] = true;
             $hasil = wa_kirim($no, $pesan);
             wa_log_catat($no, $tipe, $hasil);
         }

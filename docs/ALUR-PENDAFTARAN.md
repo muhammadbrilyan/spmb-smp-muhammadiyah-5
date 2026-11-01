@@ -56,6 +56,12 @@ flowchart TD
 - `wa_log` (tujuan, tipe, status, respons)
 - `pengaturan_sekolah.notif_wa_operator`, `notif_wa_aktif`, `notif_email` (titik sambungan)
 - `app/api/notif-count.php` (polling sidebar 60 dtk)
+- Rute tujuan `notif_operator()`: daftar `notif_wa_operator` + (khusus tipe
+  pembayaran — `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`,
+  `PEMBAYARAN_GATEWAY_LUNAS`) `notif_wa_bendahara`, fallback `kontak_wa_panitia`
+  bila nomor bendahara kosong; dinormalisasi `wa_normalize()` lalu dideduplikasi
+  supaya satu ponsel tidak menerima pesan dua kali
+- Migrasi: `database/migrations/20261101_notif_wa_bendahara.sql`
 
 ### Fase 4 — Verifikasi Bayar + Kirim Akun
 - `pendaftar.tahap` nilai `BAYAR_TERVERIFIKASI` & `AKUN_TERKIRIM`
@@ -162,7 +168,7 @@ Registrasi publik → setujui S&K (versi tercatat) → bayar formulir → `MENUN
 Gateway Midtrans Snap (aktif default) / transfer bank manual / QRIS manual. Callback → `MENUNGGU_VERIFIKASI_BAYAR`.
 
 ### Fase 3 — Notifikasi Operator
-`notif_operator()` → `notifikasi` + `wa_log`. Sidebar badge + polling 60 dtk. Halaman Notifikasi.
+`notif_operator()` → `notifikasi` + `wa_log`. Sidebar badge + polling 60 dtk. Halaman Notifikasi. Toggle `notif_wa_aktif` menyalakan seluruh kirim WA; nomor **Bendahara** (`notif_wa_bendahara`, fallback `kontak_wa_panitia`) ikut menerima salinan khusus bukti bayar masuk agar bendahara tahu ada transfer walau daftar nomor operator kosong. Nomor yang sama di kedua daftar hanya dikirimi sekali.
 
 ### Fase 4 — Verifikasi Bayar + Kirim Akun
 Bendahara: Setujui (`VERIFIED+BAYAR_TERVERIFIKASI`), Tolak (wajib alasan, kembali MENUNGGU_PEMBAYARAN, WA alasan). Tombol "Verifikasi & Kirim Akun" 1 klik idempoten. Gateway auto-kirim (default nonaktif).

@@ -148,6 +148,7 @@ $f = [
     'qris_image_url'       => $PENGATURAN['qris_image_url'] ?? '',
     'kirim_akun_otomatis'  => (int) $teks('kirim_akun_otomatis', '0'),
     'notif_wa_operator'    => $teks('notif_wa_operator'),
+    'notif_wa_bendahara'   => $teks('notif_wa_bendahara'),
     'notif_wa_aktif'       => (int) $teks('notif_wa_aktif', '0'),
     'notif_email'          => $teks('notif_email'),
     'syarat_ketentuan'     => $teks('syarat_ketentuan'),
@@ -238,19 +239,26 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     /* QRIS merchant (opsional, hanya label tampilan). */
     $f['qris_merchant'] = trim((string) ($_POST['qris_merchant'] ?? ''));
 
-    /* Notifikasi WhatsApp operator (Fase 3). */
-    $f['notif_wa_aktif']    = empty($_POST['notif_wa_aktif']) ? 0 : 1;
-    $f['notif_wa_operator'] = trim((string) ($_POST['notif_wa_operator'] ?? ''));
+    /* Notifikasi WhatsApp operator & bendahara (Fase 3). */
+    $f['notif_wa_aktif']     = empty($_POST['notif_wa_aktif']) ? 0 : 1;
+    $f['notif_wa_operator']  = trim((string) ($_POST['notif_wa_operator'] ?? ''));
+    $f['notif_wa_bendahara'] = trim((string) ($_POST['notif_wa_bendahara'] ?? ''));
+    $nomorWaValid = function (string $daftar) {
+        foreach (preg_split('/[,;]+/', $daftar) as $noWa) {
+            $noWa = trim($noWa);
+            if ($noWa === '' || !preg_match('/^\+?[0-9]{6,16}$/', $noWa)) {
+                return false;
+            }
+        }
+        return true;
+    };
     if ($f['notif_wa_aktif']) {
-        if ($f['notif_wa_operator'] === '') {
-            $galat[] = 'Notifikasi WhatsApp aktif tetapi daftar nomor tujuan masih kosong.';
-        } else {
-            foreach (preg_split('/[,;]+/', $f['notif_wa_operator']) as $noWa) {
-                $noWa = trim($noWa);
-                if ($noWa === '' || !preg_match('/^\+?[0-9]{6,16}$/', $noWa)) {
-                    $galat[] = 'Format nomor WhatsApp operator tidak valid. Pisahkan beberapa nomor dengan koma.';
-                    break;
-                }
+        if ($f['notif_wa_operator'] === '' && $f['notif_wa_bendahara'] === '' && $f['kontak_wa_panitia'] === '') {
+            $galat[] = 'Notifikasi WhatsApp aktif tetapi tidak ada nomor tujuan — isi nomor WA Operator/Bendahara atau Kontak WhatsApp Panitia.';
+        }
+        foreach (['notif_wa_operator' => 'operator', 'notif_wa_bendahara' => 'bendahara'] as $kunciWa => $labelWa) {
+            if ($f[$kunciWa] !== '' && !$nomorWaValid($f[$kunciWa])) {
+                $galat[] = "Format nomor WhatsApp {$labelWa} tidak valid. Pisahkan beberapa nomor dengan koma.";
             }
         }
     }
@@ -589,7 +597,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     midtrans_server_key = ?, midtrans_client_key = ?, midtrans_sandbox = ?,
                     bayar_gateway_aktif = ?, bayar_transfer_aktif = ?, bayar_qris_aktif = ?,
                     qris_image_url = ?, qris_merchant = ?, kirim_akun_otomatis = ?,
-                    notif_wa_operator = ?, notif_wa_aktif = ?, notif_email = ?,
+                    notif_wa_operator = ?, notif_wa_bendahara = ?, notif_wa_aktif = ?, notif_email = ?,
                     syarat_ketentuan = ?, syarat_versi = ?
                   WHERE id = 1'
             );
@@ -639,6 +647,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $f['qris_merchant'] !== '' ? $f['qris_merchant'] : null,
                 $f['kirim_akun_otomatis'],
                 $f['notif_wa_operator'] !== '' ? $f['notif_wa_operator'] : null,
+                $f['notif_wa_bendahara'] !== '' ? $f['notif_wa_bendahara'] : null,
                 $f['notif_wa_aktif'],
                 $f['notif_email'] !== '' ? $f['notif_email'] : null,
                 $f['syarat_ketentuan'] !== '' ? $f['syarat_ketentuan'] : null,
@@ -1320,7 +1329,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <input type="checkbox" name="notif_wa_aktif" value="1" class="mt-1 w-4 h-4 accent-primary" <?= $f['notif_wa_aktif'] ? 'checked' : '' ?>>
             <span>
               <span class="text-sm font-semibold text-ink-900">Kirim Notifikasi via WhatsApp (Fonnte)</span>
-              <span class="block text-[13px] text-ink-500">Pemicu: bukti bayar masuk, pembayaran gateway lunas, submit berkas (berlaku setelah Fase 5).</span>
+              <span class="block text-[13px] text-ink-500">Pemicu: bukti bayar masuk, pembayaran gateway lunas, submit berkas (berlaku setelah Fase 5). Nomor di bawah hanya dipakai bila toggle ini aktif; kegagalan kirim tidak mengganggu proses utama.</span>
             </span>
           </label>
         </div>
@@ -1329,7 +1338,12 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <div>
             <label class="label" for="notif_wa_operator">Nomor WA Operator (dipisah koma)</label>
             <input id="notif_wa_operator" name="notif_wa_operator" type="text" class="input" placeholder="08123456789, 08987654321" value="<?= e($f['notif_wa_operator']) ?>">
-            <p class="hint">Wajib diisi bila toggle di atas aktif. Format: angka saja, boleh +.</p>
+            <p class="hint">Menerima semua tipe notifikasi. Format: angka saja, boleh +, pisahkan beberapa nomor dengan koma.</p>
+          </div>
+          <div>
+            <label class="label" for="notif_wa_bendahara">Nomor WA Bendahara (dipisah koma)</label>
+            <input id="notif_wa_bendahara" name="notif_wa_bendahara" type="text" class="input" placeholder="085183076136" value="<?= e($f['notif_wa_bendahara']) ?>">
+            <p class="hint">Menerima salinan khusus bukti pembayaran masuk supaya bendahara tahu ada transfer. Boleh kosong — fallback ke Kontak WhatsApp Panitia di bagian Informasi Sekolah.</p>
           </div>
           <div>
             <label class="label" for="notif_email">Email Notifikasi</label>

@@ -307,7 +307,7 @@ function pendaftar_by_pay_token($payToken)
     }
     $stmt = $db->prepare(
         'SELECT p.id, p.no_pendaftaran, p.nama_siswa, p.tahap,
-                b.id AS bayar_id, b.nominal, b.status AS bayar_status
+                b.id AS bayar_id, b.nominal, b.status AS bayar_status, b.catatan AS bayar_catatan
            FROM pendaftar p
       LEFT JOIN pembayaran b ON b.pendaftar_id = p.id AND b.jenis_pembayaran = "FORMULIR"
           WHERE p.pay_token_hash = SHA2(?, 256)

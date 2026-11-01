@@ -347,6 +347,7 @@ CREATE TABLE `pengaturan_sekolah` (
   `qris_merchant` varchar(100) DEFAULT NULL,
   `kirim_akun_otomatis` tinyint(1) NOT NULL DEFAULT 0,
   `notif_wa_operator` varchar(255) DEFAULT NULL,
+  `notif_wa_bendahara` varchar(255) DEFAULT NULL,
   `notif_wa_aktif` tinyint(1) NOT NULL DEFAULT 0,
   `notif_email` varchar(255) DEFAULT NULL,
   `hasil_diumumkan_pada` datetime DEFAULT NULL,

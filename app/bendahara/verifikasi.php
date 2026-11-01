@@ -63,6 +63,13 @@ if ($aksi === 'tolak') {
         $waInfo = !empty($hasil['wa_ok'])
             ? 'WA alasan terkirim ke orang tua.'
             : 'Catatan: ' . ($hasil['wa_pesan'] ?? 'WA tidak terkirim.');
+        /* Penolakan formulir merotasi token bayar — tautan lama mati, jadi
+         * bila WA gagal bendahara perlu salinan tautan baru untuk dikirim manual. */
+        if (!empty($hasil['tautan_unggah'])) {
+            $waInfo .= empty($hasil['wa_ok'])
+                ? ' Tautan unggah-ulang baru: ' . $hasil['tautan_unggah']
+                : ' Tautan unggah-ulang baru tersimpan (tautan lama mati).';
+        }
         flash('sukses', 'Pembayaran ' . $hasil['reg'] . ' ditolak. ' . $waInfo);
     }
     header('Location: ' . $balik);

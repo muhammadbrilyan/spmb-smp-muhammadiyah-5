@@ -197,6 +197,7 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         . "\nNama : {$siswa['nama_siswa']}"
         . "\nNo. Pendaftaran : {$siswa['no_pendaftaran']}"
         . "\nNominal : " . rupiah($nominal)
+        . "\nPeriksa: " . url_abs('app/bendahara/pembayaran.php')
     );
 
     flash('sukses', 'Bukti transfer terunggah. Status masih MENUNGGU VERIFIKASI sampai diperiksa bendahara.');
