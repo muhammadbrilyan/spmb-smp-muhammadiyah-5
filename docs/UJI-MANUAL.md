@@ -228,6 +228,21 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | M19 | Menerbitkan skema lama ke hosting | Wajib `mysql -u root < database/migrations/20261101_notif_wa_bendahara.sql` lebih dulu; tanpanya seluruh simpan Pengaturan Sistem batal (`1054 Unknown column 'notif_wa_bendahara'`) — terlihat sebagai GAGAL pada pemeriksaan 5 `tools/cek-proyek.php` |
 | M20 | Pembayaran selesai lewat gateway Midtrans (callback `PEMBAYARAN_GATEWAY_LUNAS` / `PEMBAYARAN_GATEWAY_MASUK`) saat **Nomor WA Operator** kosong | Nomor **WA Bendahara** tetap menerima salinan (pesan sudah berisi tautan `app/bendahara/pembayaran.php`) — dahulu tidak terkirim sama sekali karena rute bendahara hanya mengenali `BUKTI_BAYAR_MASUK` |
 
+## N. Kelola Jadwal Tes (`app/operator/jadwal.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| N1 | Operator → sidebar **SPMB → Kelola Jadwal** | 200; tanpa tabel inline-edit 9 kolom lagi — daftar baca-saja (kartu tanggal, nama, status, kode, tanggal·jam·metode·ruangan, peserta & kapasitas) + 3 chip ringkasan (Draft / Terjadwal / Selesai) |
+| N2 | Lihat di layar lebar apa pun, lalu perkecil jendela sampai ~500 px | **Tidak ada scrollbar horizontal**: `overflow-x-auto` dan `min-w-[960px]` sudah dihapus, tiap baris `flex-wrap` sehingga blok aksi turun ke baris berikut |
+| N3 | Tekan **Tambah Jadwal** di kanan atas | Modal `modal-jadwal` terbuka kosong dengan bawaan 08:00–10:00, Metode Offline, Status Draft, Kapasitas 0; judul "Tambah Jadwal Tes", sub "Kode jadwal dibuat otomatis setelah disimpan" |
+| N4 | Tekan **Ubah** pada baris TES-05 | Modal yang sama terisi persis data baris itu — termasuk `<select>` Metode & Status (app.js kini mengisi `SELECT` lewat `.value`, bukan `textContent`, supaya `<option>` tidak terhapus); sub berubah jadi "Kode TES-05 tetap dan tidak ikut berubah" |
+| N5 | Tekan **Ubah** dua kali berturut-turut pada baris yang sama, lalu pada baris lain | Opsi dropdown tetap 3 dan nilai ikut baris terakhir — pembuktian bahwa pengisian ulang modal idempoten |
+| N6 | Kosongkan Nama Kegiatan lalu simpan | Validasi server menolak; halaman dimuat ulang dengan banner merah **dan** modal terbuka lagi terisi kiriman terakhir (Judul "Ubah Jadwal Tes" bila asalnya dari Ubah, lengkap dengan kode jadwalnya) |
+| N7 | Simpan Ubah pada jadwal yang `peserta_dijadwalkan`-nya terisi dari halaman Peserta Ujian | Jumlah peserta tidak hilang (field disembunyikan sebagai `<input type="hidden">` yang nilainya ikut terbawa). Uji pembanding: POST `ubah` tanpa field itu menulis ulang jadi 0 — inilah yang dicegah |
+| N8 | Tekan ikon WA pada satu baris | `confirm()` muncul, POST `kirim_notifikasi` jalan, flash hasil, tetap di halaman yang sama. Pesan WA memakai **Ruangan** sebagai Lokasi bila kolom `lokasi` kosong (dahulu selalu "Sekolah" walau operator sudah mengisi ruangan) |
+| N9 | Tekan ikon Hapus pada jadwal yang dipakai `seleksi` | Flash error "Jadwal tidak bisa dihapus karena sudah dipakai seleksi." — data tetap ada |
+| N10 | hapus semua jadwal (daftar kosong) | Empty state: ikon `event_busy` + "Belum ada jadwal tes" + petunjuk menekan **Tambah Jadwal**; chip ringkasan menampilkan 0/0/0 |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |

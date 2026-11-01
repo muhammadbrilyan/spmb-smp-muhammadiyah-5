@@ -97,7 +97,7 @@ function jadwal_tambah($nama, $tgl, $jamMulai, $jamSelesai, $mode, $peserta, $st
 function jadwal_kirim_notifikasi($jadwal_id)
 {
     $j = q_all(
-        'SELECT kode, nama_kegiatan, tanggal, jam_mulai, jam_selesai, mode, lokasi, peserta_dijadwalkan
+        'SELECT kode, nama_kegiatan, tanggal, jam_mulai, jam_selesai, mode, lokasi, ruangan, peserta_dijadwalkan
            FROM jadwal_tes WHERE id = ? LIMIT 1',
         [$jadwal_id]
     );
@@ -119,7 +119,12 @@ function jadwal_kirim_notifikasi($jadwal_id)
         return ['ok' => 0, 'gagal' => 0, 'detail' => ['Tidak ada siswa terjadwal dengan nomor WA orang tua.']];
     }
 
-    $lokasi = $j['lokasi'] ?: ($j['mode'] === 'VIDEO_CALL' ? 'Video call (tautan menyusul)' : 'Sekolah');
+    /* Operator mengisi "Ruangan" di halaman Kelola Jadwal; kolom "lokasi" hanya
+     * dipakai data lama, jadi jadikan ruangan sebagai cadangannya. */
+    $lokasi = trim((string) ($j['lokasi'] ?? '')) ?: trim((string) ($j['ruangan'] ?? ''));
+    if ($lokasi === '') {
+        $lokasi = $j['mode'] === 'VIDEO_CALL' ? 'Video call (tautan menyusul)' : 'Sekolah';
+    }
     $metode = ['OFFLINE' => 'Offline di sekolah', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video call'][$j['mode'] ?? 'OFFLINE'] ?? $j['mode'];
     $tglIndo = date('d/m/Y', strtotime($j['tanggal']));
 

@@ -44,7 +44,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $r = jadwal_kirim_notifikasi($idJ);
             if ($r['ok'] > 0) {
                 flash('sukses', $r['ok'] . ' notifikasi WA jadwal terkirim.'
-                    . ($r['gagal'] > 0 ? ' ' . $r['gagal'] . ' gagal "” ' . ($r['detail'][0] ?? '') : ''));
+                    . ($r['gagal'] > 0 ? ' ' . $r['gagal'] . ' gagal — ' . ($r['detail'][0] ?? '') : ''));
             } else {
                 flash('error', $r['detail'][0] ?? 'Tidak ada penerima atau pengiriman gagal.');
             }
@@ -106,6 +106,25 @@ $labelMode = ['OFFLINE' => 'Offline', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Vid
 $labelStat = ['DRAFT' => 'Draft', 'TERJADWAL' => 'Terjadwal', 'SELESAI' => 'Selesai'];
 $toneStat  = ['DRAFT' => 'amber', 'TERJADWAL' => 'blue', 'SELESAI' => 'green'];
 
+$hitungStat = ['DRAFT' => 0, 'TERJADWAL' => 0, 'SELESAI' => 0];
+foreach ($jadwalList as $j) {
+    $kStat = $j['status'] ?? 'DRAFT';
+    if (isset($hitungStat[$kStat])) {
+        $hitungStat[$kStat]++;
+    }
+}
+
+/* Simpanan gagal ditampilkan lagi di modal — cari kode jadwalnya untuk judul. */
+$kodeGagal = '';
+if ($galat) {
+    foreach ($jadwalList as $j) {
+        if ((string) $j['id'] === (string) ($_POST['id'] ?? '')) {
+            $kodeGagal = $j['kode'];
+            break;
+        }
+    }
+}
+
 require_once __DIR__ . '/../../includes/partials/head.php';
 $activeMenu = 'jadwal';
 require __DIR__ . '/../../includes/partials/sidebar.php';
@@ -115,14 +134,26 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 ?>
 
 <div class="lg:pl-[264px]">
-  <main class="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1200px]">
+  <main class="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
 
-    <div class="flex items-center gap-2 flex-wrap">
-      <!-- Info jumlah jadwal -->
-      <span class="badge badge-gray"><?= count($jadwalList) ?> jadwal</span>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <h1 class="text-2xl font-bold tracking-tight text-ink-900">Kelola Jadwal Tes</h1>
+        <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
+          Jadwal tes CBT, wawancara BTQ, dan seleksi minat bakat. Kode dibuat otomatis (TES-01, TES-02, dan seterusnya)
+          saat jadwal baru disimpan.
+        </p>
+      </div>
+      <button type="button" class="btn btn-primary shadow-drop shrink-0"
+              data-modal-open="modal-jadwal"
+              data-md-aksi="tambah" data-md-id=""
+              data-md-nama="" data-md-tanggal=""
+              data-md-jam1="08:00" data-md-jam2="10:00"
+              data-md-mode="OFFLINE" data-md-status="DRAFT"
+              data-md-ruangan="" data-md-kapasitas="0" data-md-peserta="0">
+        <?= icon('add') ?> Tambah Jadwal
+      </button>
     </div>
-    <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Kelola Jadwal Tes</h1>
-    <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">Jadwal tes CBT, wawancara BTQ, dan seleksi minat bakat. Kode jadwal dibuat otomatis (TES-01, TES-02, "¦).</p>
 
     <?php if ($galat): ?>
       <div class="mt-5 rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-sm text-[#991B1B]" role="alert">
@@ -133,155 +164,250 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </div>
     <?php endif; ?>
 
-    <!-- Tambah -->
-    <section class="mt-6 card p-5 sm:p-6">
-      <h2 class="font-bold text-ink-900">Tambah Jadwal Tes</h2>
-      <form method="post" action="<?= url('app/operator/jadwal.php') ?>" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-8 items-end">
-        <?= csrf_field() ?>
-        <input type="hidden" name="aksi" value="tambah">
-        <div class="lg:col-span-2">
-          <label class="label" for="nama_kegiatan">Nama Kegiatan <span class="text-red-600">*</span></label>
-          <input id="nama_kegiatan" name="nama_kegiatan" class="input" placeholder="Tes CBT Gelombang 1" required>
+    <!-- Ringkasan: satu angka per status -->
+    <div class="mt-5 grid gap-3 grid-cols-3">
+      <?php foreach ($labelStat as $k => $lab): ?>
+        <div class="rounded-xl border border-line bg-white px-3 py-2.5">
+          <p class="flex items-center gap-1.5 text-[12px] text-ink-500"><?= dot($toneStat[$k]) ?> <?= e($lab) ?></p>
+          <p class="mt-0.5 text-2xl font-bold leading-tight text-ink-900"><?= (int) $hitungStat[$k] ?></p>
         </div>
-        <div>
-          <label class="label" for="tanggal">Tanggal <span class="text-red-600">*</span></label>
-          <input id="tanggal" name="tanggal" type="date" class="input" required>
-        </div>
-        <div>
-          <label class="label" for="jam_mulai">Jam Mulai</label>
-          <input id="jam_mulai" name="jam_mulai" type="time" class="input" value="08:00" required>
-        </div>
-        <div>
-          <label class="label" for="jam_selesai">Jam Selesai</label>
-          <input id="jam_selesai" name="jam_selesai" type="time" class="input" value="10:00" required>
-        </div>
-        <div>
-          <label class="label" for="mode">Metode</label>
-          <select id="mode" name="mode" class="select">
-            <option value="OFFLINE">Offline</option>
-            <option value="DARING">Daring</option>
-            <option value="VIDEO_CALL">Video Call</option>
-          </select>
-        </div>
-        <div>
-          <label class="label" for="ruangan">Ruangan</label>
-          <input id="ruangan" name="ruangan" class="input" placeholder="Lab Komputer 1" value="">
-        </div>
-        <div class="flex items-end gap-3">
-          <div class="flex-1">
-            <label class="label" for="kapasitas">Kapasitas</label>
-            <input id="kapasitas" name="kapasitas" type="number" min="0" max="1000" value="0" class="input" title="0 = tanpa batas">
-          </div>
-          <button type="submit" class="btn btn-primary shadow-drop shrink-0"><?= icon('add') ?> Tambah</button>
-        </div>
-        <input type="hidden" name="status" value="DRAFT">
-        <input type="hidden" name="peserta_dijadwalkan" value="0">
-      </form>
-    </section>
+      <?php endforeach; ?>
+    </div>
 
-    <!-- Daftar -->
-    <section class="mt-6 card p-5 sm:p-6">
-      <h2 class="font-bold text-ink-900">Daftar Jadwal</h2>
-      <div class="mt-4 overflow-x-auto">
-        <table class="w-full min-w-[960px]">
-          <thead class="thead">
-            <tr>
-              <th class="th">Kode</th>
-              <th class="th">Nama Kegiatan</th>
-              <th class="th">Tanggal</th>
-              <th class="th">Jam</th>
-              <th class="th">Metode</th>
-              <th class="th">Ruangan / Kapasitas</th>
-              <th class="th text-right">Peserta</th>
-              <th class="th">Status</th>
-              <th class="th text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php $noBaris = 0; ?>
-            <?php foreach ($jadwalList as $j): ?>
-              <?php
-              /* [PERBAIKAN] <form> TIDAK BOLEH jadi anak <tr> — parser HTML akan
-               * mengosongkan form-nya dan membuang field ke luar, sehingga tombol
-               * Simpan/Kirim WA/Hapus tidak punya form owner (klik = tidak terkirim).
-               * Kini ketiga form berada di dalam <td> aksi, sedangkan input yang
-               * tersebar di sel lain memakai atribut form="id" (HTML5). */
-              $noBaris++;
-              $fEdit = 'jf-' . $noBaris;
-              $fWa   = 'jw-' . $noBaris;
-              $fHapus = 'jh-' . $noBaris;
-              ?>
-              <tr class="tr-hover align-top">
-                <td class="td font-mono text-[13px]"><?= e($j['kode']) ?></td>
-                <td class="td"><input form="<?= e($fEdit) ?>" name="nama_kegiatan" value="<?= e($j['nama_kegiatan']) ?>" class="input h-8 w-full min-w-[180px]" required></td>
-                <td class="td"><input form="<?= e($fEdit) ?>" name="tanggal" type="date" value="<?= e($j['tanggal']) ?>" class="input h-8 w-40" required></td>
-                <td class="td whitespace-nowrap">
-                  <div class="flex items-center gap-1">
-                    <input form="<?= e($fEdit) ?>" name="jam_mulai" type="time" value="<?= e(substr($j['jam_mulai'], 0, 5)) ?>" class="input h-8 w-24" required>
-                    <span class="text-ink-400">–</span>
-                    <input form="<?= e($fEdit) ?>" name="jam_selesai" type="time" value="<?= e(substr($j['jam_selesai'], 0, 5)) ?>" class="input h-8 w-24" required>
-                  </div>
-                </td>
-                <td class="td">
-                  <select form="<?= e($fEdit) ?>" name="mode" class="select h-8 w-28">
-                    <option value="OFFLINE" <?= $j['mode'] === 'OFFLINE' ? 'selected' : '' ?>>Offline</option>
-                    <option value="DARING" <?= $j['mode'] === 'DARING' ? 'selected' : '' ?>>Daring</option>
-                    <option value="VIDEO_CALL" <?= $j['mode'] === 'VIDEO_CALL' ? 'selected' : '' ?>>Video Call</option>
-                  </select>
-                </td>
-                <td class="td whitespace-nowrap">
-                  <input form="<?= e($fEdit) ?>" name="ruangan" value="<?= e($j['ruangan'] ?? '') ?>" placeholder="Ruangan" class="input h-8 w-32">
-                  <input form="<?= e($fEdit) ?>" name="kapasitas" type="number" min="0" max="1000" value="<?= (int) ($j['kapasitas'] ?? 0) ?>" class="input h-8 w-20 mt-1" title="0 = tanpa batas">
-                </td>
-                <td class="td text-right"><input form="<?= e($fEdit) ?>" name="peserta_dijadwalkan" type="number" min="0" max="1000" value="<?= (int) $j['peserta_dijadwalkan'] ?>" class="input h-8 w-20 text-right ml-auto"></td>
-                <td class="td">
-                  <select form="<?= e($fEdit) ?>" name="status" class="select h-8 w-32">
-                    <?php foreach ($labelStat as $k => $lab): ?>
-                      <option value="<?= $k ?>" <?= $j['status'] === $k ? 'selected' : '' ?>><?= $lab ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </td>
-                <td class="td text-right whitespace-nowrap">
-                  <div class="flex items-center justify-end gap-1.5">
-                    <form id="<?= e($fEdit) ?>" method="post" action="<?= url('app/operator/jadwal.php') ?>">
-                      <?= csrf_field() ?>
-                      <input type="hidden" name="aksi" value="ubah">
-                      <input type="hidden" name="id" value="<?= e($j['id']) ?>">
-                      <button type="submit" class="btn btn-sm btn-outline"><?= icon('save', 'text-[15px]') ?> Simpan</button>
-                    </form>
-                    <form id="<?= e($fWa) ?>" method="post" action="<?= url('app/operator/jadwal.php') ?>"
-                          onsubmit="return confirm('Kirim notifikasi WA jadwal <?= e($j['kode']) ?> ke semua wali siswa terjadwal?');">
-                      <?= csrf_field() ?>
-                      <input type="hidden" name="aksi" value="kirim_notifikasi">
-                      <input type="hidden" name="id" value="<?= e($j['id']) ?>">
-                      <button type="submit" class="icon-box border border-line text-ink-500 hover:text-emerald-600 hover:border-emerald-300" aria-label="Kirim Notifikasi WA"><?= icon('chat', 'text-[17px]') ?></button>
-                    </form>
-                    <form id="<?= e($fHapus) ?>" method="post" action="<?= url('app/operator/jadwal.php') ?>" onsubmit="return confirm('Hapus jadwal <?= e($j['kode']) ?>?');">
-                      <?= csrf_field() ?>
-                      <input type="hidden" name="aksi" value="hapus">
-                      <input type="hidden" name="id" value="<?= e($j['id']) ?>">
-                      <button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus"><?= icon('delete', 'text-[17px]') ?></button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-            <?php if (!$jadwalList): ?>
-              <tr><td colspan="9" class="td text-center text-ink-400">Belum ada jadwal. Tambahkan lewat form di atas.</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
+    <!-- Daftar jadwal -->
+    <section class="mt-6 card overflow-hidden">
+      <div class="px-5 pt-5 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="font-bold text-ink-900">Daftar Jadwal <span class="text-ink-400 font-normal">(<?= count($jadwalList) ?>)</span></h2>
+        <p class="text-[12px] text-ink-500">Urut dari tanggal terdekat</p>
       </div>
-      <p class="hint mt-3">Jadwal yang sudah dipakai pada data seleksi tidak bisa dihapus.</p>
+
+      <?php if (!$jadwalList): ?>
+        <div class="px-5 py-10 text-center">
+          <p class="text-ink-400"><?= icon('event_busy', 'text-[28px]') ?></p>
+          <p class="mt-2 text-sm font-semibold text-ink-700">Belum ada jadwal tes</p>
+          <p class="mt-1 text-[13px] text-ink-500">Tekan <strong>Tambah Jadwal</strong> di atas untuk membuat jadwal pertama.</p>
+        </div>
+      <?php else: ?>
+        <ul class="mt-2 divide-y divide-line-soft">
+          <?php foreach ($jadwalList as $j): ?>
+            <?php
+            /* "3 Nov" dari bulan_pendek() dipecah jadi angka + nama bulan. */
+            $bagiTgl = explode(' ', bulan_pendek($j['tanggal']));
+            $ruanganJ = trim((string) ($j['ruangan'] ?? ''));
+            $kapJ     = (int) ($j['kapasitas'] ?? 0);
+            $pesJ     = (int) ($j['peserta_dijadwalkan'] ?? 0);
+            ?>
+            <li class="px-5 py-4 flex flex-wrap items-start gap-3 hover:bg-canvas">
+              <div class="w-12 shrink-0 rounded-xl border border-line bg-canvas py-2 text-center">
+                <p class="text-[16px] font-bold leading-tight text-ink-900"><?= e($bagiTgl[0] ?? '') ?></p>
+                <p class="text-[11px] leading-tight text-ink-500"><?= e($bagiTgl[1] ?? '') ?></p>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="font-semibold leading-snug text-ink-900"><?= e($j['nama_kegiatan']) ?></p>
+                  <?= badge($labelStat[$j['status']] ?? $j['status'], $toneStat[$j['status']] ?? 'gray') ?>
+                  <span class="badge font-mono text-[11px] bg-canvas text-ink-500 border-line"><?= e($j['kode']) ?></span>
+                </div>
+                <p class="mt-1 text-[13px] leading-snug text-ink-500">
+                  <?= e(bulan($j['tanggal'])) ?> · <?= e(substr($j['jam_mulai'], 0, 5)) ?>–<?= e(substr($j['jam_selesai'], 0, 5)) ?> WIB ·
+                  <?= e($labelMode[$j['mode']] ?? $j['mode']) ?><?php if ($ruanganJ !== ''): ?> · <?= e($ruanganJ) ?><?php endif; ?>
+                </p>
+                <p class="mt-1 text-[12px] leading-snug text-ink-500">
+                  <?= icon('group', 'text-[14px] align-middle') ?> <?= $pesJ ?> peserta terjadwal<?= $kapJ > 0 ? ' · kapasitas ' . $kapJ : ' · kapasitas bebas' ?>
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0 ml-auto">
+                <button type="button" class="btn btn-sm btn-outline"
+                        data-modal-open="modal-jadwal"
+                        data-md-aksi="ubah"
+                        data-md-id="<?= e($j['id']) ?>"
+                        data-md-kode="<?= e($j['kode']) ?>"
+                        data-md-nama="<?= e($j['nama_kegiatan']) ?>"
+                        data-md-tanggal="<?= e($j['tanggal']) ?>"
+                        data-md-jam1="<?= e(substr($j['jam_mulai'], 0, 5)) ?>"
+                        data-md-jam2="<?= e(substr($j['jam_selesai'], 0, 5)) ?>"
+                        data-md-mode="<?= e($j['mode']) ?>"
+                        data-md-status="<?= e($j['status']) ?>"
+                        data-md-ruangan="<?= e($ruanganJ) ?>"
+                        data-md-kapasitas="<?= $kapJ ?>"
+                        data-md-peserta="<?= $pesJ ?>">
+                  <?= icon('edit', 'text-[15px]') ?> Ubah
+                </button>
+                <form method="post" action="<?= url('app/operator/jadwal.php') ?>"
+                      onsubmit="return confirm('Kirim notifikasi WA jadwal <?= e($j['kode']) ?> ke semua wali siswa terjadwal?');">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="aksi" value="kirim_notifikasi">
+                  <input type="hidden" name="id" value="<?= e($j['id']) ?>">
+                  <button type="submit" class="icon-box border border-line text-ink-500 hover:text-emerald-600 hover:border-emerald-300" aria-label="Kirim Notifikasi WA" title="Kirim notifikasi WA ke wali siswa terjadwal"><?= icon('chat', 'text-[17px]') ?></button>
+                </form>
+                <form method="post" action="<?= url('app/operator/jadwal.php') ?>" onsubmit="return confirm('Hapus jadwal <?= e($j['kode']) ?>?');">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="aksi" value="hapus">
+                  <input type="hidden" name="id" value="<?= e($j['id']) ?>">
+                  <button type="submit" class="icon-box border border-line text-ink-500 hover:text-red-600 hover:border-red-300" aria-label="Hapus" title="Hapus jadwal"><?= icon('delete', 'text-[17px]') ?></button>
+                </form>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      <?php endif; ?>
+
+      <div class="border-t border-line bg-canvas px-5 py-3 space-y-1">
+        <p class="text-[12px] text-ink-500 flex gap-2"><?= icon('info', 'text-[16px] shrink-0') ?>
+          <span>Jumlah peserta terisi otomatis dari halaman <a class="underline" href="<?= url('app/operator/peserta-ujian.php') ?>">Peserta Ujian</a>;
+          menyimpan jadwal dari sini tidak mengubahnya.</span></p>
+        <p class="text-[12px] text-ink-500 flex gap-2"><?= icon('shield_person', 'text-[16px] shrink-0') ?>
+          <span>Jadwal yang sudah dipakai pada data seleksi tidak bisa dihapus.</span></p>
+      </div>
     </section>
 
   </main>
 </div>
 
+<!-- Modal tambah / ubah (satu modal untuk keduanya) -->
+<div id="modal-jadwal" class="modal-root hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true">
+  <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px] animate-fade" data-modal-close></div>
+  <div class="relative h-full flex items-center justify-center p-4 sm:p-6">
+    <form method="post" action="<?= url('app/operator/jadwal.php') ?>"
+          class="animate-pop flex flex-col w-full max-w-lg bg-white rounded-2xl border border-line-mid shadow-modal overflow-hidden"
+          style="max-height:calc(100vh - 2rem)">
+      <?= csrf_field() ?>
+      <input type="hidden" name="aksi" data-md-fill="aksi" value="tambah">
+      <input type="hidden" name="id" data-md-fill="id" value="">
+      <input type="hidden" name="peserta_dijadwalkan" data-md-fill="peserta" value="0">
+
+      <div class="flex items-start justify-between gap-4 px-5 py-4 border-b border-line shrink-0">
+        <div>
+          <h3 id="jd-judul" class="font-bold text-ink-900 text-lg leading-tight">Tambah Jadwal Tes</h3>
+          <p id="jd-sub" class="text-[13px] text-ink-500">Kode jadwal dibuat otomatis setelah disimpan.</p>
+        </div>
+        <button type="button" class="icon-box border border-line text-ink-500 hover:text-red-600 shrink-0" data-modal-close aria-label="Tutup"><?= icon('close') ?></button>
+      </div>
+
+      <div class="p-5 space-y-4 overflow-y-auto" style="min-height:0">
+        <div>
+          <label class="label" for="jd-nama">Nama Kegiatan <span class="text-red-600">*</span></label>
+          <input id="jd-nama" name="nama_kegiatan" type="text" class="input" data-md-fill="nama"
+                 placeholder="Tes CBT Gelombang 1" maxlength="120" required>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="label" for="jd-tanggal">Tanggal <span class="text-red-600">*</span></label>
+            <input id="jd-tanggal" name="tanggal" type="date" class="input" data-md-fill="tanggal" required>
+          </div>
+          <div>
+            <label class="label" for="jd-status">Status</label>
+            <select id="jd-status" name="status" class="select" data-md-fill="status">
+              <?php foreach ($labelStat as $k => $lab): ?>
+                <option value="<?= e($k) ?>"><?= e($lab) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="label" for="jd-jam1">Jam Mulai <span class="text-red-600">*</span></label>
+            <input id="jd-jam1" name="jam_mulai" type="time" class="input" data-md-fill="jam1" value="08:00" required>
+          </div>
+          <div>
+            <label class="label" for="jd-jam2">Jam Selesai <span class="text-red-600">*</span></label>
+            <input id="jd-jam2" name="jam_selesai" type="time" class="input" data-md-fill="jam2" value="10:00" required>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="label" for="jd-mode">Metode</label>
+            <select id="jd-mode" name="mode" class="select" data-md-fill="mode">
+              <?php foreach ($labelMode as $k => $lab): ?>
+                <option value="<?= e($k) ?>"><?= e($lab) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="jd-ruangan">Ruangan</label>
+            <input id="jd-ruangan" name="ruangan" type="text" class="input" data-md-fill="ruangan"
+                   placeholder="Lab Komputer 1" maxlength="100">
+          </div>
+        </div>
+        <div>
+          <label class="label" for="jd-kapasitas">Kapasitas</label>
+          <input id="jd-kapasitas" name="kapasitas" type="number" class="input" data-md-fill="kapasitas"
+                 value="0" min="0" max="1000">
+          <p class="hint">0 = tanpa batas peserta.</p>
+        </div>
+      </div>
+
+      <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end shrink-0">
+        <button type="button" class="btn btn-outline" data-modal-close>Batal</button>
+        <button type="submit" class="btn btn-primary"><?= icon('save') ?> Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="toast-host" class="fixed bottom-5 right-5 z-[70] flex flex-col gap-2 items-end no-print"></div>
-<script src="<?= asset('assets/js/app.js') ?>"></script>
 <script>
   window.APP_FLASH = <?= json_encode($_SESSION['flash'] ?? null, JSON_UNESCAPED_UNICODE) ?>;
+</script>
+<?php if ($galat): ?>
+<script>
+/* Simpanan gagal: modal dibuka kembali berisi kiriman terakhir supaya operator
+ * tidak perlu mencari tombol Ubah-nya lagi. */
+window.JADWAL_ISI = <?= json_encode([
+    'aksi'    => $_POST['aksi'] ?? 'tambah',
+    'id'      => (string) ($_POST['id'] ?? ''),
+    'kode'    => $kodeGagal,
+    'nama'    => $_POST['nama_kegiatan'] ?? '',
+    'tanggal' => $_POST['tanggal'] ?? '',
+    'jam1'    => $_POST['jam_mulai'] ?? '',
+    'jam2'    => $_POST['jam_selesai'] ?? '',
+    'mode'    => $_POST['mode'] ?? 'OFFLINE',
+    'status'  => $_POST['status'] ?? 'DRAFT',
+    'ruangan' => $_POST['ruangan'] ?? '',
+    'kapasitas' => $_POST['kapasitas'] ?? '0',
+    'peserta' => $_POST['peserta_dijadwalkan'] ?? '0',
+], JSON_UNESCAPED_UNICODE) ?>;
+</script>
+<?php endif; ?>
+<script src="<?= asset('assets/js/app.js') ?>"></script>
+<script>
+/* Satu modal untuk Tambah dan Ubah: selain mengisi data-md-*, script ini
+ * memasang judul & subjudul modal dan membuka ulang isian saat validasi gagal. */
+(function () {
+  var modal = document.getElementById('modal-jadwal');
+  if (!modal) return;
+  var kunci = ['id', 'nama', 'tanggal', 'jam1', 'jam2', 'mode', 'status', 'ruangan', 'kapasitas', 'peserta', 'aksi'];
+
+  function isi(data) {
+    kunci.forEach(function (k) {
+      var el = modal.querySelector('[data-md-fill="' + k + '"]');
+      if (el) el.value = data[k] != null ? String(data[k]) : '';
+    });
+    var ubah = data.aksi === 'ubah';
+    document.getElementById('jd-judul').textContent = ubah ? 'Ubah Jadwal Tes' : 'Tambah Jadwal Tes';
+    document.getElementById('jd-sub').textContent = ubah
+      ? 'Kode ' + (data.kode || '—') + ' tetap dan tidak ikut berubah.'
+      : 'Kode jadwal dibuat otomatis setelah disimpan.';
+  }
+
+  document.querySelectorAll('[data-modal-open="modal-jadwal"]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var data = {};
+      kunci.concat(['kode']).forEach(function (k) {
+        data[k] = btn.getAttribute('data-md-' + k) || '';
+      });
+      isi(data);
+    });
+  });
+
+  if (window.JADWAL_ISI) {
+    isi(window.JADWAL_ISI);
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  }
+})();
 </script>
 </body>
 </html>

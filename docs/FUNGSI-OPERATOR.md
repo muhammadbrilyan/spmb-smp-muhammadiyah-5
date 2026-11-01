@@ -97,10 +97,12 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 
 | # | Fungsi | Status |
 |---|---|---|
-| 1 | Tambah jadwal tes | ✅ |
-| 2 | Edit inline (nama, tanggal, jam, mode, ruangan, kapasitas, status) | ✅ *diperbaiki* — form baris sempat kosong sehingga Simpan = nihil |
-| 3 | Kirim notifikasi WA jadwal ke wali | ✅ *diperbaiki* — sama |
-| 4 | Hapus jadwal (dijaga bila sudah dipakai seleksi) | ✅ *diperbaiki* — sama |
+| 1 | Tambah jadwal tes | ✅ *dirombak* — tidak lagi form 8 kolom di atas daftar, tapi satu modal bersama |
+| 2 | Ubah jadwal lewat modal (nama, tanggal, jam, mode, ruangan, kapasitas, status) | ✅ *dirombak* — dahulu inline-edit 9 kolom dengan `min-w-[960px]`; scrollbar samping & jumlah peserta mudah terhapus dari simpan |
+| 3 | Jumlah peserta & status tersinkron dari Peserta Ujian | ✅ nilai ikut terbawa saat menyimpan (field tersembunyi), tidak ditimpa jadi 0 |
+| 4 | Kirim notifikasi WA jadwal ke wali | ✅ lokasi pada pesan kini memakai **Ruangan** bila kolom `lokasi` kosong |
+| 5 | Hapus jadwal (dijaga bila sudah dipakai seleksi) | ✅ |
+| 6 | Ringkasan jumlah jadwal per status (Draft / Terjadwal / Selesai) | ✅ |
 
 ### 7. Peserta Ujian — `app/operator/peserta-ujian.php`
 

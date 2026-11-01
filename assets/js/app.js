@@ -95,7 +95,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const kunci = attr.name.slice('data-md-'.length);
         if (!kunci) return;
         document.querySelectorAll('[data-md-fill="' + kunci + '"]').forEach(function (target) {
-          if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          /* SELECT ikut memakai .value — bila tidak, textContent di bawah akan
+           * menghapus seluruh <option>-nya dan nilai tidak pernah terpasang. */
+          if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
             target.value = attr.value;
           } else {
             target.textContent = attr.value;
