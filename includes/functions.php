@@ -34,10 +34,18 @@ function url_abs($path = '')
     return $base . '/' . ltrim((string) $path, '/');
 }
 
-/** Bangun path asset (css/js/img). */
+/**
+ * Bangun path asset (css/js/img).
+ * Versi dari filemtime ikut ditempel supaya browser mengambil berkas baru
+ * begitu CSS/JS berubah — tanpa itu pengguna lama melihat tampilan/perilaku
+ * lama (dan harus hard reload) setiap kali aset diperbarui.
+ */
 function asset($path)
 {
-    return url($path);
+    $path = ltrim((string) $path, '/');
+    $file = dirname(__DIR__) . '/' . $path;
+    $ver  = is_file($file) ? (int) @filemtime($file) : 0;
+    return url($path) . ($ver ? '?v=' . $ver : '');
 }
 
 /** Format rupiah: 200000 -> Rp 200.000 */

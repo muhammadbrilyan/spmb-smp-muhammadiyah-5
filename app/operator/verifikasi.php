@@ -790,7 +790,7 @@ $flash = flash();
 <?php if ($flash): ?>
 <script>window.APP_FLASH = <?= json_encode(['tipe' => $flash['tipe'], 'pesan' => $flash['pesan']], JSON_UNESCAPED_UNICODE) ?>;</script>
 <?php endif; ?>
-<script src="<?= asset('assets/js/app.js') ?>?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/js/app.js') ?: 1) ?>"></script>
+<script src="<?= asset('assets/js/app.js') ?>"></script>
 <?php require __DIR__ . '/../../includes/partials/pratinjau-dokumen.php'; ?>
 </body>
 </html>

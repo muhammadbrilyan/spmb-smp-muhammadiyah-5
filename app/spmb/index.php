@@ -480,7 +480,7 @@ if (strpos($waPanitia, '0') === 0) {
 <?php require_once __DIR__ . '/../../includes/partials/footer-public.php'; ?>
 
 <div id="toast-host" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 items-end no-print"></div>
-<script src="<?= asset('assets/js/app.js') ?>?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/js/app.js') ?: 1) ?>"></script>
+<script src="<?= asset('assets/js/app.js') ?>"></script>
 <script>
 /* Fungsi toggle dark/light mode — dipanggil dari tombol di header landing. */
 function toggleTema() {

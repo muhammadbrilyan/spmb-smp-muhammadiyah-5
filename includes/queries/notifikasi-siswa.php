@@ -166,6 +166,7 @@ function notif_siswa_label($tipe)
         'DATA_DITOLAK'          => ['Data Perlu Perbaikan', 'red', 'edit_note'],
         'KOREKSI_DATA'          => ['Koreksi Data', 'blue', 'edit_note'],
         'HASIL_SELEKSI'         => ['Hasil Seleksi', 'blue', 'emoji_events'],
+        'JADWAL_UJIAN'          => ['Jadwal Tes', 'blue', 'event'],
         'PENGUMUMAN_UMUM'       => ['Pengumuman Panitia', 'blue', 'campaign'],
         'ANGSURAN_JATUH_TEMPO'  => ['Jatuh Tempo Angsuran', 'amber', 'event_busy'],
     ];

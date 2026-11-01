@@ -53,6 +53,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         exit;
     }
 
+    if ($aksi === 'umumkan_semua') {
+        $r = jadwal_umumkan_semua();
+        if ($r['jadwal'] === 0) {
+            flash('error', 'Belum ada jadwal berstatus Terjadwal yang bisa diumumkan.');
+        } elseif ($r['penerima'] === 0) {
+            flash('error', 'Belum ada pendaftar terjadwal dengan nomor WhatsApp orang tua.');
+        } else {
+            $pesan = $r['ok'] . ' wali siswa menerima satu pesan berisi ' . $r['jadwal'] . ' jadwal'
+                . ($r['in_app'] > 0 ? '. ' . $r['in_app'] . ' notifikasi portal dibuat' : '.');
+            if ($r['lewati'] > 0) {
+                $pesan .= ' ' . $r['lewati'] . ' penerima sudah pernah menerima susunan jadwal ini.';
+            }
+            if ($r['gagal'] > 0) {
+                $pesan .= ' ' . $r['gagal'] . ' gagal — ' . ($r['detail'][0] ?? '');
+            }
+            flash($r['ok'] > 0 || $r['lewati'] > 0 ? 'sukses' : 'error', $pesan);
+        }
+        header('Location: ' . url('app/operator/jadwal.php'));
+        exit;
+    }
+
     $id      = trim((string) ($_POST['id'] ?? ''));
     $nama    = trim((string) ($_POST['nama_kegiatan'] ?? ''));
     $tgl     = trim((string) ($_POST['tanggal'] ?? ''));
@@ -114,6 +135,11 @@ foreach ($jadwalList as $j) {
     }
 }
 
+/* Bahan pengumuman gabungan: semua jadwal Terjadwal + jumlah penerima WA. */
+$jadwalTerbit   = jadwal_terjadwal();
+$jumlahPenerima = count(jadwal_penerima_pengumuman());
+$contohPesan    = $jadwalTerbit ? jadwal_pesan_pengumuman('Nama Siswa', 'REG-2026-0001', $jadwalTerbit) : '';
+
 /* Simpanan gagal ditampilkan lagi di modal — cari kode jadwalnya untuk judul. */
 $kodeGagal = '';
 if ($galat) {
@@ -173,6 +199,43 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
       <?php endforeach; ?>
     </div>
+
+    <!-- Umumkan sekali: satu pesan berisi seluruh jadwal Terjadwal -->
+    <section class="mt-5 rounded-2xl border border-line bg-white p-5">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0 max-w-2xl">
+          <h2 class="flex items-center gap-2 font-bold text-ink-900">
+            <?= icon('campaign', 'text-[19px] text-emerald-800') ?> Umumkan Jadwal ke Wali Siswa
+          </h2>
+          <p class="mt-1.5 text-[13px] leading-relaxed text-ink-500">
+            Cukup sekali kirim. Setiap pendaftar yang sudah dijadwalkan menerima <strong>satu</strong> pesan
+            WhatsApp berisi <strong>seluruh</strong> jadwal berstatus Terjadwal, dan satu notifikasi muncul
+            di portal siswa.
+          </p>
+          <p class="mt-2.5 flex flex-wrap items-center gap-3 text-[12px] text-ink-500">
+            <span><?= icon('event_note', 'text-[15px] align-middle') ?> <?= count($jadwalTerbit) ?> jadwal terjadwal</span>
+            <span><?= icon('group', 'text-[15px] align-middle') ?> <?= $jumlahPenerima ?> penerima WhatsApp</span>
+          </p>
+        </div>
+        <?php if ($jadwalTerbit && $jumlahPenerima): ?>
+          <button type="button" class="btn btn-green shadow-drop shrink-0" data-modal-open="modal-umumkan">
+            <?= icon('send') ?> Umumkan Semua Jadwal
+          </button>
+        <?php endif; ?>
+      </div>
+
+      <?php if (!$jadwalTerbit): ?>
+        <p class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-800">
+          Belum ada jadwal berstatus Terjadwal. Ubah status jadwal di atas menjadi <strong>Terjadwal</strong>
+          lebih dulu agar bisa diumumkan.
+        </p>
+      <?php elseif (!$jumlahPenerima): ?>
+        <p class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-800">
+          Belum ada pendaftar terjadwal yang punya nomor WhatsApp orang tua. Atur peserta lewat
+          <a class="underline font-semibold" href="<?= url('app/operator/peserta-ujian.php') ?>">Peserta Ujian</a>.
+        </p>
+      <?php endif; ?>
+    </section>
 
     <!-- Daftar jadwal -->
     <section class="mt-6 card overflow-hidden">
@@ -342,6 +405,46 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end shrink-0">
         <button type="button" class="btn btn-outline" data-modal-close>Batal</button>
         <button type="submit" class="btn btn-primary"><?= icon('save') ?> Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Konfirmasi pengumuman gabungan: tampilkan isian pesan sebelum dikirim -->
+<div id="modal-umumkan" class="modal-root hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true">
+  <div class="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px] animate-fade" data-modal-close></div>
+  <div class="relative h-full flex items-center justify-center p-4 sm:p-6">
+    <form method="post" action="<?= url('app/operator/jadwal.php') ?>"
+          class="animate-pop flex flex-col w-full max-w-xl bg-white rounded-2xl border border-line-mid shadow-modal overflow-hidden"
+          style="max-height:calc(100vh - 2rem)">
+      <?= csrf_field() ?>
+      <input type="hidden" name="aksi" value="umumkan_semua">
+
+      <div class="flex items-start justify-between gap-4 px-5 py-4 border-b border-line shrink-0">
+        <div>
+          <h3 class="font-bold text-ink-900 text-lg leading-tight">Umumkan Semua Jadwal</h3>
+          <p class="text-[13px] text-ink-500">
+            <?= count($jadwalTerbit) ?> jadwal · <?= $jumlahPenerima ?> penerima · satu pesan per wali siswa
+          </p>
+        </div>
+        <button type="button" class="icon-box border border-line text-ink-500 hover:text-red-600 shrink-0" data-modal-close aria-label="Tutup"><?= icon('close') ?></button>
+      </div>
+
+      <div class="p-5 space-y-4 overflow-y-auto" style="min-height:0">
+        <div class="rounded-xl border border-line bg-canvas p-3.5">
+          <p class="text-[12px] font-semibold uppercase tracking-wide text-ink-500">Isi pesan (nama & nomor menyesuaikan tiap pendaftar)</p>
+          <div class="mt-2 whitespace-pre-line text-[12px] leading-relaxed text-ink-700"><?= e($contohPesan) ?></div>
+        </div>
+        <p class="text-[12px] leading-relaxed text-ink-500 flex gap-2">
+          <?= icon('info', 'text-[16px] shrink-0') ?>
+          <span>Pesan yang sama tersimpan sebagai notifikasi di portal siswa. Susunan jadwal yang sudah
+          pernah diumumkan tidak dikirim ulang; bila jadwal diubah, pengumuman berikutnya dianggap baru.</span>
+        </p>
+      </div>
+
+      <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end shrink-0">
+        <button type="button" class="btn btn-outline" data-modal-close>Batal</button>
+        <button type="submit" class="btn btn-green"><?= icon('send') ?> Kirim Sekarang</button>
       </div>
     </form>
   </div>

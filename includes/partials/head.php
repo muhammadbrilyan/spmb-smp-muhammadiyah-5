@@ -44,9 +44,9 @@ $teksKontras   = warna_kontras($warnaPrima);
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
 
 <!-- Tailwind CSS lokal (tanpa CDN) — warna utama via CSS variable agar bisa diganti dari CMS.
-     Penanda ?v= wajib: tanpa itu browser memakai salinan lama setiap kali npm run build:css
-     menghasilkan kelas baru (pola yang sama dipakai untuk app.css di bawah). -->
-<link rel="stylesheet" href="<?= asset('assets/css/tailwind.css') ?>?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/css/tailwind.css') ?: 1) ?>">
+     Penanda versi ditempel oleh asset(): tanpa itu browser memakai salinan lama terus
+     setiap npm run build:css menghasilkan kelas baru. -->
+<link rel="stylesheet" href="<?= asset('assets/css/tailwind.css') ?>">
 <script>
 /* Dark mode: baca preferensi dari localStorage SEBELUM render agar tidak flash. */
 (function () {
@@ -129,6 +129,6 @@ $teksKontras   = warna_kontras($warnaPrima);
   html.gelap .icon-box { border-color: #475569 !important; color: #CBD5E1 !important; }
 </style>
 
-<link rel="stylesheet" href="<?= asset('assets/css/app.css') ?>?v=<?= (int) (@filemtime(__DIR__ . '/../../assets/css/app.css') ?: 1) ?>">
+<link rel="stylesheet" href="<?= asset('assets/css/app.css') ?>">
 </head>
 <body class="<?= e($bodyClass) ?>">

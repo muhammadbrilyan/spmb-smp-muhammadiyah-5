@@ -100,9 +100,10 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | 1 | Tambah jadwal tes | ✅ *dirombak* — tidak lagi form 8 kolom di atas daftar, tapi satu modal bersama |
 | 2 | Ubah jadwal lewat modal (nama, tanggal, jam, mode, ruangan, kapasitas, status) | ✅ *dirombak* — dahulu inline-edit 9 kolom dengan `min-w-[960px]`; scrollbar samping & jumlah peserta mudah terhapus dari simpan |
 | 3 | Jumlah peserta & status tersinkron dari Peserta Ujian | ✅ nilai ikut terbawa saat menyimpan (field tersembunyi), tidak ditimpa jadi 0 |
-| 4 | Kirim notifikasi WA jadwal ke wali | ✅ lokasi pada pesan kini memakai **Ruangan** bila kolom `lokasi` kosong |
-| 5 | Hapus jadwal (dijaga bila sudah dipakai seleksi) | ✅ |
-| 6 | Ringkasan jumlah jadwal per status (Draft / Terjadwal / Selesai) | ✅ |
+| 4 | **Umumkan Semua Jadwal** — satu pesan WA berisi seluruh jadwal Terjadwal + satu notifikasi portal per siswa | ✅ baru — `jadwal_umumkan_semua()`; penerima = yang sudah dijadwalkan & punya WA orang tua; `ref_id` sidik jari susunan jadwal sehingga klik ganda tidak mengirim ulang |
+| 5 | Kirim notifikasi WA jadwal ke wali (per kegiatan) | ✅ *diperbaiki* — dahulu selalu 0 penerima karena hanya membaca `seleksi.jadwal_id`, padahal penjadwalan ditulis ke `peserta_ujian`; kini kedua sumber dibaca dan Lokasi memakai **Ruangan** yang diisi operator |
+| 6 | Hapus jadwal (dijaga bila sudah dipakai seleksi) | ✅ |
+| 7 | Ringkasan jumlah jadwal per status (Draft / Terjadwal / Selesai) | ✅ |
 
 ### 7. Peserta Ujian — `app/operator/peserta-ujian.php`
 
