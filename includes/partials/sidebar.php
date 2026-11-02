@@ -2,8 +2,8 @@
 /**
  * SIDEBAR PORTAL — menu dipisah per peran.
  *
- * - Siswa  : portal ringkas (Dashboard, Data Siswa, Keuangan, PPDB & Seleksi,
- *            Hasil Seleksi, Akademik, Pengumuman, Pengaturan Akun).
+ * - Siswa  : portal ringkas (Dashboard, Informasi, Data Siswa, Keuangan,
+ *            Jadwal & Kartu Ujian, Hasil Seleksi, Akademik, Pengaturan Akun).
  * - Operator: operasional SPMB (pendaftar, verifikasi, jadwal, tes, seleksi,
  *            penempatan, pengumuman, pengaturan).
  * - Bendahara/Kepsek: menu monitoring yang sudah ada tetap dipertahankan.
@@ -41,10 +41,10 @@ if ($role === 'siswa') {
     $badgeHasil = (!empty($hasilBolehBuka) && empty($hasilTerbuka)) ? 'Baru' : '';
     $menuSiswa = [
         $menuItem('dashboard', 'dashboard', 'Dashboard', url('app/siswa/index.php')),
-        $menuItem('notifikasi', 'notifications', 'Notifikasi & Pengumuman', url('app/siswa/notifikasi.php')),
+        $menuItem('notifikasi', 'notifications', 'Informasi', url('app/siswa/notifikasi.php')),
         $menuItem('siswa', 'badge', 'Data Siswa', url('app/siswa/data-siswa.php')),
         $menuItem('keuangan', 'account_balance_wallet', 'Keuangan', url('app/siswa/keuangan.php')),
-        $menuItem('ppdb', 'how_to_reg', 'PPDB & Seleksi', url('app/siswa/ppdb.php')),
+        $menuItem('ppdb', 'event', 'Jadwal & Kartu Ujian', url('app/siswa/ppdb.php')),
         $menuItem('hasil', 'emoji_events', 'Hasil Seleksi', url('app/siswa/hasil.php'), $badgeHasil),
     ];
     if (!empty($siswaDiterima)) {

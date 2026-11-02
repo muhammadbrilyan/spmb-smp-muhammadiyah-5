@@ -40,7 +40,7 @@ $LANGKAH = [
      'isi'   => 'Bayar biaya formulir Rp 200.000 melalui bank/QRIS. Sistem memverifikasi otomatis nomor & rekening.',
      'meta'  => 'Verifikasi Otomatis', 'meta_icon' => 'verified_user'],
     ['no' => '03', 'icon' => 'laptop_mac', 'judul' => 'Tes CBT & Wawancara BTQ',
-     'isi'   => 'Mengikuti ujian komputer (CBT), wawancara Al-Qur\u2019an (BTQ), dan seleksi minat bakat di sekolah atau daring.',
+     'isi'   => 'Mengikuti ujian komputer (CBT), wawancara Al-Qur’an (BTQ), dan seleksi minat bakat di sekolah atau daring.',
      'meta'  => 'Di Sekolah / Daring (Luar Kota)', 'meta_icon' => 'groups'],
     ['no' => '04', 'icon' => 'school', 'judul' => 'Pengumuman & Daftar Ulang',
      'isi'   => 'Hasil keputusan seleksi diumumkan online dan via WhatsApp. Siswa lulus menyelesaikan daftar ulang.',
@@ -51,7 +51,7 @@ $LANGKAH = [
  * 3. FAQ
  * ------------------------------------------------------------------ */
 $FAQ = [
-    ['q' => 'Apakah sekolah ini benar-benar berbasis tahfidz Qur\u2019an?',
+    ['q' => 'Apakah sekolah ini benar-benar berbasis tahfidz Qur’an?',
      'a' => 'Ya. SMP Muhammadiyah 5 Kota Tangerang menerapkan pembinaan pemahaman dan pengembangan sarana prasarana hafalan hingga tingkat 10 juz yang dilengkapi sertifikasi BTQ.'],
     ['q' => 'Bagaimana jika calon siswa berasal di luar Kota Tangerang?',
      'a' => 'Pendaftar luar daerah tetap diterima. Proses seleksi dapat diikuti secara daring (video call) dan penempatan kelas mengikuti kuota rombel yang tersedia.'],

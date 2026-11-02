@@ -334,6 +334,7 @@ CREATE TABLE `pengaturan_sekolah` (
   `profil_singkat` text DEFAULT NULL,
   `deskripsi_sekolah` text DEFAULT NULL,
   `tagline` varchar(255) DEFAULT 'Berakhlak & Berprestasi',
+  `faq_list` text DEFAULT NULL,
   `tahun_ajaran` varchar(20) DEFAULT '2027/2028',
   `gelombang` varchar(50) DEFAULT 'Gelombang 1',
   `tanggal_buka_ppdb` date DEFAULT NULL,

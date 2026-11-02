@@ -143,7 +143,17 @@ seluruh akun staf masih `!LOCKED` atau operator kehilangan akses.
    tidak ada *Gagal* — termasuk item retensi, proxy, & lokasi storage.
 2. **Pengaturan Sistem**: lengkapi profil sekolah, rekening/QRIS, nomor WA,
    daftar berkas persyaratan, S&K (Pasal 8 Privasi — tinjau sekolah/hukum,
-   draf: `docs/KEBIJAKAN-DATA.md`).
+   draf: `docs/KEBIJAKAN-DATA.md`). Nomor WA tujuan notifikasi panitia
+   (`notif_wa_operator`) hanya tersimpan di database — ia **tidak** ikut seed,
+   jadi isi ulang di server. Sejak 2026-11-03 nomor ini juga bisa diganti dari
+   **Pengaturan Sistem → Petugas & Hak Akses** (panel *Notifikasi WhatsApp ke
+   Panitia*) tanpa menggulir formulir CMS; saklar `notif_wa_aktif` bersifat
+   global, jadi mematikannya menghentikan seluruh kiriman WA panitia
+   termasuk ke nomor bendahara. Sejak 2026-11-03 isi section **Pusat Bantuan
+   (FAQ)** halaman depan juga disunting dari blok *Tanya Jawab (FAQ) Landing*
+   (kolom `pengaturan_sekolah.faq_list`) — seed mengosongkan kolom itu, jadi
+   selama belum disentuh halaman masih menampilkan contoh bawaan dari
+   `includes/dummy.php`; tulis pertanyaan versi sekolah sebelum publik.
 3. Uji manual mengikuti `docs/UJI-MANUAL.md` (registrasi, unggah, bayar,
    verifikasi, pengumuman, cek-status, tools CLI bila ada).
 4. Bila ada akses CLI/terminal: jalankan `php tools/cek-proyek.php` dan

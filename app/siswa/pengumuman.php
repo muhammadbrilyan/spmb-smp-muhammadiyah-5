@@ -1,6 +1,6 @@
 <?php
 /**
- * Halaman Pengumuman lama — sudah digabung ke Notifikasi & Pengumuman.
+ * Halaman Pengumuman lama — sudah digabung ke menu Informasi (notifikasi.php).
  * Redirect kecil ini menjaga tautan/bookmark lama (termasuk #pgn-...)
  * tetap sampai ke halaman barunya.
  */

@@ -4,12 +4,12 @@
  *
  * Menggabungkan dua halaman yang dulu dikerjakan berurutan:
  *   - berkas.php          : setujui/tolak tiap berkas persyaratan
- *   - verifikasi-data.php : verifikasi data identitas + antrean koreksi
- * Satu pendaftar kini dibuka di satu layar: datanya, berkasnya,
- * keputusan verifikasinya, dan pengajuan koreksinya.
+ *   - verifikasi-data.php : verifikasi data identitas
+ * Satu pendaftar kini dibuka di satu layar: datanya, berkasnya, dan
+ * keputusan verifikasinya.
  *
  * Mode tampilan:
- *   ?tab=berkas|data|koreksi          -> antrean tab tersebut
+ *   ?tab=berkas|data                  -> antrean tab tersebut
  *   ?tab=...&id=<pendaftar_id>        -> ruang kerja satu pendaftar
  * Berkas.php & verifikasi-data.php tinggal menjadi pengalih.
  * ================================================================== */
@@ -21,7 +21,6 @@ $me = current_user();
 $TABS = [
     'berkas'  => 'Berkas Persyaratan',
     'data'    => 'Data Siswa',
-    'koreksi' => 'Koreksi Data',
 ];
 $tab = (string) ($_POST['tab'] ?? $_GET['tab'] ?? 'berkas');
 if (!isset($TABS[$tab])) {
@@ -145,19 +144,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         exit;
     }
 
-    /* --- Tindak lanjut pengajuan koreksi --- */
-    if ($aksi === 'koreksi_status') {
-        $hasil = koreksi_ubah_status(
-            trim((string) ($_POST['koreksi_id'] ?? '')),
-            (string) ($_POST['status'] ?? ''),
-            (string) ($_POST['catatan'] ?? ''),
-            (string) ($me['id'] ?? '')
-        );
-        flash(!empty($hasil['ok']) ? 'sukses' : 'error', $hasil['pesan'] ?? 'Gagal memperbarui pengajuan koreksi.');
-        header('Location: ' . $balik);
-        exit;
-    }
-
     flash('error', 'Aksi tidak dikenali.');
     header('Location: ' . $balik);
     exit;
@@ -185,10 +171,9 @@ if ($detailId !== '' && !$pend) {
     exit;
 }
 
-$hitung   = ['berkas' => 0, 'data' => 0, 'koreksi' => 0];
+$hitung   = ['berkas' => 0, 'data' => 0];
 $antreanBerkas  = [];
 $antreanData    = [];
-$antreanKoreksi = [];
 $semuaData      = [];
 $FILTER_DATA = ['MENUNGGU_VERIFIKASI' => 'Menunggu', 'DITOLAK' => 'Perlu Perbaikan', 'DRAFT' => 'Draft', 'SEMUA' => 'Semua'];
 $sFilter = strtoupper(trim((string) ($_GET['s'] ?? 'MENUNGGU_VERIFIKASI')));
@@ -198,12 +183,10 @@ if (!isset($FILTER_DATA[$sFilter])) {
 
 /* Ruang kerja satu pendaftar. */
 $dok         = [];
-$koreksiSaya = [];
 $dataKurang  = [];
 if ($pend) {
     $berkasDetail = berkas_detail_pendaftar($detailId) ?: ['pend' => null, 'dok' => []];
     $dok          = $berkasDetail['dok'];
-    $koreksiSaya  = koreksi_siswa($detailId);
     $dataKurang   = pendaftar_data_kurang($pend);
     $dataLengkap  = !$dataKurang;
     $terkunci     = in_array((string) $pend['tahap'], ['BERKAS_TERVERIFIKASI', 'JADWAL_DITETAPKAN', 'NILAI_TERINPUT', 'DIUMUMKAN'], true);
@@ -222,7 +205,6 @@ if ($pend) {
     /* Antrean: satu query per kelompok, angkanya dipakai untuk badge tab. */
     $antreanBerkas  = berkas_antrean();
     $semuaData      = pendaftar_data_antrean('');
-    $antreanKoreksi = array_merge(koreksi_antrean('MENUNGGU'), koreksi_antrean('DIPROSES'));
 
     /* Satu query di atas dipakai untuk badge tab maupun chip filter. */
     $perStatus = ['MENUNGGU_VERIFIKASI' => 0, 'DITOLAK' => 0, 'DRAFT' => 0, 'TERVERIFIKASI' => 0];
@@ -232,7 +214,6 @@ if ($pend) {
     }
     $hitung['berkas']  = count($antreanBerkas);
     $hitung['data']    = $perStatus['MENUNGGU_VERIFIKASI'];
-    $hitung['koreksi'] = count($antreanKoreksi);
 
     $antreanData = $sFilter === 'SEMUA'
         ? $semuaData
@@ -249,7 +230,7 @@ $USER_LOGIN = [
 ];
 
 $title     = $pend ? 'Verifikasi ' . $pend['nama_siswa'] : 'Verifikasi Pendaftar';
-$desc      = 'Periksa berkas persyaratan, data calon siswa, dan pengajuan koreksi dalam satu halaman.';
+$desc      = 'Periksa berkas persyaratan dan data calon siswa dalam satu halaman.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 require_once __DIR__ . '/../../includes/partials/head.php';
@@ -506,7 +487,6 @@ $flash = flash();
               <div class="flex justify-between gap-3"><dt class="text-ink-500">Berkas disetujui</dt><dd class="font-semibold text-ink-900"><?= (int) $pend['dok_verifikasi'] ?></dd></div>
               <div class="flex justify-between gap-3"><dt class="text-ink-500">Pembayaran terverifikasi</dt><dd class="font-semibold text-ink-900"><?= rupiah((float) $pend['bayar_verified']) ?></dd></div>
               <div class="flex justify-between gap-3"><dt class="text-ink-500">Bukti menunggu</dt><dd class="font-semibold text-ink-900"><?= (int) $pend['bayar_pending'] ?> baris</dd></div>
-              <div class="flex justify-between gap-3"><dt class="text-ink-500">Koreksi aktif</dt><dd class="font-semibold text-ink-900"><?= (int) $pend['koreksi_aktif'] ?></dd></div>
             </dl>
             <?php if (!empty($pend['data_verified_at'])): ?>
               <p class="mt-3 border-t border-line-soft pt-3 text-[11px] text-ink-400">
@@ -559,64 +539,6 @@ $flash = flash();
         </div>
       </div>
 
-      <!-- Koreksi milik pendaftar ini -->
-      <section class="mt-6 card p-5 sm:p-6">
-        <div class="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <h2 class="font-bold text-ink-900">Pengajuan Koreksi Data</h2>
-            <p class="mt-1 text-[13px] text-ink-500">
-              Siswa hanya dapat mengajukan koreksi setelah data terverifikasi. Menyetujui koreksi <strong>tidak mengubah data otomatis</strong> —
-              formulir dibuka kembali agar siswa memperbaiki sendiri.
-            </p>
-          </div>
-          <span class="badge badge-gray"><?= count($koreksiSaya) ?> pengajuan</span>
-        </div>
-
-        <div class="mt-4 space-y-3">
-          <?php if (!$koreksiSaya): ?>
-            <p class="text-sm text-ink-400">Belum ada pengajuan koreksi dari pendaftar ini.</p>
-          <?php endif; ?>
-          <?php foreach ($koreksiSaya as $k): $kl = koreksi_status_label($k['status']); ?>
-            <article class="rounded-2xl border border-line p-4">
-              <div class="flex items-start justify-between gap-2 flex-wrap">
-                <div>
-                  <p class="text-[13px] font-semibold text-ink-900"><?= e(koreksi_bidang()[$k['bidang']] ?? $k['bidang']) ?></p>
-                  <p class="text-[11px] text-ink-400">Diajukan <?= e(bulan($k['created_at'])) ?><?= !empty($k['reviewed_at']) ? ' · ditinjau ' . e(bulan($k['reviewed_at'])) : '' ?></p>
-                </div>
-                <span class="badge badge-<?= e($kl[1]) ?>"><?= e($kl[0]) ?></span>
-              </div>
-              <p class="mt-2 text-[13px] text-ink-700 whitespace-pre-line"><?= e($k['pesan']) ?></p>
-              <?php if (!empty($k['catatan_operator'])): ?>
-                <p class="mt-2 rounded-lg bg-canvas px-3 py-2 text-[12px] text-ink-600"><strong>Catatan operator:</strong> <?= e($k['catatan_operator']) ?></p>
-              <?php endif; ?>
-
-              <?php if (in_array($k['status'], ['MENUNGGU', 'DIPROSES'], true)): ?>
-                <form method="post" action="verifikasi.php" class="mt-3 grid gap-2.5 sm:grid-cols-[180px_1fr_auto] sm:items-end">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="tab" value="<?= e($tab) ?>">
-                  <input type="hidden" name="aksi" value="koreksi_status">
-                  <input type="hidden" name="koreksi_id" value="<?= e($k['id']) ?>">
-                  <input type="hidden" name="pendaftar_id" value="<?= e($pend['id']) ?>">
-                  <div>
-                    <label class="label" for="ks-<?= e($k['id']) ?>">Tindakan</label>
-                    <select id="ks-<?= e($k['id']) ?>" name="status" class="select">
-                      <option value="DIPROSES" <?= $k['status'] === 'DIPROSES' ? 'selected' : '' ?>>Tandai Diproses</option>
-                      <option value="DISETUJUI">Setujui &amp; Buka Data</option>
-                      <option value="DITOLAK">Tolak</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="label" for="kn-<?= e($k['id']) ?>">Catatan (wajib bila ditolak)</label>
-                    <input id="kn-<?= e($k['id']) ?>" name="catatan" class="input" placeholder="Contoh: bukti akta kurang jelas.">
-                  </div>
-                  <button type="submit" class="btn btn-primary btn-sm h-10"><?= icon('send', 'text-[15px]') ?> Simpan</button>
-                </form>
-              <?php endif; ?>
-            </article>
-          <?php endforeach; ?>
-        </div>
-      </section>
-
     <?php else: ?>
       <?php /* ================= ANTREAN ================= */ ?>
       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -627,7 +549,7 @@ $flash = flash();
           </div>
           <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Verifikasi Pendaftar</h1>
           <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-            Satu tempat untuk memeriksa berkas persyaratan, data calon siswa, dan pengajuan koreksi.
+            Satu tempat untuk memeriksa berkas persyaratan dan data calon siswa.
             Klik <strong>Periksa</strong> untuk membuka seluruh data pendaftar dalam satu layar.
           </p>
         </div>
@@ -642,7 +564,7 @@ $flash = flash();
           <a href="verifikasi.php?tab=<?= e($k) ?>" class="tab-underline <?= $tab === $k ? 'text-primary border-primary' : '' ?>"
              <?= $tab === $k ? 'data-active="true"' : '' ?>>
             <?= e($label) ?>
-            <?php if ($hitung[$k] > 0): ?><span class="badge <?= $k === 'koreksi' ? 'badge-blue' : 'badge-amber' ?> ml-1"><?= (int) $hitung[$k] ?></span><?php endif; ?>
+            <?php if ($hitung[$k] > 0): ?><span class="badge badge-amber ml-1"><?= (int) $hitung[$k] ?></span><?php endif; ?>
           </a>
         <?php endforeach; ?>
       </div>
@@ -721,13 +643,12 @@ $flash = flash();
                   <th class="th">Pendaftar</th>
                   <th class="th">Kontak</th>
                   <th class="th">Berkas</th>
-                  <th class="th">Koreksi</th>
                   <th class="th text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line-soft">
                 <?php if (!$antreanData): ?>
-                  <tr><td class="td text-center text-ink-400" colspan="5">Tidak ada pendaftar pada status ini.</td></tr>
+                  <tr><td class="td text-center text-ink-400" colspan="4">Tidak ada pendaftar pada status ini.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($antreanData as $p): $pv = $labelVer[$p['status_verifikasi']] ?? [$p['status_verifikasi'], 'gray']; ?>
                   <tr class="tr-hover">
@@ -741,58 +662,8 @@ $flash = flash();
                       <span class="badge badge-<?= e($pv[1]) ?> block mt-1 w-fit"><?= e($pv[0]) ?></span>
                     </td>
                     <td class="td text-[13px] font-semibold"><?= (int) $p['dok_terisi'] ?>/<?= (int) $p['dok_wajib'] ?></td>
-                    <td class="td">
-                      <?php if ((int) $p['koreksi_aktif'] > 0): ?>
-                        <span class="badge badge-amber"><?= (int) $p['koreksi_aktif'] ?> aktif</span>
-                      <?php else: ?>
-                        <span class="text-[12px] text-ink-400">—</span>
-                      <?php endif; ?>
-                    </td>
                     <td class="td text-right">
                       <a href="verifikasi.php?tab=data&amp;id=<?= rawurlencode($p['id']) ?>" class="btn btn-sm btn-outline"><?= icon('fact_check', 'text-[15px]') ?> Periksa</a>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-      <?php else: ?>
-        <section class="mt-5 card overflow-hidden">
-          <div class="p-5 sm:p-6 pb-0 flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <h2 class="font-bold text-ink-900">Pengajuan Koreksi Data</h2>
-              <p class="mt-1 text-[13px] text-ink-500">Pengajuan dari siswa yang datanya sudah terverifikasi. Menyetujui koreksi membuka kembali formulir siswa — data tidak berubah otomatis.</p>
-            </div>
-            <span class="badge badge-amber"><?= (int) $hitung['koreksi'] ?> menunggu / diproses</span>
-          </div>
-          <div class="mt-4 overflow-x-auto scroll-thin">
-            <table class="w-full min-w-[860px] border-collapse">
-              <thead class="thead">
-                <tr>
-                  <th class="th">Pendaftar</th>
-                  <th class="th">Bidang</th>
-                  <th class="th">Uraian</th>
-                  <th class="th">Status</th>
-                  <th class="th text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line-soft">
-                <?php if (!$antreanKoreksi): ?>
-                  <tr><td class="td text-center text-ink-400" colspan="5">Tidak ada pengajuan koreksi aktif.</td></tr>
-                <?php endif; ?>
-                <?php foreach ($antreanKoreksi as $k): $kl = koreksi_status_label($k['status']); ?>
-                  <tr class="tr-hover align-top">
-                    <td class="td">
-                      <p class="font-semibold text-ink-900"><?= e($k['nama_siswa']) ?></p>
-                      <p class="font-mono text-[12px] text-ink-500"><?= e($k['no_pendaftaran']) ?></p>
-                    </td>
-                    <td class="td text-[13px]"><?= e(koreksi_bidang()[$k['bidang']] ?? $k['bidang']) ?></td>
-                    <td class="td text-[13px] max-w-[320px]"><?= e($k['pesan']) ?></td>
-                    <td class="td"><span class="badge badge-<?= e($kl[1]) ?>"><?= e($kl[0]) ?></span></td>
-                    <td class="td text-right">
-                      <a href="verifikasi.php?tab=koreksi&amp;id=<?= rawurlencode($k['pendaftar_id']) ?>" class="btn btn-sm btn-outline">Tinjau</a>
                     </td>
                   </tr>
                 <?php endforeach; ?>

@@ -117,7 +117,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <span class="icon-box bg-[#FFF7ED] text-[#EA580C]"><?= icon('event', 'text-[20px]') ?></span>
           </div>
           <div class="mt-3 pt-3 border-t border-line-soft text-xs">
-            <a href="<?= url('app/siswa/ppdb.php') ?>" class="font-semibold text-primary hover:underline">Buka PPDB &amp; Seleksi</a>
+            <a href="<?= url('app/siswa/ppdb.php') ?>" class="font-semibold text-primary hover:underline">Buka Jadwal &amp; Kartu Ujian</a>
           </div>
         </article>
       </section>

@@ -188,7 +188,7 @@ $panduan = [
         'role'  => ['operator', 'admin'],
         'langkah' => [
             'Buka <strong>Pengaturan</strong> di menu operator.',
-            'Seksi 1–6 mengatur konten landing (ticker, hero, berita, FAQ, statistik, biaya).',
+            'Seksi 1–6 mengatur konten landing (ticker, hero, statistik, biaya) — termasuk blok <strong>Tanya Jawab (FAQ) Landing</strong> yang mengisi section Pusat Bantuan di halaman depan.',
             'Seksi 7 <strong>WhatsApp Gateway</strong>: isi token Fonnte (dari dashboard Fonnte → Settings → Token).',
             'Tanpa token, fitur generate akun & notifikasi jadwal tetap jalan tapi WA tidak terkirim — kredensial ditampilkan manual di halaman hasil.',
             'Seksi 8 <strong>Payment Gateway (Midtrans)</strong>: opsional — tanpa API key, sistem tetap jalan penuh dengan transfer bank manual / QRIS.',

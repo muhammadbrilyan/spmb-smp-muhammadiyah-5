@@ -557,7 +557,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <strong>Umumkan Semua Jadwal</strong> di atas.</span></p>
         <p class="text-[12px] text-ink-500 flex gap-2"><?= icon('badge', 'text-[16px] shrink-0') ?>
           <span>Nomor peserta &amp; kartu peserta tercetak otomatis; siswa melihatnya di
-          <strong>PPDB &amp; Seleksi</strong> pada portal siswa.</span></p>
+          <strong>Jadwal &amp; Kartu Ujian</strong> pada portal siswa.</span></p>
         <p class="text-[12px] text-ink-500 flex gap-2"><?= icon('history', 'text-[16px] shrink-0') ?>
           <span>Menghapus peserta mengembalikan pendaftarnya ke tahap berkas terverifikasi sehingga bisa dijadwalkan ulang.</span></p>
       </div>

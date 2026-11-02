@@ -161,6 +161,67 @@ function jalur_aktif()
 }
 
 /**
+ * Daftar pertanyaan FAQ pada section "Pusat Bantuan" landing page.
+ * Sunting di Pengaturan Sistem → Tanya Jawab (FAQ) Landing; tersimpan di
+ * kolom JSON pengaturan_sekolah.faq_list sebagai
+ *   [{"q":"...","a":"..."}, ...]
+ * Kolom belum pernah diisi → contoh includes/dummy.php ($FAQ), jadi landing
+ * yang sudah tayang tidak tiba-tiba kehilangan isinya.
+ * @return array<int, array{q:string,a:string}>
+ */
+function faq_daftar()
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $hasil = is_array($GLOBALS['FAQ'] ?? null) ? $GLOBALS['FAQ'] : [];
+
+    $baris  = pengaturan_baris();
+    $mentah = $baris === null ? '' : trim((string) ($baris['faq_list'] ?? ''));
+    if ($mentah !== '') {
+        $decoded = json_decode($mentah, true);
+        if (is_array($decoded)) {
+            $tersimpan = [];
+            foreach ($decoded as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                $tanya  = trim((string) ($item['q'] ?? ''));
+                $jawab  = trim((string) ($item['a'] ?? ''));
+                if ($tanya === '' || $jawab === '') {
+                    continue;
+                }
+                $tersimpan[] = ['q' => $tanya, 'a' => $jawab];
+            }
+            $hasil = $tersimpan ?: $hasil;
+        }
+    }
+
+    $cache = $hasil;
+    return $cache;
+}
+
+/**
+ * Encode daftar FAQ menjadi nilai kolom faq_list; daftar kosong = NULL.
+ * @param array<int,array{q?:string,a?:string}> $daftar
+ */
+function faq_json(array $daftar)
+{
+    $isi = [];
+    foreach ($daftar as $item) {
+        $tanya = preg_replace('/\s+/u', ' ', trim((string) ($item['q'] ?? '')));
+        $jawab = trim((string) ($item['a'] ?? ''));
+        if ($tanya === '' || $jawab === '') {
+            continue;
+        }
+        $isi[] = ['q' => $tanya, 'a' => $jawab];
+    }
+    return $isi ? json_encode($isi, JSON_UNESCAPED_UNICODE) : null;
+}
+
+/**
  * Daftar rombel aktif, termasuk jumlah pendaftar yang sudah tertempat.
  * @return array<int, array{kode:string,nama:string,wali:string,kuota:int,terisi:int}>
  */

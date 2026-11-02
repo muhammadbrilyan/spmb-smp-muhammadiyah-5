@@ -12,8 +12,9 @@
  *    diverifikasi).
  *
  * Data induk hanya dapat diubah selama belum diverifikasi operator. Setelah
- * TERVERIFIKASI, siswa memakai mekanisme pengajuan koreksi di bagian bawah
- * halaman (di luar form utama, tidak otomatis mengubah data).
+ * TERVERIFIKASI halaman ini menjadi baca-saja: perubahan dilakukan panitia
+ * lewat tombol "Minta Perbaikan" di ruang verifikasi, yang membuka kembali
+ * formulir ini untuk siswa.
  */
 $title = 'Data Siswa';
 $desc  = 'Formulir data siswa (identitas, orang tua/wali, alamat) dan dokumen persyaratan dalam satu halaman.';
@@ -315,25 +316,6 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $kembali();
     }
 
-    /* ---------------- Pengajuan koreksi data ---------------- */
-    if ($aksi === 'ajukan_koreksi') {
-        $hasil = koreksi_ajukan(
-            $siswa['id'],
-            (string) ($me['id'] ?? ''),
-            (string) ($_POST['bidang'] ?? ''),
-            (string) ($_POST['pesan'] ?? '')
-        );
-        flash($hasil['ok'] ? 'sukses' : 'error', $hasil['pesan']);
-        $kembali();
-    }
-
-    if ($aksi === 'batalkan_koreksi') {
-        $id = (string) ($_POST['koreksi_id'] ?? '');
-        $ok = $id !== '' && koreksi_batalkan($id, $siswa['id']);
-        flash($ok ? 'sukses' : 'error', $ok ? 'Pengajuan koreksi dibatalkan.' : 'Pengajuan tidak dapat dibatalkan.');
-        $kembali();
-    }
-
     flash('error', 'Aksi tidak dikenali.');
     $kembali();
 }
@@ -426,7 +408,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
         <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Data Siswa</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          Lengkapi data dengan benar. Setelah operator memverifikasi, data terkunci dan perubahan dilakukan melalui pengajuan koreksi.
+          Lengkapi data dengan benar. Setelah operator memverifikasi, data terkunci — hubungi panitia SPMB bila ada yang keliru, panitia akan membuka kembali formulir ini untuk Anda perbaiki.
         </p>
       </div>
       <?php if ($siswa): ?>
@@ -531,7 +513,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 <div>
                   <label class="label" for="nama_siswa">Nama Lengkap</label>
                   <input id="nama_siswa" class="input bg-canvas" value="<?= e($siswa['nama_siswa']) ?>" disabled>
-                  <p class="hint">Nama sesuai akta kelahiran. Hubungi panitia untuk koreksi nama.</p>
+                  <p class="hint">Nama sesuai akta kelahiran. Hubungi panitia bila namanya perlu diperbaiki.</p>
                 </div>
                 <div>
                   <label class="label" for="nisn">NISN (10 digit)</label>
@@ -789,84 +771,11 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <?php else: ?>
           <div class="mt-6 rounded-2xl bg-canvas border border-line px-5 py-4 text-[13px] text-ink-500">
             <?php if ($dokTerkunci): ?>
-              Data dan berkas sudah diajukan. Tidak ada aksi di halaman ini — pantau status melalui menu PPDB &amp; Seleksi.
+              Data dan berkas sudah diajukan. Tidak ada aksi di halaman ini — pantau status melalui menu Jadwal &amp; Kartu Ujian.
             <?php else: ?>
               Pengajuan verifikasi dan unggah berkas dibuka setelah pembayaran formulir diverifikasi panitia.
             <?php endif; ?>
           </div>
-        <?php endif; ?>
-
-        <?php if (($siswa['status_verifikasi'] ?? '') === 'TERVERIFIKASI' || $koreksi): ?>
-          <?php /* ================= KOREKSI DATA (form terpisah di luar form utama) ================= */ ?>
-          <section id="koreksi" class="mt-5 card p-5 sm:p-6">
-            <div class="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <h2 class="font-bold text-ink-900">Koreksi Data</h2>
-                <p class="mt-1 text-[13px] text-ink-500">
-                  Bila ada data yang keliru, ajukan koreksi — panitia akan meninjau, dan data TIDAK berubah otomatis.
-                </p>
-              </div>
-              <span class="badge badge-gray">Data Terkunci</span>
-            </div>
-
-            <?php if (($siswa['status_verifikasi'] ?? '') === 'TERVERIFIKASI'): ?>
-              <form method="post" action="<?= url('app/siswa/data-siswa.php') ?>" class="mt-5 grid gap-3">
-                <?= csrf_field() ?>
-                <input type="hidden" name="aksi" value="ajukan_koreksi">
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label class="label" for="bidang_koreksi">Bagian yang dikoreksi</label>
-                    <select id="bidang_koreksi" name="bidang" class="select" required>
-                      <?php foreach ($koreksiBidang as $kb => $lb): ?>
-                        <option value="<?= e($kb) ?>"><?= e($lb) ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
-                  <div class="sm:col-span-2">
-                    <label class="label" for="pesan_koreksi">Uraian koreksi <span class="text-red-600">*</span></label>
-                    <textarea id="pesan_koreksi" name="pesan" class="textarea" rows="3" minlength="10" maxlength="2000" required
-                              placeholder="Contoh: tanggal lahir tertulis 12/05/2012, seharusnya 15/05/2012 sesuai akta."></textarea>
-                    <p class="hint">Minimal 10 karakter. Lampirkan bukti pendukung melalui bagian Dokumen bila diperlukan.</p>
-                  </div>
-                </div>
-                <div class="flex justify-end">
-                  <button type="submit" class="btn btn-outline"><?= icon('edit_note') ?> Ajukan Koreksi</button>
-                </div>
-              </form>
-            <?php endif; ?>
-
-            <?php if ($koreksi): ?>
-              <div class="mt-5 border-t border-line-soft pt-4">
-                <h3 class="font-semibold text-ink-900 text-sm">Riwayat Pengajuan Koreksi</h3>
-                <div class="mt-3 space-y-2.5">
-                  <?php foreach ($koreksi as $k): $kl = koreksi_status_label($k['status']); ?>
-                    <article class="rounded-xl border border-line p-3.5">
-                      <div class="flex items-start justify-between gap-2 flex-wrap">
-                        <p class="text-[13px] font-semibold text-ink-900"><?= e($koreksiBidang[$k['bidang']] ?? $k['bidang']) ?></p>
-                        <span class="badge badge-<?= e($kl[1]) ?>"><?= e($kl[0]) ?></span>
-                      </div>
-                      <p class="mt-1.5 text-[13px] text-ink-600 whitespace-pre-line"><?= e($k['pesan']) ?></p>
-                      <?php if (!empty($k['catatan_operator'])): ?>
-                        <p class="mt-2 rounded-lg bg-canvas px-3 py-2 text-[12px] text-ink-600"><strong>Panitia:</strong> <?= e($k['catatan_operator']) ?></p>
-                      <?php endif; ?>
-                      <div class="mt-2 flex items-center justify-between gap-2 flex-wrap">
-                        <p class="text-[11px] text-ink-400">Diajukan <?= e(bulan($k['created_at'])) ?></p>
-                        <?php if ($k['status'] === 'MENUNGGU'): ?>
-                          <form method="post" action="<?= url('app/siswa/data-siswa.php') ?>"
-                                onsubmit="return confirm('Batalkan pengajuan koreksi ini?');">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="aksi" value="batalkan_koreksi">
-                            <input type="hidden" name="koreksi_id" value="<?= e($k['id']) ?>">
-                            <button type="submit" class="text-[12px] font-semibold text-red-600 hover:underline">Batalkan</button>
-                          </form>
-                        <?php endif; ?>
-                      </div>
-                    </article>
-                  <?php endforeach; ?>
-                </div>
-              </div>
-            <?php endif; ?>
-          </section>
         <?php endif; ?>
 
     <?php endif; ?>

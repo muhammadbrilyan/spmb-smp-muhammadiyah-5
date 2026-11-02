@@ -459,9 +459,7 @@ function pendaftar_data_antrean($status = '', $cari = '', $id = '', $tampilkan =
                    (SELECT COALESCE(SUM(b.nominal),0) FROM pembayaran b
                      WHERE b.pendaftar_id = p.id
                        AND b.status IN ('VERIFIED','LUNAS','ANGSURAN_1','ANGSURAN_2')) AS bayar_verified,
-                   (SELECT COUNT(*) FROM pembayaran b WHERE b.pendaftar_id = p.id AND b.status = 'PENDING') AS bayar_pending,
-                   (SELECT COUNT(*) FROM pengajuan_koreksi kx
-                     WHERE kx.pendaftar_id = p.id AND kx.status IN ('MENUNGGU','DIPROSES')) AS koreksi_aktif
+                   (SELECT COUNT(*) FROM pembayaran b WHERE b.pendaftar_id = p.id AND b.status = 'PENDING') AS bayar_pending
               FROM pendaftar p
          LEFT JOIN users u ON u.id = p.user_id
          LEFT JOIN users vu ON vu.id = p.data_verified_by
@@ -614,7 +612,7 @@ function verifikasi_data_set($pendaftar_id, $status, $catatan, $verifier_id)
                 'DATA_TERVERIFIKASI',
                 'Data terverifikasi',
                 'Data calon siswa Anda telah diverifikasi panitia dan dikunci. '
-                    . 'Perubahan setelah ini diajukan melalui menu Data Siswa (pengajuan koreksi).',
+                    . 'Bila ada yang keliru, hubungi panitia SPMB — formulir akan dibuka kembali lewat menu Minta Perbaikan.',
                 url('app/siswa/data-siswa.php')
             );
         } elseif ($status === 'DITOLAK') {

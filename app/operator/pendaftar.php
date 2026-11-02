@@ -19,7 +19,7 @@ $USER_LOGIN = [
 ];
 
 $title     = 'Data Pendaftar';
-$desc      = 'Daftar pendaftar SPMB: pencarian, status verifikasi data, kelengkapan berkas, pengarsipan, dan tindak lanjut koreksi.';
+$desc      = 'Daftar pendaftar SPMB: pencarian, status verifikasi data, kelengkapan berkas, dan pengarsipan.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 $statusLabel = [
@@ -99,7 +99,6 @@ $ringkas = [
     'menunggu'   => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'MENUNGGU_VERIFIKASI' AND arsip_at IS NULL") ?? 0),
     'terverifikasi' => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'TERVERIFIKASI' AND arsip_at IS NULL") ?? 0),
     'perbaikan'  => (int) (q_col("SELECT COUNT(*) FROM pendaftar WHERE status_verifikasi = 'DITOLAK' AND arsip_at IS NULL") ?? 0),
-    'koreksi'    => (int) (q_col("SELECT COUNT(*) FROM pengajuan_koreksi WHERE status IN ('MENUNGGU','DIPROSES')") ?? 0),
     'arsip'      => (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NOT NULL') ?? 0),
 ];
 
@@ -133,7 +132,7 @@ $flash = flash();
         </div>
         <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Data Pendaftar</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          Cari pendaftar, pantau status verifikasi data, dan buka detail untuk memeriksa kelengkapan formulir serta pengajuan koreksi.
+          Cari pendaftar, pantau status verifikasi data, dan buka detail untuk memeriksa kelengkapan formulir.
         </p>
       </div>
       <a href="<?= url('app/operator/verifikasi.php?tab=data') ?>" class="btn btn-primary shrink-0 shadow-drop">
@@ -193,14 +192,14 @@ $flash = flash();
       <article class="card p-5">
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="text-[13px] font-medium text-ink-500">Perlu Perbaikan / Koreksi</p>
+            <p class="text-[13px] font-medium text-ink-500">Perlu Perbaikan</p>
             <p class="mt-2 text-3xl font-extrabold text-ink-900"><?= (int) $ringkas['perbaikan'] ?></p>
           </div>
           <span class="icon-box bg-[#FEF2F2] text-[#991B1B]"><?= icon('report', 'text-[20px]') ?></span>
         </div>
-        <p class="mt-3 pt-3 border-t border-line-soft text-[12px] text-ink-500">
-          <strong class="text-ink-900"><?= (int) $ringkas['koreksi'] ?></strong> pengajuan koreksi aktif
-        </p>
+        <a href="<?= e($tautanFilter('DITOLAK')) ?>" class="mt-3 pt-3 border-t border-line-soft text-[12px] font-semibold text-primary hover:underline inline-flex items-center gap-1">
+          Buka yang perlu diperbaiki <?= icon('arrow_forward', 'text-[15px]') ?>
+        </a>
       </article>
     </section>
 
@@ -262,14 +261,13 @@ $flash = flash();
               <th class="th">Tahap</th>
               <th class="th">Verifikasi Data</th>
               <th class="th">Berkas</th>
-              <th class="th">Koreksi</th>
               <th class="th text-right">Aksi</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-line-soft">
             <?php if (!$daftar): ?>
               <tr>
-                <td class="td text-center text-ink-400" colspan="7">
+                <td class="td text-center text-ink-400" colspan="6">
                   <?php if ($tampilkan === 'arsip'): ?>
                     Belum ada pendaftar yang diarsipkan.
                   <?php else: ?>
@@ -336,13 +334,6 @@ $flash = flash();
                 <td class="td text-[13px]">
                   <p class="font-semibold text-ink-900"><?= (int) $p['dok_terisi'] ?>/<?= (int) $p['dok_wajib'] ?></p>
                   <p class="text-[11px] text-ink-400"><?= (int) $p['dok_verifikasi'] ?> terverifikasi</p>
-                </td>
-                <td class="td">
-                  <?php if ((int) $p['koreksi_aktif'] > 0): ?>
-                    <span class="badge badge-amber"><?= (int) $p['koreksi_aktif'] ?> aktif</span>
-                  <?php else: ?>
-                    <span class="text-[12px] text-ink-400">—</span>
-                  <?php endif; ?>
                 </td>
                 <td class="td text-right">
                   <div class="inline-flex items-center gap-2 justify-end">

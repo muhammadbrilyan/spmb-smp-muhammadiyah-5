@@ -291,7 +291,7 @@ Lihat `.env.example`. Variabel: `DB_*`, `FONNTE_TOKEN`, `MIDTRANS_SERVER_KEY`, `
 | 10 | `database/migrations/20261015_fase10_keamanan.sql` |
 | 11 | `database/migrations/20261016_fase11_pay_token_hash.sql` |
 | 12 | `database/migrations/20261017_fase12_retensi.sql` |
-| 13 | `database/migrations/20261026_fase13_koreksi_data.sql` |
+| 13 | `database/migrations/20261026_fase13_koreksi_data.sql` (tabel `pengajuan_koreksi` — UI-nya sudah pensiun: pengajuan siswa dihapus 2026-11-02, tab operator 2026-11-03; tabel dibiarkan sebagai arsip) |
 | — | `database/migrations/20261028_arsip_pendaftar.sql` (kolom `arsip_at`/`arsip_alasan`/`arsip_oleh` — pengarsipan soft-delete pendaftar) |
 | — | `database/migrations/20261028_beasiswa_cms.sql` · `20261030_nonaktifkan_jenis_dokumen.sql` · `20261030_tahap2_notifikasi_siswa_pengumuman_umum.sql` |
 | — | `database/migrations/20261031_pengingat_angsuran.sql` · `20261031_persetujuan_hasil.sql` · `20261031_tahap3_angsuran.sql` |
@@ -299,6 +299,7 @@ Lihat `.env.example`. Variabel: `DB_*`, `FONNTE_TOKEN`, `MIDTRANS_SERVER_KEY`, `
 | — | `database/migrations/20261102_rincian_biaya.sql` (kolom `rincian_biaya` JSON + `ambang_kelulusan`) |
 | — | `database/migrations/20261102_hasil_dibuka.sql` (kolom `pendaftar.hasil_dibuka_at` — gerbang amplop Hasil Seleksi di portal siswa; lihat `docs/UJI-MANUAL.md` bagian T) |
 | — | `database/migrations/20261102_sosmed_sekolah.sql` (kolom `sosmed_instagram`/`sosmed_tiktok`/`sosmed_youtube`/`website_sekolah` — input link di Pengaturan Sistem + ikon footer publik) |
+| — | `database/migrations/20261103_faq_cms.sql` (kolom `faq_list` JSON — pertanyaan section Pusat Bantuan di halaman depan kini disunting dari Pengaturan Sistem, bukan dari `includes/dummy.php`) |
 
 Seed lengkap: `database/db_spmb_mualimku.sql` (gabungan semua fase).
 Dokumentasi uji: `docs/UJI-MANUAL.md`.

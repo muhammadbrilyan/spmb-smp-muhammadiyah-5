@@ -231,3 +231,63 @@ function petugas_set_aktif($id, $aktif)
             : 'Akun "' . $akun['username'] . '" dinonaktifkan — tidak bisa login, datanya tetap tersimpan.',
     ];
 }
+
+/**
+ * Nomor WA tujuan notifikasi panitia + saklar pengirimannya.
+ *
+ * Kolomnya milik `pengaturan_sekolah` (sama dengan yang diisi di Pengaturan
+ * Sistem); halaman Petugas hanya menyediakan jalan pintas supaya panitia
+ * pemegang nomor bisa menggantinya tanpa membuka formulir CMS yang panjang.
+ * Saklar `notif_wa_aktif` bersifat global — mematikannya juga menyenyapkan
+ * kiriman ke nomor bendahara.
+ */
+function petugas_notif_wa_simpan($nomor, $aktif)
+{
+    $aktif = $aktif ? 1 : 0;
+
+    $bagian = preg_split('/[,;]+/', (string) $nomor) ?: [];
+    $bersih  = [];
+    foreach ($bagian as $no) {
+        $no = trim($no);
+        if ($no === '') {
+            continue;
+        }
+        if (!preg_match('/^\+?[0-9]{6,16}$/', $no)) {
+            return ['ok' => false, 'pesan' => 'Format nomor WhatsApp "' . $no . '" tidak valid. '
+                . 'Gunakan 6-16 angka (boleh diawali +), pisahkan beberapa nomor dengan koma.'];
+        }
+        $bersih[] = $no;
+    }
+    $tersimpan = $bersih === [] ? null : implode(', ', $bersih);
+
+    if ($aktif === 1 && $tersimpan === null) {
+        return ['ok' => false, 'pesan' => 'Pengiriman WhatsApp aktif tetapi nomor WA operator kosong. '
+            . 'Isi nomornya lebih dulu, atau matikan saklarnya.'];
+    }
+
+    $ok = q_exec(
+        'UPDATE pengaturan_sekolah SET notif_wa_operator = ?, notif_wa_aktif = ? WHERE id = 1',
+        [$tersimpan, $aktif]
+    );
+    if (!$ok) {
+        return ['ok' => false, 'pesan' => 'Gagal menyimpan nomor WhatsApp.'];
+    }
+
+    return [
+        'ok'    => true,
+        'pesan' => $tersimpan === null
+            ? 'Nomor WA operator dikosongkan — notifikasi hanya masuk ke dalam aplikasi.'
+            : 'Notifikasi WhatsApp ' . ($aktif === 1 ? 'aktif' : 'dimatikan sementara')
+                . ' — tujuan operator: ' . $tersimpan . '.',
+    ];
+}
+
+/** Nilai tersimpan saat ini untuk formulir nomor WA panitia. */
+function petugas_notif_wa_bhawa()
+{
+    $P = $GLOBALS['PENGATURAN'] ?? [];
+    return [
+        'nomor' => trim((string) ($P['notif_wa_operator'] ?? '')),
+        'aktif' => (int) ($P['notif_wa_aktif'] ?? 0) === 1,
+    ];
+}

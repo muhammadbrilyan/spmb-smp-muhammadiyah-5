@@ -101,7 +101,7 @@ function siswa_simpan_data_diri($pendaftar_id, array $d)
         }
         if (!in_array((string) $status, ['DRAFT', 'MENUNGGU_VERIFIKASI', 'DITOLAK'], true)) {
             $db->rollBack();
-            return ['ok' => false, 'pesan' => 'Data sudah terkunci. Gunakan pengajuan koreksi bila perlu perubahan.'];
+            return ['ok' => false, 'pesan' => 'Data sudah terkunci. Hubungi panitia SPMB bila perlu perubahan — panitia akan membuka kembali formulir ini untuk Anda.'];
         }
 
         $upd = $db->prepare(
@@ -192,7 +192,7 @@ function siswa_ajukan_verifikasi_data($pendaftar_id)
         return ['ok' => false, 'pesan' => 'Data pendaftar tidak ditemukan.'];
     }
     if (!in_array($row['status_verifikasi'], ['DRAFT', 'MENUNGGU_VERIFIKASI', 'DITOLAK'], true)) {
-        return ['ok' => false, 'pesan' => 'Data sudah diverifikasi / terkunci. Gunakan pengajuan koreksi bila perlu perubahan.'];
+        return ['ok' => false, 'pesan' => 'Data sudah diverifikasi / terkunci. Hubungi panitia SPMB bila perlu perubahan — panitia akan membuka kembali formulir ini untuk Anda.'];
     }
 
     $wajib = [

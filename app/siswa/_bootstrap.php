@@ -67,8 +67,6 @@ $bayarFormulir = ['tagihan' => 0, 'verified' => 0, 'pending' => 0, 'pending_bukt
 $bayarUangMasuk = $bayarFormulir;
 $ringkasAngsuran = null;
 $totalTerverifikasi = 0;
-$koreksi = [];
-$koreksiBidang = koreksi_bidang();
 $siswaDiterima = false;
 $siswaAktif = false;
 $hasilBolehBuka = false;
@@ -87,7 +85,6 @@ if ($siswa) {
     $penempatan = penempatan_siswa($siswa['id']);
     $dokumen    = dokumen_siswa($siswa['id']);
     $kartuUjian = peserta_kartu_siswa($siswa['id']);
-    $koreksi    = koreksi_siswa($siswa['id']);
     $biodataBolehEdit = in_array($siswa['status_verifikasi'], ['DRAFT', 'MENUNGGU_VERIFIKASI', 'DITOLAK'], true);
 
     $labelVer = [

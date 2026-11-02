@@ -240,12 +240,12 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <p class="mt-1 text-[13px] font-semibold text-ink-900">Keuangan</p>
           </a>
           <a href="<?= url('app/siswa/ppdb.php') ?>" class="rounded-xl border border-line p-3.5 hover:bg-canvas transition">
-            <span class="ms text-[20px] text-primary">how_to_reg</span>
-            <p class="mt-1 text-[13px] font-semibold text-ink-900">PPDB &amp; Seleksi</p>
+            <span class="ms text-[20px] text-primary">event</span>
+            <p class="mt-1 text-[13px] font-semibold text-ink-900">Jadwal &amp; Kartu Ujian</p>
           </a>
           <a href="<?= url('app/siswa/notifikasi.php') ?>" class="rounded-xl border border-line p-3.5 hover:bg-canvas transition">
             <span class="ms text-[20px] text-primary">notifications</span>
-            <p class="mt-1 text-[13px] font-semibold text-ink-900">Notifikasi</p>
+            <p class="mt-1 text-[13px] font-semibold text-ink-900">Informasi</p>
           </a>
         </div>
       </section>

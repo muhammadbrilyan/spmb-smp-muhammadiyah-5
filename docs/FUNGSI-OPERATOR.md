@@ -70,14 +70,14 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | 3 | Kirim Pesan Revisi via WA (tombol di ruang kerja berkas) | ✅ baru 2026-11-02 — pemberitahuan ke wali tidak perlu menunggu seluruh berkas diputus; `berkas_wa_revisi()` mengirim notifikasi portal + WA orang tua, dibatasi 5×/jam per pendaftar |
 | 4 | Retensi berkas pribadi | ✅ |
 
-### 4. Verifikasi Data & Koreksi — `app/operator/verifikasi.php?tab=data` (dahulu `verifikasi-data.php`)
+### 4. Verifikasi Data — `app/operator/verifikasi.php?tab=data` (dahulu `verifikasi-data.php`)
 
 | # | Fungsi | Status |
 |---|---|---|
 | 1 | Antrean biodata + cek kelengkapan (dihitung di server) | ✅ |
 | 2 | Verifikasi & Kunci data | ✅ |
 | 3 | Minta Perbaikan / Kembalikan | ✅ sejak 2026-11-02 — tombol menolak dikirim sebelum catatan ditulis (pengawasan di peramban + tetap diverifikasi server), catatan tampil di portal siswa sebagai banner "Panitia meminta perbaikan data", formulir dibuka kembali, dan kirim ulang memakai tombol yang sama |
-| 4 | Alur pengajuan koreksi (MENUNGGU → DIPROSES → DISETUJUI/DITOLAK) | ✅ — migrasi `20261026_fase13_koreksi_data.sql` dijalankan 2026-10-28 (tabel `pengajuan_koreksi` + kolom verifikasi data sudah ada) |
+| 4 | Alur pengajuan koreksi (MENUNGGU → DIPROSES → DISETUJUI/DITOLAK) | ❌ **dihapus total 2026-11-03.** Sisi siswa ditutup 2026-11-02, lalu tab **Koreksi Data** di halaman ini, blok "Pengajuan Koreksi Data" pada ruang kerja pendaftar, kolom/chip di Data Pendaftar, serta lapisan `includes/queries/koreksi.php` (+ `require_once`-nya) ikut dihapus. Jalur perbaikan data kini hanya butir 3 (Minta Perbaikan). Tabel `pengajuan_koreksi` **tidak** di-drop — baris lama tinggal arsip, tidak ada UI yang membacanya lagi |
 | 5 | Guard pendaftar terarsip | ✅ — `verifikasi_data_set()` menolak dengan pesan "pulihkan dulu dari Data Pendaftar" |
 
 ### 5. Notifikasi — `app/operator/notifikasi.php`
@@ -202,13 +202,14 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 
 ### 14. Pengaturan Sistem (CMS) — `app/operator/pengaturan.php`
 
-Satu `<form>` berisi **11 section isian + 1 kartu tautan** — semua isian **tersimpan & terpakai**:
+Satu `<form>` berisi **12 section isian + 1 kartu tautan** — semua isian **tersimpan & terpakai**:
 
 | # | Section | Status |
 |---|---|---|
 | 1 | Identitas & Kontak Institusi | ✅ sejak 2026-11-02 tambahkan blok **Media Sosial & Website Sekolah**: empat kolom `sosmed_instagram`, `sosmed_tiktok`, `sosmed_youtube`, `website_sekolah` (migrasi `20261102_sosmed_sekolah.sql`). Operator cukup menempel link — `tautan_normal()` menambahkan `https://` bila kurang dan menolak teks yang bukan alamat situs. Kolom terisi = ikon tampil di footer halaman publik (`includes/partials/footer-public.php`) dan membuka tab baru; kolom kosong = ikonnya tidak dirender sama sekali, bukan tautan `#` mati. Nomor WA panitia di footer juga ikut jadi tautan `wa.me` |
 | 2 | Aset Visual & Warna Tema (unggah logo, banner, **color picker**) | ✅ warna → `head.php` |
 | 3 | Running Text / Ticker | ⚠️ Salah kunci baca: `ticker_header` vs `ticker` → selalu kosong di 2 halaman |
+| 3b | **Tanya Jawab (FAQ) Landing** (baru 2026-11-03) | ✅ Section **Pusat Bantuan — Tanya Jawab Seputar SPMB** di `app/spmb/index.php` tidak lagi hardcode. Baris "pertanyaan + jawaban" bisa ditambah/dihapus/urutkan ulang (maks 15, minimal 1), disimpan sebagai JSON `[{"q":…,"a":…}]` di kolom `pengaturan_sekolah.faq_list` (migrasi `20261103_faq_cms.sql`). Dibaca lewat `faq_daftar()` di `includes/cms.php`; kolom masih NULL = contoh bawaan `includes/dummy.php` ($FAQ) yang tampil, dan formulir sudah terisi contoh itu sejak awal — jadi apa yang dilihat operator di layar sama dengan yang akan disimpan. Spasi & baris baru dinormalkan jadi satu paragraf (`faq_json()`), pertanyaan pertama otomatis terbuka di halaman |
 | 4 | **Rincian Biaya SPMB**: Biaya Formulir, SPP, **daftar item biaya masuk yang bisa disusun bebas**, **Biaya Masuk** (+ nama labelnya) dan **Teks Promo** | ✅ sejak 2026-11-01, daftar item sejak 2026-11-02. Operator menambah/menghapus item "nama + nominal" (maks 15) — tersimpan sebagai JSON di `pengaturan_sekolah.rincian_biaya` dan **totalnya otomatis menjadi Biaya Masuk** (`estimasi_uang_masuk`), jadi `angsuran_skema()` di `queries/pembayaran.php` tetap satu-satunya sumber angka. Kartu "Tagihan Setelah Lulus" menampilkan `Biaya Masuk − Biaya Formulir = Sisa` yang dibagi 2 angsuran sama besar (`angsuran_*_nominal` tidak dibaca lagi); nilai berubah langsung saat operator mengetik. Daftar dikosongkan = Biaya Masuk diketik manual. Rincian ikut tampil di kartu biaya halaman publik dan di panel **Rincian Biaya & Sisa Pembayaran** portal siswa. `teks_beasiswa` (label barunya **Teks Promo**) kosong = kartu promo tidak tampil di halaman publik; kolom DB-nya tidak diganti |
 | 5 | Rekening Bank | ✅ dipakai di footer & halaman bayar |
 | 6 | Gelombang Pendaftaran | ✅ |
@@ -265,8 +266,10 @@ Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
 
 ### 19. Petugas & Hak Akses — `app/operator/petugas.php`
 
-Menu grup **Pengaturan Sistem** (kunci `petugas`). Menyimpan di tabel `users`,
-bukan `pengaturan_sekolah` — hanya role `operator`/`admin` yang boleh membuka.
+Menu grup **Pengaturan Sistem** (kunci `petugas`). Akun staf disimpan di tabel
+`users`; hanya role `operator`/`admin` yang boleh membuka. Sejak 2026-11-03 halaman
+ini juga menulis dua kolom `pengaturan_sekolah` (`notif_wa_operator`, `notif_wa_aktif`)
+lewat panel Notifikasi WhatsApp — satu-satunya pengecualian.
 
 | # | Fungsi | Status |
 |---|---|---|
@@ -277,10 +280,12 @@ bukan `pengaturan_sekolah` — hanya role `operator`/`admin` yang boleh membuka.
 | 5 | Tambah petugas baru (nama, jabatan, role, username, password sementara) | ✅ — beberapa akun per role diperbolehkan |
 | 6 | Nonaktifkan / aktifkan akun (soft, data tetap ada) | ✅ — ditolak bila akun tersebut operator aktif terakhir |
 | 7 | Pengaman akun sendiri | ✅ — hanya nama & jabatan yang bisa diubah; username/password/nonaktif akun sendiri dikunci (UI disembunyikan + divalidasi ulang di server) |
+| 8 | Panel **Notifikasi WhatsApp ke Panitia** (2026-11-03) | ✅ — mengganti nomor WA operator (boleh beberapa, dipisah koma) dan saklar `notif_wa_aktif` tanpa membuka formulir Pengaturan Sistem. Format nomor divalidasi di server dengan aturan yang sama seperti CMS (`+?[0-9]{6,16}` per nomor); nomor dikosongkan saat saklar aktif ditolak. Kolom yang ditulis sama persis dengan milik **Pengaturan Sistem → Kontak & Notifikasi** — keduanya tetap bisa dipakai, yang terakhir menyimpan menang |
 
 Lapisan query: `includes/queries/petugas.php` (`petugas_semua`, `petugas_buat`,
 `petugas_ubah_identitas`, `petugas_set_password`, `petugas_set_aktif`,
-`petugas_username_valid`, `petugas_password_valid`).
+`petugas_username_valid`, `petugas_password_valid`, `petugas_notif_wa_simpan`,
+`petugas_notif_wa_bhawa`).
 Untuk kondisi awal di mana **belum ada** akun staf yang bisa login (semua
 `!LOCKED`), pemulihan tetap lewat `php tools/set-password.php` (CLI) atau
 `tools/set-password-web.php`.
@@ -337,6 +342,18 @@ Untuk kondisi awal di mana **belum ada** akun staf yang bisa login (semua
 | 33 | **Sidebar melompat ke atas tiap pindah halaman** (2026-11-02) | Skrip di `includes/partials/sidebar.php` menyimpan posisi gulir `.nav-penuh`/`.nav-rel` ke `sessionStorage` dan memulihkannya, lalu menggeser **seminimal mungkin** bila menu aktif tidak ikut terlihat (12 px dari tepi). Menekan "Pengaturan Sistem" kini membuat scrollbar standby di menu itu, dan halaman yang menampilkannya tanpa scroll tidak digerakkan sama sekali |
 | 34 | **Landing page & halaman masuk** (2026-11-02) | Kartu biaya `app/spmb/index.php` tidak lagi menulis "Saldo Rekening" dan tombol **Ajukan Skema Angsuran** dihapus (skema angsuran tetap dihitung `angsuran_skema()` dan muncul di tab Tagihan). `app/auth/registrasi.php` tidak lagi menawarkan "Masuk Portal" — setelah registrasi yang dibutuhkan hanya melengkapi portal siswa. Di `app/spmb/bayar.php`, teks "hubungi panitia 08xxxx" menjadi **Hubungi panitia — klik disini** yang menaut `wa.me` nomor dari CMS (tanpa nomor = teks biasa, bukan nomor palsu) |
 | 35 | **Ikon media sosial footer hanya hiasan mati** (2026-11-02) | Empat kolom baru di `pengaturan_sekolah` (`sosmed_instagram`, `sosmed_tiktok`, `sosmed_youtube`, `website_sekolah` — migrasi `database/migrations/20261102_sosmed_sekolah.sql`) + blok **Media Sosial & Website Sekolah** di Pengaturan Sistem. Operator cukup menempel link; `tautan_normal()` menormalkan ke `https://…` dan menolak yang bukan alamat situs. Footer publik merender ikon **hanya** untuk kolom yang terisi (`rel="noopener me"`, tab baru) — yang kosong tidak tampil, dan ikon Facebook yang tidak punya kolom dihapus |
+
+| 36 | **Kolom "Koreksi Data" di portal siswa** (2026-11-02) | Bagian **Koreksi Data** (form ajukan + riwayat + batal) dihapus dari `app/siswa/data-siswa.php` berikut dua handler POST-nya (`ajukan_koreksi`, `batalkan_koreksi`); `$koreksi`/`$koreksiBidang` tidak lagi dimuat di `app/siswa/_bootstrap.php`. Tiga pesan yang menunjuk ke UI itu ditulis ulang ("hubungi panitia — formulir dibuka kembali lewat Minta Perbaikan") di `includes/queries/siswa.php` dan `includes/queries/pendaftar.php`. Lapisan query `koreksi.php` + tab **Koreksi Data** operator saat itu sengaja **dipertahankan** supaya baris lama tetap bisa diputus — tab tersebut akhirnya ikut dihapus pada 2026-11-03 (lihat baris 40) |
+
+| 37 | **Penamaan menu portal siswa** (2026-11-03) | Istilah "PPDB" dilepas dari portal siswa. Menu **PPDB & Seleksi** → **Jadwal & Kartu Ujian** (ikon `event`) dan judul halaman `app/siswa/ppdb.php` ikut nama menu; menu **Notifikasi & Pengumuman** → **Informasi**. Hanya label — URL, `?tab=`, kunci `$activeMenu` (`ppdb`, `notifikasi`) dan tautan lama di WA/notifikasi tetap hidup. Enam teks yang menyebut nama menu lama ikut diperbarui: dashboard siswa, Pengaturan Akun (kartu pintasan + label "Notifikasi"), Hasil Seleksi (2 tombol), Data Siswa, Informasi, dan catatan di `app/operator/jadwal.php` |
+
+| 38 | **Urutan tab Jadwal & Kartu Ujian** (2026-11-03) | Tab **Jadwal Tes** dipindah ke paling kiri dan sekaligus menjadi tab bawaan (URL tanpa `?tab=` dan `?tab=` tak dikenal mendarat di sana); **Formulir & Kelengkapan** di kanan. Tidak ada URL baru — `?tab=formulir` tetap membuka formulir. Panel "Tahap saat ini" posisinya di atas tab, sehingga tautan "Lihat Status" dari dashboard/informasi tetap menampilkan tahap siswa apa pun tab bawaannya |
+
+| 39 | **Tombol pintasan "Jadwal & Kartu Ujian" di halaman hasil** (2026-11-03) | Dua tombol di `app/siswa/hasil.php` dihapus (kartu LULUS dan kartu TIDAK_LULUS). Halaman hasil kini hanya menawarkan langkah berikutnya: **Buka Akademik** / **Buka Keuangan** untuk yang lulus, **Info Pendaftaran** untuk yang belum. Baris tombol LULUS dibungkus `if (!$tagihan || $penempatan)` agar tidak menyisakan `<div>` kosong bila dua-duanya tidak berlaku. Menu di sidebar tetap jalan — `app/siswa/ppdb.php` tidak berubah |
+| 40 | **Fitur Koreksi Data ditutup sampai lapisan query** (2026-11-03) | Tab **Koreksi Data** di `app/operator/verifikasi.php` dihapus (`$TABS` tinggal berkas/data), beserta handler POST `koreksi_status`, blok "Pengajuan Koreksi Data" di ruang kerja satu pendaftar, baris "Koreksi aktif" pada kartu Ringkasan, kolom **Koreksi** di antrean data, serta kolom **Koreksi** + chip "N aktif" + baris "N pengajuan koreksi aktif" di `app/operator/pendaftar.php` (kartu keempat jadi **Perlu Perbaikan** dengan tautan filter `DITOLAK`). Berkas `includes/queries/koreksi.php` dan `require_once`-nya di `includes/queries.php` dihapus; subquery `koreksi_aktif` di `pendaftar_data_antrean()` ikut hilang. Notifikasi lama bertipe `KOREKSI_DATA` tetap tampil dan kini menunjuk `verifikasi.php?tab=data`. `?tab=koreksi` lama tidak error — jatuh ke tab berkas. Tabel `pengajuan_koreksi` dan migrasinya **tidak** diapa-apakan |
+| 41 | **Sisa tulisan "PPDB" di ruang kerja operator** (2026-11-03) | Item cek Kesiapan Rilis "Jadwal PPDB & Syarat Ketentuan" → **Jadwal SPMB & Syarat Ketentuan**; teks galatnya "Tanggal buka/tutup pendaftaran SPMB atau teks S&K belum lengkap…". Nama kolom CMS (`tanggal_buka_ppdb`, `tanggal_tutup_ppdb`) tidak diubah |
+| 42 | **Notifikasi WA ke operator belum punya nomor tujuan** (2026-11-03) | `pengaturan_sekolah.notif_wa_operator` diisi nomor WhatsApp panitia dan `notif_wa_aktif` tetap 1 sehingga item Kesiapan Rilis "Notifikasi WA ke operator" berubah menjadi **Aktif — dikirim ke …**. Nomor kini bisa diganti dari **Petugas & Hak Akses** (panel baru, aksi POST `wa` → `petugas_notif_wa_simpan()`), tidak perlu lagi menggulir formulir Pengaturan Sistem. Nilai nomor disimpan di database saja — tidak masuk ke seed `database/db_spmb_mualimku.sql` karena repo ini publik |
+| 43 | **Isi FAQ halaman depan tidak bisa diubah tanpa menyentuh kode** (2026-11-03) | Pertanyaan-jawaban section **Pusat Bantuan** di `app/spmb/index.php` dulu dibaca langsung dari `$FAQ` di `includes/dummy.php`. Kini lewat `faq_daftar()` (kolom JSON `pengaturan_sekolah.faq_list`, lihat section 3b) dengan editor baris di Pengaturan Sistem. Sekalian memperbaiki dua string yang menampilkan `Qur\u2019an` apa adanya — `\u2019` di dalam petik tunggal PHP tidak diproses (langkah alur 3 & FAQ pertama) |
 
 ---
 

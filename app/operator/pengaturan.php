@@ -11,6 +11,8 @@
  *   - Biaya & Rekening    → biaya formulir, SPP, biaya pendaftaran, bank
  *   - Jadwal Gelombang    → tahun ajaran, gelombang, tanggal buka/tutup
  *   - Jalur Pendaftaran   → centang jalur yang aktif
+ *   - FAQ Landing         → daftar pertanyaan section Pusat Bantuan
+ *                            (kolom JSON pengaturan_sekolah.faq_list)
  *   - WhatsApp Fonnte     → token API untuk kirim WA otomatis
  *   - Pengaturan Lainnya  → estimasi, deskripsi gelombang
  * ================================================================== */
@@ -258,6 +260,36 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $galat[] = 'Aktifkan minimal satu jalur pendaftaran.';
     }
     $f['jalur_aktif'] = json_encode($jalurDipilih, JSON_UNESCAPED_UNICODE);
+
+    /* FAQ landing: faq_tanya[] + faq_jawab[] sepasang per baris.
+     * Minimal satu pertanyaan — bila semua baris dikosongkan tidak disimpan,
+     * karena kolom kosong berarti halaman kembali memakai contoh bawaan. */
+    $faqTanya = (array) ($_POST['faq_tanya'] ?? []);
+    $faqJawab = (array) ($_POST['faq_jawab'] ?? []);
+    $faqBaru  = [];
+    foreach ($faqTanya as $i => $tanyaRaw) {
+        $tanya = preg_replace('/\s+/u', ' ', trim((string) $tanyaRaw));
+        $jawab = preg_replace('/\s+/u', ' ', trim((string) ($faqJawab[$i] ?? '')));
+        if ($tanya === '' && $jawab === '') {
+            continue; /* baris kosong hasil "Tambah Pertanyaan" yang tidak jadi diisi */
+        }
+        if ($tanya === '') {
+            $galat[] = 'FAQ baris ' . (count($faqBaru) + 1) . ' belum ada pertanyaannya.';
+            continue;
+        }
+        if ($jawab === '') {
+            $galat[] = 'Jawaban untuk "' . mb_substr($tanya, 0, 40) . '" masih kosong.';
+            continue;
+        }
+        $faqBaru[] = ['q' => mb_substr($tanya, 0, 200), 'a' => mb_substr($jawab, 0, 1000)];
+    }
+    if (count($faqBaru) > 15) {
+        $galat[] = 'FAQ maksimal 15 pertanyaan.';
+    }
+    if (!$faqBaru) {
+        $galat[] = 'Isi minimal satu pertanyaan FAQ — section Pusat Bantuan tidak boleh kosong.';
+    }
+    $f['faq_list'] = faq_json($faqBaru);
 
     /* Metode pembayaran: checkbox bayar_*_aktif — wajib minimal 1 aktif. */
     $f['bayar_gateway_aktif']  = empty($_POST['bayar_gateway_aktif'])  ? 0 : 1;
@@ -646,6 +678,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     tanggal_buka_ppdb = ?, tanggal_tutup_ppdb = ?, tanggal_pengumuman = ?,
                     deskripsi_gelombang = ?, logo_url = ?, hero_banner_url = ?, login_banner_url = ?,
                     jalur_aktif = ?,
+                    faq_list = ?,
                     fonnte_token = ?,
                     midtrans_server_key = ?, midtrans_client_key = ?, midtrans_sandbox = ?,
                     bayar_gateway_aktif = ?, bayar_transfer_aktif = ?, bayar_qris_aktif = ?,
@@ -694,6 +727,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $bannerAkhir,
                 $loginBannerAkhir,
                 $f['jalur_aktif'],
+                $f['faq_list'] ?? null,
                 $f['fonnte_token'] !== '' ? $f['fonnte_token'] : null,
                 $f['midtrans_server_key'] !== '' ? $f['midtrans_server_key'] : null,
                 $f['midtrans_client_key'] !== '' ? $f['midtrans_client_key'] : null,
@@ -1038,6 +1072,58 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <input id="tagline" name="tagline" class="input" value="<?= e($f['tagline']) ?>" placeholder="Berakhlak & Berprestasi">
             <p class="hint">Tampil di bawah nama sekolah pada header & footer, misal: "Berakhlak & Berprestasi".</p>
           </div>
+        </div>
+      </section>
+
+      <!-- ============ 3b. FAQ LANDING ============ -->
+      <section class="card p-5 sm:p-6">
+        <h2 class="font-bold text-ink-900">Tanya Jawab (FAQ) Landing</h2>
+        <p class="mt-1 text-[13px] text-ink-500">
+          Isi section <strong>Pusat Bantuan — Tanya Jawab Seputar SPMB</strong> di halaman depan.
+          Urutan baris di bawah sama dengan urutan yang dilihat calon siswa; pertanyaan pertama tampil terbuka.
+        </p>
+
+        <?php
+        /* faq_daftar() sudah membaca kolom faq_list; selama kolom belum pernah
+         * diisi, contoh bawaan includes/dummy.php yang muncul di sini —
+         * operator cukup menyuntingnya lalu menyimpan. */
+        $faqTampil = faq_daftar() ?: [['q' => '', 'a' => '']];
+        ?>
+        <div id="faq-rows" class="mt-4 space-y-3">
+          <?php foreach ($faqTampil as $faq): ?>
+            <div class="rounded-2xl border border-line p-4" data-faq-row>
+              <div class="flex items-start gap-2">
+                <div class="flex-1 min-w-0 space-y-2">
+                  <input name="faq_tanya[]" class="input font-semibold" maxlength="200"
+                         placeholder="Pertanyaan, mis. Apakah Biaya Pendaftaran dapat diangsur?" value="<?= e($faq['q'] ?? '') ?>">
+                  <textarea name="faq_jawab[]" class="textarea" rows="2" maxlength="1000"
+                            placeholder="Jawaban singkat untuk calon siswa..."><?= e($faq['a'] ?? '') ?></textarea>
+                </div>
+                <button type="button" class="btn btn-outline shrink-0" data-faq-hapus
+                        aria-label="Hapus pertanyaan"><?= icon('delete', 'text-[18px]') ?></button>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+
+        <template id="faq-row-tpl">
+          <div class="rounded-2xl border border-line p-4" data-faq-row>
+            <div class="flex items-start gap-2">
+              <div class="flex-1 min-w-0 space-y-2">
+                <input name="faq_tanya[]" class="input font-semibold" maxlength="200"
+                       placeholder="Pertanyaan, mis. Apa saja berkas yang harus diunggah?" value="">
+                <textarea name="faq_jawab[]" class="textarea" rows="2" maxlength="1000"
+                          placeholder="Jawaban singkat untuk calon siswa..."></textarea>
+              </div>
+              <button type="button" class="btn btn-outline shrink-0" data-faq-hapus
+                      aria-label="Hapus pertanyaan"><?= icon('delete', 'text-[18px]') ?></button>
+            </div>
+          </div>
+        </template>
+
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <button type="button" class="btn btn-outline" id="faq-tambah"><?= icon('add') ?> Tambah Pertanyaan</button>
+          <p class="hint mb-0">Maksimal 15 pertanyaan. Baris baru pada jawaban otomatis digabung menjadi satu paragraf.</p>
         </div>
       </section>
 
@@ -1662,6 +1748,23 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       sinkronTotal();
     });
     sinkronTotal();
+  })();
+  (function () {
+    /* FAQ landing — sepasang input pertanyaan & jawaban per baris. */
+    var rows = document.getElementById('faq-rows');
+    var tambah = document.getElementById('faq-tambah');
+    var tpl = document.getElementById('faq-row-tpl');
+    if (!rows || !tambah || !tpl) return;
+    tambah.addEventListener('click', function () {
+      rows.insertAdjacentHTML('beforeend', tpl.innerHTML);
+      var baru = rows.querySelector('[data-faq-row]:last-child input[name="faq_tanya[]"]');
+      if (baru) baru.focus();
+    });
+    rows.addEventListener('click', function (e) {
+      var hapus = e.target.closest('[data-faq-hapus]');
+      if (!hapus) return;
+      hapus.closest('[data-faq-row]').remove();
+    });
   })();
 </script>
 </body>

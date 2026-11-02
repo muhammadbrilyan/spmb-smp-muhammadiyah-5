@@ -1,6 +1,6 @@
 <?php
 /**
- * NOTIFIKASI & PENGUMUMAN — portal siswa (Tahap 2).
+ * INFORMASI — portal siswa (Tahap 2). Dahulu bernama "Notifikasi & Pengumuman".
  *
  * SATU halaman untuk semua pemberitahuan siswa: pengumuman panitia yang
  * sudah terbit, lalu notifikasi per penerima (tabel notifikasi_siswa) —
@@ -8,7 +8,7 @@
  * Dulu pengumuman punya menu & halaman sendiri; kini digabung agar siswa
  * tidak bingung memilih antara "Notifikasi" dan "Pengumuman".
  */
-$title = 'Notifikasi & Pengumuman';
+$title = 'Informasi';
 $desc  = 'Pemberitahuan status pendaftaran, pembayaran, berkas, seleksi, dan pengumuman panitia.';
 require __DIR__ . '/_bootstrap.php';
 
@@ -172,7 +172,7 @@ if ($waPanitia !== '' && strpos($waPanitia, '0') === 0) {
 require_once __DIR__ . '/../../includes/partials/head.php';
 $activeMenu = 'notifikasi';
 require __DIR__ . '/../../includes/partials/sidebar.php';
-$breadcrumbs = ['Portal Siswa' => url('app/siswa/index.php'), 'Notifikasi & Pengumuman' => null];
+$breadcrumbs = ['Portal Siswa' => url('app/siswa/index.php'), 'Informasi' => null];
 $pageActions = '';
 require __DIR__ . '/../../includes/partials/topbar.php';
 ?>
@@ -186,7 +186,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <span class="badge badge-blue"><?= dot('blue') ?> <?= (int) $jumlah ?> belum dibaca</span>
           <span class="badge badge-gray"><?= e($PENGATURAN['gelombang'] ?? 'SPMB') ?> · <?= e($PENGATURAN['tahun_ajaran'] ?? '') ?></span>
         </div>
-        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Notifikasi &amp; Pengumuman</h1>
+        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Informasi</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
           Semua pemberitahuan resmi untuk Anda dalam satu tempat: pengumuman panitia, verifikasi data &amp; berkas,
           keputusan pembayaran, dan hasil seleksi.
@@ -387,7 +387,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 </dd>
               </div>
             </dl>
-            <a href="<?= url('app/siswa/ppdb.php') ?>" class="btn btn-outline btn-block btn-sm mt-4">Buka PPDB &amp; Seleksi</a>
+            <a href="<?= url('app/siswa/ppdb.php') ?>" class="btn btn-outline btn-block btn-sm mt-4">Buka Jadwal &amp; Kartu Ujian</a>
           <?php else: ?>
             <p class="mt-2 text-[13px] text-ink-500">Data pendaftaran belum terhubung ke akun ini. Hubungi panitia SPMB.</p>
           <?php endif; ?>

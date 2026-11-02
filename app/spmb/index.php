@@ -10,7 +10,8 @@
  *   - Section alur   → langkah pendaftaran
  *   - Section biaya  → rincian biaya
  *   - Section jadwal → jadwal gelombang (otomatis dari CMS)
- *   - Section FAQ    → tanya jawab
+ *   - Section FAQ    → tanya jawab (faq_daftar(): kolom faq_list dari
+ *                      Pengaturan Sistem, contoh dummy.php selama belum diisi)
  *   - Footer         → via includes/partials/footer-public.php
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
@@ -467,7 +468,7 @@ if (strpos($waPanitia, '0') === 0) {
     </div>
 
     <div class="mt-9 space-y-3">
-      <?php foreach ($FAQ as $i => $f): ?>
+      <?php foreach (faq_daftar() as $i => $f): ?>
         <details class="card-flat group <?= $i === 0 ? 'ring-1 ring-primary/20' : '' ?>" <?= $i === 0 ? 'open' : '' ?>>
           <summary class="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
             <span class="font-semibold text-ink-900 text-[15px]"><?= e($f['q']) ?></span>

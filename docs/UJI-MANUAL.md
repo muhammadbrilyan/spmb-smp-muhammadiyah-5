@@ -178,6 +178,9 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | J10 | Nonaktifkan satu-satunya akun operator aktif | Ditolak: "Akun ini satu-satunya operator aktif. Buat atau aktifkan operator lain lebih dulu." |
 | J11 | Role bendahara/kepsek membuka URL `app/operator/petugas.php` | Dialihkan ke portal netral (require_role operator/admin) |
 | J12 | Kesiapan Rilis saat masih ada akun `!LOCKED` | Item "Akun staf sudah memiliki password" berwarna Perhatian dan menautkan halaman Petugas & Hak Akses |
+| J13 | Gulir ke panel **Notifikasi WhatsApp ke Panitia** (baru 2026-11-03) | Menampilkan nomor WA operator tersimpan di database + saklar "Kirim via WhatsApp (Fonnte)" + badge hijau **Aktif** bila saklar dan nomor sama-sama terisi, selain itu badge abu-abu **Belum aktif**. Menyimpan menulis `pengaturan_sekolah.notif_wa_operator` & `notif_wa_aktif` — kolom yang sama dengan Pengaturan Sistem → Kontak & Notifikasi |
+| J14 | Isi `123` atau `0811-2233-4455` lalu simpan | Ditolak server: "Format nomor WhatsApp "…" tidak valid. Gunakan 6-16 angka (boleh diawali +), pisahkan beberapa nomor dengan koma." Nilai lama tidak tertimpa. `081122334455; 081234567890` diterima dan disimpan ternormalisasi `081122334455, 081234567890` |
+| J15 | Kosongkan nomor sambil saklar tetap aktif / matikan saklar | Kosong + aktif → ditolak ("…nomor WA operator kosong"). Saklar mati → flash "Notifikasi WhatsApp dimatikan sementara — tujuan operator: …"; `notif_operator()` berhenti mengirim WA (in-app tetap tercatat) dan **juga menyenyapkan** kiriman ke nomor bendahara karena saklarnya global. Kesiapan Rilis kembali menandai item "Notifikasi WA ke operator" belum aktif bila nomor dikosongkan |
 
 ## K. Persetujuan Penetapan Hasil (`app/kepsek/penetapan.php`)
 
@@ -207,6 +210,10 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | L6 | **Simpan** padahal DB tertinggal satu migrasi (buang kolom contoh: `ALTER TABLE pengaturan_sekolah DROP COLUMN pengingat_angsuran_wa`) | Toast merah menyebut "Struktur basis data belum lengkap (… Unknown column …) — jalankan database/migrations/"; **tidak ada** perubahan yang tersimpan separuh |
 | L7 | `php tools/cek-proyek.php` sesudah langkah L6 | Pemeriksaan 5 **GAGAL**: `1 kolom ada di seed tapi belum ada di DB: pengaturan_sekolah.pengingat_angsuran_wa`; pulihkan dengan `mysql -u root < database/migrations/20261031_pengingat_angsuran.sql` → 8 PASS |
 | L8 | Simpan dengan token Fonnte kosong di form (tidak mengetik ulang) | Token tersimpan **tidak terhapus**; penghapusan hanya lewat checkbox "Hapus token dari database" |
+| L9 | Kartu **Tanya Jawab (FAQ) Landing** (blok 3b, baru 2026-11-03) | Ada di antara "Running Text & Profil Singkat" dan "Rincian Biaya SPMB". Selama `pengaturan_sekolah.faq_list` masih NULL, barisnya sudah terisi contoh bawaan `includes/dummy.php` — persis yang tampil di section Pusat Bantuan halaman depan |
+| L10 | Ubah satu pertanyaan, **Tambah Pertanyaan**, hapus satu baris, lalu Simpan | `faq_list` terisi JSON `[{"q":…,"a":…}]`; landing `app/spmb/index.php` (#faq) menampilkan urutan yang sama, pertanyaan pertama ber-`open`, dan spasi berlebih/baris baru pada jawaban tergabung jadi satu paragraf |
+| L11 | Kosongkan **seluruh** baris FAQ lalu Simpan | Ditolak: "Isi minimal satu pertanyaan FAQ — section Pusat Bantuan tidak boleh kosong." Nilai `faq_list` lama tidak tertimpa |
+| L12 | Simpan 16 pertanyaan (klik Tambah Pertanyaan sampai baris ke-16 terisi) | Ditolak: "FAQ maksimal 15 pertanyaan." — tidak ada yang tersimpan |
 
 ## M. Bendahara — Dashboard & Verifikasi Pembayaran
 
@@ -267,7 +274,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | O7 | Tambah manual pada dua kartu sekaligus | Tiap kartu punya `<select>` sendiri dengan id unik `pm-<id jadwal>`; pilihan yang sama (pendaftar BERKAS_TERVERIFIKASI yang belum punya jadwal mana pun, terarsip dikecualikan) dan otomatis berkurang setelah dipakai |
 | O8 | Perkecil jendela sampai ~400 px | Daftar peserta memakai `<ul>` vertikal (nomor peserta rata kiri, nama + no. pendaftaran + asal sekolah, nomor WA, ikon hapus) — **tanpa scrollbar horizontal**, pengganti tabel `min-w-[760px]` lama |
 | O9 | Buka portal siswa (peran `siswa`) | Topbar sama persis dengan topbar peran sekolah: hanya chip tahun ajaran + lonceng + `?` + avatar. **Tidak ada** breadcrumb "Portal Siswa › …" dan **tidak ada** chip "Gateway WA dikonfigurasi — % terkirim bulan ini" |
-| O10 | Lihat sidebar siswa | Satu grup **Portal Saya** berisi Dashboard, Notifikasi & Pengumuman, Data Siswa, Keuangan, PPDB & Seleksi, **Hasil Seleksi**, Pengaturan Akun. Menu *Akademik* hanya muncul bila siswa itu sudah dinyatakan diterima. Tidak ada tombol CTA "Info SPMB" (ikon `?` di topbar tetap mengarah ke Info SPMB) dan kaki sidebar hanya berisi **Keluar** — tautan *Ganti Password* dibuang karena `app/staf/ganti-password.php` menolak peran siswa; ganti sandal ada di **Pengaturan Akun**. Menu *Hasil Seleksi* diberi badge merah **Baru** selama panitia sudah mengumumkan tetapi amplop siswa itu belum dibuka (lihat bagian T) |
+| O10 | Lihat sidebar siswa | Satu grup **Portal Saya** berisi Dashboard, **Informasi**, Data Siswa, Keuangan, **Jadwal & Kartu Ujian**, **Hasil Seleksi**, Pengaturan Akun (nama menu diganti 2026-11-03: dahulu "Notifikasi & Pengumuman" dan "PPDB & Seleksi"; URL `app/siswa/notifikasi.php` & `app/siswa/ppdb.php` tidak berubah). Menu *Akademik* hanya muncul bila siswa itu sudah dinyatakan diterima. Tidak ada tombol CTA "Info SPMB" (ikon `?` di topbar tetap mengarah ke Info SPMB) dan kaki sidebar hanya berisi **Keluar** — tautan *Ganti Password* dibuang karena `app/staf/ganti-password.php` menolak peran siswa; ganti sandal ada di **Pengaturan Akun**. Menu *Hasil Seleksi* diberi badge merah **Baru** selama panitia sudah mengumumkan tetapi amplop siswa itu belum dibuka (lihat bagian T) |
 | O11 | Login sebagai operator/bendahara/kepsek setelah perubahan O9–O10 | Sidebar & kaki mereka tidak berubah (CTA Pendaftaran Manual operator, *Ganti Password* tetap ada untuk peran sekolah) |
 
 ## P. Tabel Agenda pada Kartu Peserta (`app/siswa/ppdb.php?tab=jadwal`)
@@ -343,8 +350,8 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_hasil_dibuka
 
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
-| T1 | Sidebar siswa | **Hasil Seleksi** menjadi menu tersendiri (ikon `emoji_events`) di grup Portal Saya, bukan lagi tab di PPDB & Seleksi. Selama panitia sudah mengumumkan dan amplop belum dibuka, menunya memakai badge merah **Baru**; setelah dibuka badge hilang dan menu hanya menandai halaman aktif |
-| T2 | `app/siswa/ppdb.php` | Tab hanya **Formulir** & **Jadwal Tes** — tab "Hasil Seleksi" lama dihapus. Tautan lama `ppdb.php?tab=hasil` (penanda halaman WA, markah browser) mengirim 302 ke `app/siswa/hasil.php` |
+| T1 | Sidebar siswa | **Hasil Seleksi** menjadi menu tersendiri (ikon `emoji_events`) di grup Portal Saya, bukan lagi tab di Jadwal & Kartu Ujian (nama lama "PPDB & Seleksi"). Selama panitia sudah mengumumkan dan amplop belum dibuka, menunya memakai badge merah **Baru**; setelah dibuka badge hilang dan menu hanya menandai halaman aktif |
+| T2 | `app/siswa/ppdb.php` | Tab hanya **Formulir** & **Jadwal Tes** — tab "Hasil Seleksi" lama dihapus (urutan tab diubah 2026-11-03: Jadwal Tes terkiri + bawaan, lihat W2). Tautan lama `ppdb.php?tab=hasil` (penanda halaman WA, markah browser) mengirim 302 ke `app/siswa/hasil.php` |
 | T3 | Pengumuman belum ditekan panitia dan siswa belum lulus-dapat-kelas → Hasil Seleksi | Kartu "Pengumuman Belum Dibuka" + badge amber *Menunggu Pengumuman*; menampilkan tanggal terjadwal (`pengumuman.dijadwalkan_pada`) atau perkiraan CMS. **Tidak ada** tombol buka, **tidak ada** angka nilai |
 | T4 | Panitia sudah mengumumkan / siswa LULUS berkelas, amplop belum dibuka | Badge hijau *Siap Dibuka* + kartu "Amplop Hasil Seleksi Sudah Tiba" dengan tombol **Buka Hasil Seleksi** (ikon `mail`, denyut `amplop-nadi`). Strip kaki kartu: No. Pendaftaran · nama sekolah · "Terkunci sampai Anda buka". **View-source halaman ini tidak memuat status kelulusan, kelas, maupun nilai** |
 | T5 | Tekan **Buka Hasil Seleksi** | POST + CSRF ke `app/siswa/hasil.php`, `pendaftar.hasil_dibuka_at = NOW()` (sekali, `… IS NULL`), lalu redirect PRG ke `?baru=1` |
@@ -448,6 +455,46 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_hasil_dibuka
 | V36 | Lipat sidebar (rail ikon) lalu ulangi V34–V35 | Posisi rail ikut dipertahankan (kunci terpisah `nav-rel-gulir`) dan ikon aktif discroll-kan |
 | V37 | Buka drawer sidebar di layar sempit (< 1024 px) | Perilaku drawer tidak berubah; script hanya menyentuh `.nav-penuh` dan `.nav-rel` |
 | V38 | Mode privat / `sessionStorage` diblokir | Tidak ada galat JS — pembacaan & penulisan posisi dibungkus `try/catch`, menu tetap berfungsi |
+
+## W. Revisi 2026-11-03 (Label Portal Siswa & Penghapusan Koreksi Data)
+
+### W-a. Penamaan menu portal siswa
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| W1 | Login siswa → sidebar grup **Portal Saya** | Menunya kini **Informasi** (ikon `notifications`) dan **Jadwal & Kartu Ujian** (ikon `event`) — tulisan "PPDB" dan "Notifikasi & Pengumuman" tidak ada lagi. Urutan & jumlah menu tidak berubah |
+| W2 | Klik **Jadwal & Kartu Ujian** | URL tetap `app/siswa/ppdb.php`; tanpa `?tab=` (maupun `?tab=` nilai tak dikenal) halaman mendarat di tab **Jadwal Tes** — tab itu kini terkiri dan menjadi bawaan, **Formulir & Kelengkapan** di kanannya (sebelumnya formulir terkiri dan bawaan); `?tab=formulir` / `?tab=jadwal` tetap bekerja. `<title>` dan h1 = "Jadwal & Kartu Ujian", breadcrumb "Portal Siswa › Jadwal & Kartu Ujian"; `aria-label` navigasi tab ikut nama baru. Menu sidebar tersorot aktif (kunci `$activeMenu = 'ppdb'` tidak diubah). Panel "Tahap saat ini" berada di atas tab, jadi tautan tanpa `?tab=` yang berlabel "Lihat Status" tetap menampilkan tahap siswa |
+| W3 | Klik **Informasi** | URL tetap `app/siswa/notifikasi.php`; `<title>` + breadcrumb + h1 = "Informasi". Isi halaman tidak berubah (pengumuman panitia di atas, daftar notifikasi di bawah) dan badge jumlah belum dibaca tetap muncul di menu |
+| W4 | Telusuri tautan yang menyebut nama menu lama | Dashboard siswa → "Buka Jadwal &amp; Kartu Ujian"; **Pengaturan Akun** kartu pintasan → "Jadwal & Kartu Ujian" (ikon `event`) & "Informasi"; pesan terkunci di Data Siswa → "pantau status melalui menu Jadwal &amp; Kartu Ujian"; catatan di `app/operator/jadwal.php` → "siswa melihatnya di **Jadwal &amp; Kartu Ujian**". (Tombol "Jadwal & Kartu Ujian" di **Hasil Seleksi** sudah dihapus — lihat W-c.) Tidak ada satu pun **teks yang tampil** berisi "PPDB" di portal siswa; yang tersisa hanya catatan historis di docblock (`app/siswa/ppdb.php`, `notifikasi.php`, `hasil.php`) |
+| W5 | Lipat sidebar desktop (rail ikon) dan buka drawer mobile | Rail & drawer memakai label yang sama (nama baru) — keduanya dirender dari satu `$menuSiswa`, tidak ada salinan teks lama |
+| W6 | Bookmark/tautan lama: `app/siswa/ppdb.php?tab=hasil`, `app/siswa/pengumuman.php`, `app/siswa/ppdb.php?tab=jadwal` | Tetap hidup: `?tab=hasil` → redirect ke `app/siswa/hasil.php`; `pengumuman.php` → meta-refresh/`location.replace` ke `notifikasi.php` (mendarat di menu **Informasi**); `?tab=jadwal` membuka tab Agenda Tes seperti sebelumnya |
+
+### W-b. Kolom "Koreksi Data" dihapus dari portal siswa
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| W7 | Siswa dengan data `TERVERIFIKASI` membuka Data Siswa | **Tidak ada** lagi bagian "Koreksi Data" di bawah halaman (form bidang + uraian, Riwayat Pengajuan, tombol Batalkan) — halaman berakhir pada form/aksi yang ada. Paragraf pembuka kini berbunyi "… hubungi panitia SPMB bila ada yang keliru, panitia akan membuka kembali formulir ini untuk Anda perbaiki." |
+| W8 | POST manual `aksi=ajukan_koreksi` ke `app/siswa/data-siswa.php` (mis. dari skrip lama) | Ditolak: flash "Aksi tidak dikenali." — tidak ada baris baru di `pengajuan_koreksi` dan tidak ada `wa_log`/notifikasi yang terbentuk |
+| W9 | Coba menyimpan data yang sudah terkunci | Pesan lama "Gunakan pengajuan koreksi" diganti "Data sudah terkunci. Hubungi panitia SPMB bila perlu perubahan — panitia akan membuka kembali formulir ini untuk Anda." (juga di guard `siswa_simpan_data()`/pengajuan verifikasi) |
+| W10 | Notifikasi "Data terverifikasi" di lonceng portal | Isinya tidak lagi menyuruh membuka menu koreksi: "…Bila ada yang keliru, hubungi panitia SPMB — formulir akan dibuka kembali lewat menu Minta Perbaikan." |
+| W11 | Operator → `app/operator/verifikasi.php` | Tab hanya **Berkas Persyaratan** & **Data Siswa**. URL lama `?tab=koreksi` (penanda halaman, notifikasi lama) tidak error — `$TABS` tidak mengenalnya sehingga halaman mendarat di tab **berkas**. POST `aksi=koreksi_status` → flash "Aksi tidak dikenali."; tidak ada lagi tombol "Tandai Diproses / Setujui & Buka Data / Tolak" di mana pun |
+| W12 | Operator → Data Pendaftar | Kolom **Koreksi** di tabel, chip "N aktif", dan baris "N pengajuan koreksi aktif" pada kartu ringkasan semuanya hilang; kartu keempat kini berjudul **Perlu Perbaikan** dengan tautan "Buka yang perlu diperbaiki" → filter `DITOLAK`. Header tabel 6 kolom, baris kosong `colspan="6"` |
+
+### W-c. Sisi operator ikut ditutup — tabel `pengajuan_koreksi` dibiarkan sebagai arsip
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| W13 | `SELECT COUNT(*) FROM pengajuan_koreksi;` di phpMyAdmin | Baris lama (termasuk yang MENUNGGU/DIPROSES) **masih ada** — tidak ada migrasi hapus/drop; tidak ada lagi jalur UI yang menulis ke tabel ini |
+| W14 | Lonceng portal siswa & daftar notifikasi operator | Notifikasi bertipe `KOREKSI_DATA` yang lama tetap tampil (label "Koreksi Data" di peta tipe `includes/queries/notifikasi-siswa.php` dipertahankan). Tautannya di `app/operator/notifikasi.php` sekarang mengarah ke `verifikasi.php?tab=data`, bukan tab yang sudah dihapus |
+| W15 | Muat ulang halaman apa pun | Tidak ada fatal `undefined function koreksi_*()`: `includes/queries/koreksi.php` dihapus berikut `require_once`-nya di `includes/queries.php`, dan tidak ada satu pun pemanggil yang tersisa (diperiksa dengan `grep -rn "koreksi_" app/ includes/`) |
+
+### W-d. Halaman Hasil Seleksi: tombol "Jadwal & Kartu Ujian" dihapus
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| W16 | Siswa LULUS membuka `app/siswa/hasil.php` (amplop sudah dibuka) | Deretan tombol di bawah kartu hanya **Buka Akademik** (bila sudah ada kelas) dan/atau **Buka Keuangan** (bila tagihan belum aktif). Tombol "Jadwal & Kartu Ujian" hilang; jika keduanya tidak berlaku, seluruh baris tombol tidak dirender — tanpa ruang kosong |
+| W17 | Siswa TIDAK_LULUS membuka amplop | Baris tombol hanya berisi **Info Pendaftaran** → `app/spmb/index.php`; tombol "Jadwal & Kartu Ujian" tidak ada lagi. Teks lain pada kartu (kutip QS. Al-Baqarah: 216, "Hasil dibuka pada …") tidak berubah |
+| W18 | Sidebar siswa tetap | Menu **Jadwal & Kartu Ujian** masih ada di sidebar dan tetap bisa dibuka dari sana — yang dihapus hanya tombol pintasan di halaman hasil (`app/siswa/ppdb.php` tidak diubah; docblock `hasil.php` baris 5 masih menyebut nama lama sebagai catatan historis) |
 
 ## Skenario Penyalahgunaan (wajib lolos)
 

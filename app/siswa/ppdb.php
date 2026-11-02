@@ -1,13 +1,13 @@
 <?php
 /**
- * PPDB & SELEKSI — portal siswa (Fase 13).
+ * JADWAL & KARTU UJIAN — portal siswa (Fase 13). Dahulu bernama "PPDB & Seleksi".
  *
  * Ringkasan formulir, kelengkapan/pengajuan, jadwal tes & lokasi, ujian
  * daring, serta status tes. Hasil seleksi TIDAK lagi berada di sini — ia
  * menjadi menu tersendiri di app/siswa/hasil.php (lihat catatan redirect).
  */
-$title = 'PPDB & Seleksi';
-$desc  = 'Formulir pendaftaran, kelengkapan berkas, jadwal tes, dan status seleksi.';
+$title = 'Jadwal & Kartu Ujian';
+$desc  = 'Jadwal tes, kartu ujian, formulir pendaftaran, dan kelengkapan berkas SPMB.';
 require __DIR__ . '/_bootstrap.php';
 
 /* Tautan lama (pesan WA & bookmark) menunjuk ke ?tab=hasil. Dibawa ke halaman
@@ -18,12 +18,13 @@ if ((string) ($_GET['tab'] ?? '') === 'hasil') {
 }
 
 $tabs = [
-    'formulir' => ['Formulir & Kelengkapan', 'how_to_reg'],
     'jadwal'   => ['Jadwal Tes', 'event'],
+    'formulir' => ['Formulir & Kelengkapan', 'how_to_reg'],
 ];
-$tab = (string) ($_GET['tab'] ?? 'formulir');
+/* Tab terkiri = tab bawaan, sama seperti nama menunya (Jadwal & Kartu Ujian). */
+$tab = (string) ($_GET['tab'] ?? 'jadwal');
 if (!isset($tabs[$tab])) {
-    $tab = 'formulir';
+    $tab = 'jadwal';
 }
 
 $flash = flash();
@@ -52,7 +53,7 @@ $agendaBaris = $agendaTes ?: ($kartuUjian ? [$kartuUjian] : []);
 require_once __DIR__ . '/../../includes/partials/head.php';
 $activeMenu = 'ppdb';
 require __DIR__ . '/../../includes/partials/sidebar.php';
-$breadcrumbs = ['Portal Siswa' => url('app/siswa/index.php'), 'PPDB & Seleksi' => null];
+$breadcrumbs = ['Portal Siswa' => url('app/siswa/index.php'), 'Jadwal & Kartu Ujian' => null];
 $pageActions = '';
 require __DIR__ . '/../../includes/partials/topbar.php';
 ?>
@@ -67,7 +68,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <span class="badge badge-gray"><?= e($PENGATURAN['tahun_ajaran'] ?? '') ?></span>
           <?php if ($siswa): ?><span class="badge badge-<?= e($tahap['persen'] >= 100 ? 'green' : 'amber') ?>"><?= e($tahap['label']) ?></span><?php endif; ?>
         </div>
-        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">PPDB &amp; Seleksi</h1>
+        <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Jadwal &amp; Kartu Ujian</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
           Pantau formulir, kelengkapan berkas, dan jadwal tes Anda. Hasil seleksi dibuka sendiri melalui menu
           <a href="<?= url('app/siswa/hasil.php') ?>" class="font-semibold text-primary hover:underline">Hasil Seleksi</a>.
@@ -104,7 +105,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
       </section>
 
-      <nav class="mt-5 card p-2 flex gap-1.5 overflow-x-auto scroll-thin" aria-label="Bagian PPDB">
+      <nav class="mt-5 card p-2 flex gap-1.5 overflow-x-auto scroll-thin" aria-label="Bagian Jadwal &amp; Kartu Ujian">
         <?php foreach ($tabs as $key => $meta): $aktif = $key === $tab; ?>
           <a href="<?= url('app/siswa/ppdb.php?tab=' . $key) ?>"
              class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold whitespace-nowrap transition

@@ -145,12 +145,12 @@ $tglOk = !empty($P['tanggal_buka_ppdb']) && !empty($P['tanggal_tutup_ppdb']);
 $skOk  = trim((string) ($P['syarat_ketentuan'] ?? '')) !== '';
 $items[] = [
     'grup' => 'Konfigurasi', 'status' => ($tglOk && $skOk) ? 'ok' : 'hati',
-    'judul' => 'Jadwal PPDB & Syarat Ketentuan',
+    'judul' => 'Jadwal SPMB & Syarat Ketentuan',
     'ket'   => ($tglOk && $skOk)
         ? 'Buka ' . date('d/m/Y', strtotime((string) $P['tanggal_buka_ppdb']))
             . ' — tutup ' . date('d/m/Y', strtotime((string) $P['tanggal_tutup_ppdb']))
             . ', S&K versi ' . (int) ($P['syarat_versi'] ?? 1) . '.'
-        : 'Tanggal buka/tutup PPDB atau teks S&K belum lengkap — lengkapi di Pengaturan Sistem.',
+        : 'Tanggal buka/tutup pendaftaran SPMB atau teks S&K belum lengkap — lengkapi di Pengaturan Sistem.',
 ];
 
 $items[] = [

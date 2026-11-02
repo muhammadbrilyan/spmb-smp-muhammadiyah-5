@@ -2,7 +2,8 @@
 /**
  * HASIL SELEKSI — portal siswa.
  *
- * Dulu hanya sebuah tab di PPDB & Seleksi; kini menu tersendiri beserta
+ * Dulu hanya sebuah tab di Jadwal & Kartu Ujian (nama lama "PPDB & Seleksi");
+ * kini menu tersendiri beserta
  * "amplop"-nya. Angka hasil TIDAK PERNAH dirender sebelum tombol
  * "Buka Hasil Seleksi" ditekan: status final baru dibaca dari database
  * setelah kolom pendaftar.hasil_dibuka_at terisi, sehingga tidak ada jalan
@@ -198,15 +199,16 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               </div>
             <?php endif; ?>
 
-            <div class="mt-4 flex flex-wrap gap-2.5 justify-center">
-              <?php if (!$tagihan): ?>
-                <a href="<?= url('app/siswa/keuangan.php') ?>" class="btn btn-outline btn-sm"><?= icon('account_balance_wallet') ?> Buka Keuangan</a>
-              <?php endif; ?>
-              <?php if ($penempatan): ?>
-                <a href="<?= url('app/siswa/akademik.php') ?>" class="btn <?= $tagihan ? 'btn-outline' : 'btn-primary' ?> btn-sm"><?= icon('menu_book') ?> Buka Akademik</a>
-              <?php endif; ?>
-              <a href="<?= url('app/siswa/ppdb.php') ?>" class="btn btn-outline btn-sm"><?= icon('how_to_reg') ?> PPDB &amp; Seleksi</a>
-            </div>
+            <?php if (!$tagihan || $penempatan): ?>
+              <div class="mt-4 flex flex-wrap gap-2.5 justify-center">
+                <?php if (!$tagihan): ?>
+                  <a href="<?= url('app/siswa/keuangan.php') ?>" class="btn btn-outline btn-sm"><?= icon('account_balance_wallet') ?> Buka Keuangan</a>
+                <?php endif; ?>
+                <?php if ($penempatan): ?>
+                  <a href="<?= url('app/siswa/akademik.php') ?>" class="btn <?= $tagihan ? 'btn-outline' : 'btn-primary' ?> btn-sm"><?= icon('menu_book') ?> Buka Akademik</a>
+                <?php endif; ?>
+              </div>
+            <?php endif; ?>
             <p class="mt-4 text-[12px] text-ink-400 text-center">
               Hasil dibuka pada <?= e(bulan($siswa['hasil_dibuka_at'])) ?>.
               Informasi resmi juga disampaikan melalui WhatsApp orang tua / wali.
@@ -237,7 +239,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               Rincian nilai dan catatan panitia dapat ditanyakan kepada petugas SPMB.
             </p>
             <div class="mt-5 flex flex-wrap gap-2.5">
-              <a href="<?= url('app/siswa/ppdb.php') ?>" class="btn btn-outline btn-sm"><?= icon('how_to_reg') ?> PPDB &amp; Seleksi</a>
               <a href="<?= url('app/spmb/index.php') ?>" class="btn btn-outline btn-sm"><?= icon('support_agent') ?> Info Pendaftaran</a>
             </div>
             <p class="mt-4 text-[12px] text-ink-400">

@@ -4,7 +4,8 @@
  *
  * Operator dapat: mengubah nama/jabatan/username petugas, menyetel
  * password sementara (wajib diganti saat login pertama), menambah petugas
- * baru, serta menonaktifkan akun. Akun siswa TIDAK dikelola di sini
+ * baru, menonaktifkan akun, serta mengganti nomor WA tujuan notifikasi
+ * panitia. Akun siswa TIDAK dikelola di sini
  * (lihat menu Generate Akun).
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
@@ -74,6 +75,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         } else {
             $hasil = petugas_set_aktif($id, $nilai);
         }
+    } elseif ($aksi === 'wa') {
+        $hasil = petugas_notif_wa_simpan($_POST['notif_wa_operator'] ?? '', !empty($_POST['notif_wa_aktif']));
     }
 
     flash($hasil['ok'] ? 'sukses' : 'error', $hasil['pesan']);
@@ -104,6 +107,7 @@ $petugas  = petugas_semua();
 $roleKatalog = petugas_role_katalog();
 $toneRole = ['operator' => 'blue', 'bendahara' => 'green', 'kepsek' => 'amber'];
 $gantiDiri = url('app/staf/ganti-password.php');
+$waPanitia = petugas_notif_wa_bhawa();
 ?>
 
 <div class="lg:pl-[264px]">
@@ -263,6 +267,40 @@ $gantiDiri = url('app/staf/ganti-password.php');
           <p class="text-[12px] text-ink-500 flex items-center gap-1.5"><?= icon('lock', 'text-[15px]') ?>
             Petugas dipaksa mengganti password ini pada login pertama.</p>
           <button type="submit" class="btn btn-primary shadow-drop"><?= icon('person_add') ?> Buat Akun Petugas</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Nomor WA tujuan notifikasi panitia -->
+    <section class="mt-6 card p-5 sm:p-6">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 class="font-bold text-ink-900">Notifikasi WhatsApp ke Panitia</h2>
+          <p class="mt-1 text-[13px] text-ink-500">
+            Nomor ini menerima pesan setiap ada pemicu di portal — bukti bayar masuk, pembayaran gateway lunas,
+            dan submit berkas siswa. Isinya sama dengan kolom di Pengaturan Sistem; boleh diganti dari halaman ini.
+          </p>
+        </div>
+        <span class="badge <?= $waPanitia['aktif'] && $waPanitia['nomor'] !== '' ? 'badge-green' : 'badge-gray' ?>">
+          <?= $waPanitia['aktif'] && $waPanitia['nomor'] !== '' ? 'Aktif' : 'Belum aktif' ?>
+        </span>
+      </div>
+
+      <form method="post" action="<?= url('app/operator/petugas.php') ?>" class="mt-4 grid gap-4 sm:grid-cols-2 items-end">
+        <?= csrf_field() ?>
+        <input type="hidden" name="aksi" value="wa">
+        <div>
+          <label class="label" for="wa_operator">Nomor WA Operator (dipisah koma)</label>
+          <input id="wa_operator" name="notif_wa_operator" type="text" class="input font-mono"
+                 placeholder="08123456789, 08987654321" value="<?= e($waPanitia['nomor']) ?>">
+          <p class="hint">6-16 angka, boleh diawali <code class="font-mono">+</code>. Kosongkan untuk menghentikan pesan ke nomor lama.</p>
+        </div>
+        <div>
+          <label class="flex items-start gap-2.5 text-[13px] text-ink-600 cursor-pointer">
+            <input type="checkbox" name="notif_wa_aktif" value="1" class="mt-0.5 w-4 h-4 accent-primary" <?= $waPanitia['aktif'] ? 'checked' : '' ?>>
+            <span>Kirim via WhatsApp (Fonnte). Saklar ini berlaku global — dimatikan juga menghentikan kiriman ke nomor bendahara.</span>
+          </label>
+          <button type="submit" class="btn btn-primary shadow-drop mt-3"><?= icon('notifications') ?> Simpan Nomor</button>
         </div>
       </form>
     </section>
