@@ -79,6 +79,59 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 .animate-fade { animation: fade-in .2s ease-out both; }
 
+/* ===== Perayaan hasil seleksi (portal siswa) =====
+   Keping konfeti dibuat oleh window.konfetiRayakan() di app.js; setiap keping
+   membawa variasi lewat custom property sehingga satu aturan cukup untuk
+   seluruh keping (warna, ukuran, jarak miring, dan putaran berbeda-beda). */
+.konfeti-lapis {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: hidden;
+  pointer-events: none;
+}
+.konfeti-keping {
+  position: absolute;
+  top: -10vh;
+  left: var(--kf-x, 50%);
+  width: var(--kf-lebar, 9px);
+  height: var(--kf-tinggi, 15px);
+  background: var(--kf-warna, #f59e0b);
+  border-radius: var(--kf-radius, 2px);
+  opacity: 0;
+  animation: konfeti-jatuh var(--kf-durasi, 2.8s) linear var(--kf-tunda, 0s) forwards;
+  will-change: transform, opacity;
+}
+@keyframes konfeti-jatuh {
+  0%   { opacity: 0; transform: translate3d(0, 0, 0) rotate(0deg) scaleX(1); }
+  10%  { opacity: 1; }
+  50%  { transform: translate3d(calc(var(--kf-geser, 0px) * .4), 55vh, 0) rotate(calc(var(--kf-putar, 620deg) * .5)) scaleX(.35); }
+  88%  { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--kf-geser, 0px), 112vh, 0) rotate(var(--kf-putar, 620deg)) scaleX(1); }
+}
+
+/* Kartu hasil muncul dengan lompatan kecil tepat setelah amplop dibuka. */
+@keyframes hasil-membuka {
+  from { opacity: 0; transform: translateY(16px) scale(.94); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.hasil-baru { animation: hasil-membuka .45s cubic-bezier(.2, .9, .3, 1.15) both; }
+
+/* Denyut halus pada tombol "Buka Hasil" agar jelas bahwa itu langkah berikutnya.
+   Memakai warna tema dari head.php supaya cocok dengan warna sekolah. */
+@keyframes amplop-nadi {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent); }
+  60%      { box-shadow: 0 0 0 16px color-mix(in srgb, var(--color-primary) 0%, transparent); }
+}
+.amplop-tombol { animation: amplop-nadi 2.2s ease-out infinite; }
+
+/* Pengguna yang memilih "kurangi gerak animasi" tidak mendapat konfeti. */
+@media (prefers-reduced-motion: reduce) {
+  .konfeti-lapis { display: none; }
+  .hasil-baru,
+  .amplop-tombol { animation: none; }
+}
+
 /* Pratinjau dokumen siswa: kartu kecil mengambang di tengah halaman.
    Ditulis di sini (bukan utility Tailwind) agar ukuran pasti dan tidak
    bergantung pada hasil build tailwind.css. */

@@ -102,6 +102,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         exit;
     }
 
+    /* --- Kirim pesan revisi berkas ke WA orang tua (manual) ---
+     * Dipakai saat sebagian berkas sudah ditolak tapi operator belum selesai
+     * memeriksa berkas lain, atau saat pengingat perlu diulang. Tidak perlu
+     * menunggu siswa mengirim ulang berkasnya. */
+    if ($aksi === 'kirim_wa_revisi' && $pendId !== '') {
+        if (!rate_limit_cek('wa_revisi', 5, 3600, 'warn:' . $pendId)) {
+            flash('error', 'Pesan revisi baru saja dikirim. Tunggu sebelum mengirim lagi (maks 5×/jam per pendaftar).');
+            header('Location: ' . $balik);
+            exit;
+        }
+        $kirim = berkas_wa_revisi($pendId);
+        if (empty($kirim['ok'])) {
+            flash('error', $kirim['pesan'] ?? 'Gagal mengirim pesan revisi.');
+        } else {
+            rate_limit_catat('wa_revisi', 'warn:' . $pendId);
+            flash(!empty($kirim['terkirim']) ? 'sukses' : 'error', $kirim['pesan']);
+        }
+        header('Location: ' . $balik);
+        exit;
+    }
+
     /* --- Status verifikasi data calon siswa --- */
     if ($aksi === 'set_status_data' && $pendId !== '') {
         $hasil = verifikasi_data_set(
@@ -190,8 +211,12 @@ if ($pend) {
         && !empty($pend['updated_at'])
         && strtotime((string) $pend['updated_at']) > strtotime((string) $pend['data_verified_at']) + 1;
     $dokSetuju = 0;
+    $dokTolak  = 0;
+    $dokBelum  = 0;
     foreach ($dok as $d) {
         if ($d['status_verifikasi'] === 'VERIFIED') { $dokSetuju++; }
+        if ($d['status_verifikasi'] === 'REJECTED') { $dokTolak++; }
+        if ($d['status_verifikasi'] === 'PENDING')  { $dokBelum++; }
     }
 } else {
     /* Antrean: satu query per kelompok, angkanya dipakai untuk badge tab. */
@@ -306,6 +331,39 @@ $flash = flash();
               </div>
             <?php endif; ?>
 
+            <?php if (!$terkunci && $dokTolak > 0): ?>
+              <?php $daftarRevisi = berkas_revisi_daftar($detailId); ?>
+              <div class="mt-4 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-[13px] font-semibold text-[#991B1B]">
+                      <?= icon('notifications_active', 'text-[15px]') ?>
+                      <?= (int) $dokTolak ?> berkas ditolak — orang tua bisa diberitahu sekarang
+                    </p>
+                    <ul class="mt-1.5 space-y-0.5 text-[12px] text-[#B42318]">
+                      <?php foreach ($daftarRevisi as $br): ?><li class="whitespace-pre-line"><?= e($br) ?></li><?php endforeach; ?>
+                    </ul>
+                    <?php if ($dokBelum > 0): ?>
+                      <p class="mt-2 text-[12px] text-[#92400E]">
+                        Masih ada <?= (int) $dokBelum ?> berkas belum diputuskan. Setelah semuanya diputus, satu pesan
+                        otomatis berisi semua catatan terkirim — atau tekan tombol ini sekarang untuk memberitahu lebih awal.
+                      </p>
+                    <?php else: ?>
+                      <p class="mt-2 text-[12px] text-ink-500">Tekan tombol ini untuk mengirim ulang pengingat revisi ke WhatsApp wali murid.</p>
+                    <?php endif; ?>
+                  </div>
+                  <form method="post" action="verifikasi.php" class="shrink-0"
+                        onsubmit="return confirm('Kirim pesan revisi <?= (int) $dokTolak ?> berkas ke WhatsApp orang tua <?= e($pend['nama_siswa']) ?>?');">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="tab" value="<?= e($tab) ?>">
+                    <input type="hidden" name="aksi" value="kirim_wa_revisi">
+                    <input type="hidden" name="pendaftar_id" value="<?= e($pend['id']) ?>">
+                    <button type="submit" class="btn btn-green btn-sm"><?= icon('whatshot', 'text-[15px]') ?> Kirim Pesan Revisi via WA</button>
+                  </form>
+                </div>
+              </div>
+            <?php endif; ?>
+
             <div class="mt-4 space-y-3">
               <?php if (!$dok): ?>
                 <p class="text-sm text-ink-400">Belum ada berkas terunggah.</p>
@@ -415,7 +473,7 @@ $flash = flash();
                 <label class="label" for="catatan-data">Catatan panitia</label>
                 <textarea id="catatan-data" name="catatan" class="textarea" rows="3"
                           placeholder="Wajib untuk &quot;Minta Perbaikan&quot;. Contoh: alamat orang tua belum lengkap."></textarea>
-                <p class="hint">Catatan ditampilkan kepada siswa. Kosongkan saat data sudah benar.</p>
+                <p class="hint">Catatan WAJIB bila menekan "Minta Perbaikan" — isinya ditampilkan di portal siswa sebagai panduan memperbaiki.</p>
               </div>
               <div class="grid gap-2.5">
                 <button type="submit" name="status" value="TERVERIFIKASI"
@@ -425,7 +483,9 @@ $flash = flash();
                   <?= icon('verified') ?> Verifikasi &amp; Kunci Data
                 </button>
                 <button type="submit" name="status" value="DITOLAK" class="btn btn-danger btn-block"
-                        onclick="return confirm('Kembalikan data ke siswa untuk diperbaiki? Pastikan catatan sudah diisi.');">
+                        onclick="var c = document.getElementById('catatan-data');
+                                 if (!c.value.trim()) { c.focus(); alert('Tulis dulu catatan perbaikannya — catatan inilah yang dibaca siswa di portalnya.'); return false; }
+                                 return confirm('Minta perbaikan data ke siswa? Formulir datanya dibuka kembali dan ia bisa mengirim ulang untuk diverifikasi.');">
                   <?= icon('edit_note') ?> Minta Perbaikan
                 </button>
                 <?php if (in_array($pend['status_verifikasi'], ['TERVERIFIKASI', 'DITOLAK'], true)): ?>
@@ -775,7 +835,7 @@ $flash = flash();
         <label class="label" for="alasan-berkas">Alasan penolakan <span class="text-red-600">*</span></label>
         <textarea id="alasan-berkas" name="alasan" class="textarea" rows="3" required
                   placeholder="Contoh: foto buram / dokumen tidak terbaca / tidak sesuai ketentuan."></textarea>
-        <p class="hint">Alasan dikirim via WhatsApp ke orang tua &amp; ditampilkan di portal siswa.</p>
+        <p class="hint">Alasan ditampilkan di portal siswa dan ikut dikirim ke WhatsApp orang tua lewat tombol Kirim Pesan Revisi.</p>
       </div>
 
       <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end">

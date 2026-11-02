@@ -3,8 +3,11 @@
  * PENETAPAN HASIL SELEKSI — persetujuan Kepala Sekolah.
  *
  * Dua tindakan berbeda, keduanya direkam bersama SIDIK daftar hasil:
- *   - "Setujui"  : membuka tombol Umumkan Sekarang di sisi operator.
+ *   - "Setujui"  : catatan resmi bahwa daftar hasil sudah dibaca & disetujui kepsek.
  *   - "Tandatangani" : membubuhkan tanda tangan pada rilis yang sudah terbit.
+ *
+ * Operator menerbitkan pengumuman tanpa menunggu catatan ini — persetujuan tidak
+ * mengunci halaman Pengumuman lagi.
  *
  * Sidik dihitung dari no_pendaftaran + status_seleksi seluruh pendaftar aktif.
  * Bila operator mengubah nilai/status setelah catatan dibuat, sidik tidak cocok
@@ -48,13 +51,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $jenis = $aksi === 'ttd' || $aksi === 'cabut_ttd' ? 'ttd' : 'disetujui';
         if ($hapus) {
             $hasil = persetujuan_hapus($jenis)
-                ? ['ok' => true, 'pesan' => $jenis === 'ttd' ? 'Tanda tangan dicabut.' : 'Persetujuan dicabut. Hasil kembali terkunci.']
+                ? ['ok' => true, 'pesan' => $jenis === 'ttd' ? 'Tanda tangan dicabut.' : 'Persetujuan dicabut.']
                 : ['ok' => false, 'pesan' => 'Gagal mencabut catatan. Coba lagi.'];
         } else {
             $hasil = persetujuan_simpan($jenis, $me['id'] ?? null)
                 ? ['ok' => true, 'pesan' => $jenis === 'ttd'
                     ? 'Tanda tangan tersimpan pada rilis yang sedang berlaku.'
-                    : 'Daftar hasil disetujui. Operator kini dapat menerbitkan pengumuman.']
+                    : 'Persetujuan atas daftar hasil tersimpan sebagai catatan resmi.']
                 : ['ok' => false, 'pesan' => 'Gagal menyimpan catatan. Pastikan daftar hasil terbaca, lalu coba lagi.'];
         }
     }
@@ -111,7 +114,7 @@ $belumAdaHasil = $ringkas['LULUS'] + $ringkas['TIDAK_LULUS'] === 0;
 $bolehTtd = !empty($umum['diumumkan']);
 
 $title     = 'Persetujuan Penetapan Hasil';
-$desc      = 'Setujui daftar hasil seleksi sebelum diterbitkan dan tanda tangani rilis yang sudah terbit.';
+$desc      = 'Catat persetujuan daftar hasil seleksi dan tanda tangani rilis yang sudah terbit.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 require_once __DIR__ . '/../../includes/partials/head.php';
@@ -186,8 +189,9 @@ $notaTtd    = $nota($ttd, 'Ditandatangani', 'Belum Ditandatangani');
       </div>
       <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Persetujuan Penetapan Hasil</h1>
       <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-        Hasil seleksi baru boleh diterbitkan setelah daftar ini disetujui. Persetujuan melekat pada isi daftar —
-        begitu nilainya berubah, persetujuan batal dan penguncian berlaku lagi.
+        Operator dapat menerbitkan pengumuman langsung — catatan di halaman ini adalah persetujuan resmi sekolah
+        atas daftar hasil, bukan kunci halaman. Persetujuan melekat pada isi daftar: begitu nilainya berubah,
+        catatan ditandai batal agar tidak tertempel pada daftar yang sudah berbeda.
       </p>
     </div>
 
@@ -227,18 +231,11 @@ $notaTtd    = $nota($ttd, 'Ditandatangani', 'Belum Ditandatangani');
         <div class="flex items-start justify-between gap-3">
           <div>
             <h2 class="font-bold text-ink-900">Persetujuan Daftar Hasil</h2>
-            <p class="mt-1 text-[13px] text-ink-500">Membuka tombol "Umumkan Sekarang" di sisi operator.</p>
+            <p class="mt-1 text-[13px] text-ink-500">Catatan resmi bahwa daftar hasil sudah ditelaah; tidak mengunci aksi operator.</p>
           </div>
           <?= $notaSetuju['badge'] ?>
         </div>
         <p class="mt-3 text-[12px] text-ink-500"><?= e($notaSetuju['ket']) ?></p>
-
-        <?php if (!empty($umum['diumumkan'])): ?>
-          <p class="mt-3 text-[12px] text-ink-400">
-            Rilis ini sudah terbit, jadi persetujuan tidak lagi mengunci apa pun. Catatannya tetap disimpan
-            sebagai bukti siapa yang menyetujui daftar tersebut.
-          </p>
-        <?php endif; ?>
 
         <?php if ($belumAdaHasil): ?>
           <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[13px] text-amber-800">
@@ -456,9 +453,9 @@ $adaProses = $ringkas['PROSES'] > 0;
 
 $modal('modal-setujui', 'setujui', 'how_to_reg', 'bg-[#ECFDF5] text-[#047857]',
     'Setujui Daftar Hasil',
-    'Operator dapat menerbitkan pengumuman setelah ini.',
+    'Mencatat bahwa daftar hasil ini sudah ditelaah kepala sekolah.',
     'Persetujuan berlaku untuk daftar dengan isi ini saja. Bila nanti ada nilai atau status yang diubah, '
-        . 'persetujuan batal dengan sendirinya dan operator perlu meminta persetujuan baru.',
+        . 'persetujuan batal dengan sendirinya supaya tidak tertempel pada daftar yang sudah berbeda.',
     'Ya, Setujui', $adaProses);
 
 $modal('modal-ttd', 'ttd', 'draw', 'bg-[#EFF6FF] text-[#1D4ED8]',
@@ -470,9 +467,9 @@ $modal('modal-ttd', 'ttd', 'draw', 'bg-[#EFF6FF] text-[#1D4ED8]',
 
 $modal('modal-cabut', 'cabut', 'lock', 'bg-[#FEF2F2] text-[#991B1B]',
     'Cabut Persetujuan',
-    'Pengumuman kembali terkunci.',
-    'Tanpa persetujuan, tombol "Umumkan Sekarang" di halaman Pengumuman tidak dapat dipakai operator sampai '
-        . 'daftar disetujui ulang.',
+    'Catatan persetujuan dihapus.',
+    'Penerbitan pengumuman di sisi operator tidak terpengaruh — catatan ini hanya bukti bahwa daftar hasil '
+        . 'pernah ditelaah kepala sekolah.',
     'Cabut Persetujuan');
 
 $modal('modal-cabut-ttd', 'cabut_ttd', 'lock', 'bg-[#FEF2F2] text-[#991B1B]',

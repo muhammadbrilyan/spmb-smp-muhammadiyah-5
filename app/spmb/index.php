@@ -302,7 +302,6 @@ if (strpos($waPanitia, '0') === 0) {
       <div class="card p-6 flex flex-col">
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Bank Aktif</span>
-          <span class="badge badge-gray">Saldo Rekening</span>
         </div>
         <h3 class="mt-4 font-bold text-ink-900 text-lg">Biaya Formulir</h3>
         <div class="mt-5 rounded-xl bg-canvas border border-line p-5">
@@ -396,8 +395,6 @@ if (strpos($waPanitia, '0') === 0) {
             </div>
           <?php endif; ?>
         </div>
-
-        <a href="#faq" class="btn btn-primary btn-block mt-5">Ajukan Skema Angsuran</a>
       </div>
 
       <!-- Kartu 3: Agenda -->

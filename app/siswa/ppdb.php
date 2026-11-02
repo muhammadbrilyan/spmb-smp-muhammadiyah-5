@@ -3,17 +3,23 @@
  * PPDB & SELEKSI — portal siswa (Fase 13).
  *
  * Ringkasan formulir, kelengkapan/pengajuan, jadwal tes & lokasi, ujian
- * daring, status tes, serta hasil seleksi yang HANYA tampil setelah
- * panitia mengumumkan hasil secara resmi.
+ * daring, serta status tes. Hasil seleksi TIDAK lagi berada di sini — ia
+ * menjadi menu tersendiri di app/siswa/hasil.php (lihat catatan redirect).
  */
 $title = 'PPDB & Seleksi';
-$desc  = 'Formulir pendaftaran, kelengkapan berkas, jadwal tes, status seleksi, dan hasil resmi.';
+$desc  = 'Formulir pendaftaran, kelengkapan berkas, jadwal tes, dan status seleksi.';
 require __DIR__ . '/_bootstrap.php';
+
+/* Tautan lama (pesan WA & bookmark) menunjuk ke ?tab=hasil. Dibawa ke halaman
+ * Hasil Seleksi yang baru agar tidak ada yang mati. */
+if ((string) ($_GET['tab'] ?? '') === 'hasil') {
+    header('Location: ' . url('app/siswa/hasil.php'));
+    exit;
+}
 
 $tabs = [
     'formulir' => ['Formulir & Kelengkapan', 'how_to_reg'],
     'jadwal'   => ['Jadwal Tes', 'event'],
-    'hasil'    => ['Hasil Seleksi', 'emoji_events'],
 ];
 $tab = (string) ($_GET['tab'] ?? 'formulir');
 if (!isset($tabs[$tab])) {
@@ -63,7 +69,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
         <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">PPDB &amp; Seleksi</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          Pantau formulir, jadwal tes, dan hasil seleksi Anda. Hasil hanya ditampilkan setelah diumumkan resmi oleh panitia.
+          Pantau formulir, kelengkapan berkas, dan jadwal tes Anda. Hasil seleksi dibuka sendiri melalui menu
+          <a href="<?= url('app/siswa/hasil.php') ?>" class="font-semibold text-primary hover:underline">Hasil Seleksi</a>.
         </p>
       </div>
       <a href="<?= url('app/siswa/index.php') ?>" class="btn btn-outline shrink-0"><?= icon('arrow_back') ?> Dashboard</a>
@@ -295,7 +302,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <section class="mt-5 card p-6">
             <h2 class="font-bold text-ink-900">Jadwal Tes</h2>
             <p class="mt-2 text-sm text-ink-500">Hasil seleksi sudah diumumkan — jadwal tes tidak lagi ditampilkan.</p>
-            <a href="<?= url('app/siswa/ppdb.php?tab=hasil') ?>" class="btn btn-outline btn-sm mt-4">Lihat Hasil Seleksi</a>
+            <a href="<?= url('app/siswa/hasil.php') ?>" class="btn btn-outline btn-sm mt-4">Lihat Hasil Seleksi</a>
           </section>
         <?php else: ?>
           <section class="mt-5 card p-6">
@@ -307,88 +314,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               <a href="<?= url('app/siswa/data-siswa.php') ?>" class="btn btn-outline btn-sm mt-4">Periksa Berkas</a>
             <?php endif; ?>
           </section>
-        <?php endif; ?>
-      <?php endif; ?>
-
-      <?php if ($tab === 'hasil'): ?>
-        <?php if (!$pengumumanAktif): ?>
-          <section class="mt-5 card p-6">
-            <h2 class="font-bold text-ink-900">Hasil Seleksi</h2>
-            <?php if (!empty($pengumuman['dijadwalkan_pada'])): ?>
-              <p class="mt-2 text-sm text-ink-500">
-                Hasil seleksi dijadwalkan diumumkan pada
-                <strong class="text-ink-900"><?= e(bulan($pengumuman['dijadwalkan_pada'])) ?>, <?= e(date('H:i', strtotime((string) $pengumuman['dijadwalkan_pada']))) ?> WIB</strong>.
-              </p>
-            <?php elseif (!empty($PENGATURAN['tanggal_pengumuman'])): ?>
-              <p class="mt-2 text-sm text-ink-500">Perkiraan pengumuman: <strong class="text-ink-900"><?= e(bulan($PENGATURAN['tanggal_pengumuman'])) ?></strong>. Tanggal resmi akan diinformasikan panitia.</p>
-            <?php else: ?>
-              <p class="mt-2 text-sm text-ink-500">Hasil seleksi belum diumumkan. Mohon tunggu informasi resmi panitia.</p>
-            <?php endif; ?>
-            <div class="mt-4 rounded-xl bg-canvas border border-line px-4 py-3 text-[13px] text-ink-500">
-              Nilai dan status kelulusan tidak dapat diakses sebelum waktu pengumuman resmi.
-            </div>
-          </section>
-        <?php else: ?>
-          <?php $sel = $labelSeleksi[$siswa['status_seleksi']] ?? [$siswa['status_seleksi'], 'gray']; ?>
-          <div class="mt-5 grid gap-5 lg:grid-cols-2">
-            <section class="card p-5 sm:p-6">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <h2 class="font-bold text-ink-900">Status Seleksi</h2>
-                  <p class="mt-1 text-[13px] text-ink-500">Hasil resmi SPMB <?= e($PENGATURAN['tahun_ajaran'] ?? '') ?>.</p>
-                </div>
-                <span class="badge badge-<?= e($sel[1]) ?>"><?= e($sel[0]) ?></span>
-              </div>
-
-              <?php if ($seleksi): ?>
-                <dl class="mt-4 space-y-3 text-sm">
-                  <?php
-                  $nilaiBaris = [
-                      ['Nilai Akhir', $seleksi['nilai_akhir'] ?? null],
-                      ['CBT', $seleksi['nilai_cbt'] ?? null],
-                      ['BTQ', $seleksi['nilai_btq'] ?? null],
-                      ['Wawancara', $seleksi['nilai_wawancara'] ?? null],
-                  ];
-                  foreach ($nilaiBaris as $nb):
-                      if ($nb[1] === null) continue;
-                  ?>
-                    <li class="flex items-center justify-between gap-3">
-                      <span class="text-ink-500"><?= e($nb[0]) ?></span>
-                      <span class="font-semibold text-ink-900"><?= e(number_format((float) $nb[1], 1)) ?></span>
-                    </li>
-                  <?php endforeach; ?>
-                </dl>
-                <?php if (!empty($seleksi['catatan'])): ?>
-                  <p class="mt-3 rounded-xl bg-canvas border border-line px-4 py-3 text-[13px] text-ink-600"><?= e($seleksi['catatan']) ?></p>
-                <?php endif; ?>
-              <?php else: ?>
-                <p class="mt-4 text-sm text-ink-500">Status sudah diumumkan, namun rincian nilai belum tersedia. Hubungi panitia bila diperlukan.</p>
-              <?php endif; ?>
-            </section>
-
-            <section class="card p-5 sm:p-6">
-              <h2 class="font-bold text-ink-900"><?= $siswaDiterima ? 'Penempatan Kelas' : 'Langkah Selanjutnya' ?></h2>
-              <?php if ($siswaDiterima): ?>
-                <?php if ($penempatan): ?>
-                  <div class="mt-3 rounded-xl bg-primary-light border border-primary/20 p-4">
-                    <p class="text-sm text-primary font-semibold">Selamat! Anda ditempatkan di</p>
-                    <p class="mt-1 text-xl font-extrabold text-ink-900"><?= e($penempatan['kode']) ?> — <?= e($penempatan['nama_kelas']) ?></p>
-                    <p class="mt-1 text-[13px] text-ink-500">Wali kelas: <?= e($penempatan['wali_kelas'] ?: '—') ?></p>
-                  </div>
-                  <a href="<?= url('app/siswa/akademik.php') ?>" class="btn btn-primary btn-block mt-4"><?= icon('school') ?> Buka Akademik</a>
-                <?php else: ?>
-                  <div class="mt-3 rounded-xl bg-canvas border border-line p-4 text-[13px] text-ink-600">
-                    Anda dinyatakan <strong>lulus</strong>. Penempatan kelas akan diinformasikan panitia melalui portal ini.
-                  </div>
-                <?php endif; ?>
-              <?php else: ?>
-                <p class="mt-3 text-sm text-ink-500">Hasil seleksi resmi dapat dilihat di samping. Ikuti informasi panitia untuk langkah berikutnya.</p>
-              <?php endif; ?>
-              <div class="mt-4 border-t border-line-soft pt-3 text-[12px] text-ink-500">
-                Informasi resmi juga disampaikan melalui WhatsApp orang tua / wali.
-              </div>
-            </section>
-          </div>
         <?php endif; ?>
       <?php endif; ?>
 

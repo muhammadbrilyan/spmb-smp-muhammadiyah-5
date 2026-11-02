@@ -392,6 +392,11 @@ foreach ($dokumen as $dokCek) {
 
 /* Form utama + dua tombol aksi tampil bila masih ada yang bisa dilakukan. */
 $bolehAksi = $bolehSimpanData || $bolehAksiDok;
+/* Panitia menekan "Minta Perbaikan" → data dibuka lagi untuk siswa betulkan. */
+$mintaPerbaikanData = ($siswa['status_verifikasi'] ?? '') === 'DITOLAK';
+$labelTombolAjukan = $mintaPerbaikanData && !$bolehAksiDok
+    ? 'Kirim Ulang Data untuk Verifikasi'
+    : 'Ajukan Verifikasi Berkas';
 $ajukanSiap = (!$bolehSimpanData || !$kurangData)
            && (!$bolehAksiDok || (!$kurangDok && !$dokRevisiKurang));
 $daftarKurangAksi = array_merge(
@@ -435,6 +440,25 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </div>
     <?php endif; ?>
 
+    <?php if ($mintaPerbaikanData): ?>
+      <?php /* Panitia menekan "Minta Perbaikan" — siswa perlu tahu apa yang harus dibetulkan. */ ?>
+      <div class="mt-6 rounded-2xl border border-red-200 bg-[#FEF2F2] p-5 sm:p-6">
+        <p class="flex items-center gap-2 text-sm font-bold text-[#991B1B]">
+          <?= icon('report', 'text-[18px]') ?> Panitia meminta perbaikan data
+        </p>
+        <div class="mt-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-[13px] text-[#991B1B] whitespace-pre-line leading-relaxed">
+          <?= $siswa['catatan_verifikasi_data'] !== null && trim((string) $siswa['catatan_verifikasi_data']) !== ''
+              ? e($siswa['catatan_verifikasi_data'])
+              : 'Panitia belum menuliskan catatan perbaikan. Hubungi panitia SPMB bila ragu bagian mana yang perlu diperbaiki.' ?>
+        </div>
+        <ol class="mt-3 list-decimal list-inside space-y-1 text-[13px] text-ink-600">
+          <li>Baca catatan di atas, lalu perbaiki isian formulir yang diminta.</li>
+          <li>Gunakan tombol <strong class="text-ink-700">Simpan Data Sementara</strong> bila ingin menyimpan bertahap.</li>
+          <li>Kirim kembali dengan tombol <strong class="text-ink-700"><?= e($labelTombolAjukan) ?></strong> agar panitia memeriksa ulang.</li>
+        </ol>
+      </div>
+    <?php endif; ?>
+
     <?php if (!$siswa): ?>
       <div class="mt-6 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-5 text-sm text-[#92400E]">
         <p class="font-semibold">Data pendaftaran belum ditemukan untuk akun ini.</p>
@@ -474,7 +498,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <strong>Belum lengkap:</strong> <?= e(implode(', ', $kelengkapan['kurang'])) ?>.
           </div>
         <?php endif; ?>
-        <?php if (!empty($siswa['catatan_verifikasi_data'])): ?>
+        <?php if (!$mintaPerbaikanData && !empty($siswa['catatan_verifikasi_data'])): ?>
           <div class="mt-3 rounded-xl bg-[#FEF2F2] border border-red-200 px-4 py-3 text-[13px] text-[#991B1B]">
             <strong>Catatan panitia:</strong> <?= e($siswa['catatan_verifikasi_data']) ?>
           </div>
@@ -738,7 +762,9 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                     Lengkapi dulu: <?= e(implode(', ', $daftarKurangAksi)) ?>.
                   <?php else: ?>
                     <strong class="text-ink-700">Simpan Data Sementara</strong> menyimpan isian formulir &amp; berkas terpilih tanpa mengirim.
-                    <strong class="text-ink-700">Ajukan Verifikasi Berkas</strong> menyimpan semuanya lalu mengirim data diri + berkas ke panitia sekaligus.
+                    <strong class="text-ink-700"><?= e($labelTombolAjukan) ?></strong> <?= $mintaPerbaikanData && !$bolehAksiDok
+                        ? 'mengirim data yang sudah diperbaiki supaya panitia memeriksa ulang.'
+                        : 'menyimpan semuanya lalu mengirim data diri + berkas ke panitia sekaligus.' ?>
                   <?php endif; ?>
                 </p>
               </div>
@@ -749,11 +775,11 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 <?php if ($ajukanSiap): ?>
                   <button type="submit" name="aksi" value="ajukan_verifikasi" class="btn btn-primary shadow-drop"
                           onclick="return confirm('Kirim data diri dan seluruh berkas untuk diverifikasi panitia? Data akan terkunci setelah diverifikasi.');">
-                    <?= icon('send') ?> Ajukan Verifikasi Berkas
+                    <?= icon('send') ?> <?= e($labelTombolAjukan) ?>
                   </button>
                 <?php else: ?>
                   <button type="button" class="btn btn-primary opacity-50 pointer-events-none" disabled>
-                    <?= icon('send') ?> Ajukan Verifikasi Berkas
+                    <?= icon('send') ?> <?= e($labelTombolAjukan) ?>
                   </button>
                 <?php endif; ?>
               </div>

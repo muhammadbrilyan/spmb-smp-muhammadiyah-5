@@ -123,7 +123,7 @@ $panduan = [
         'judul' => 'Jadwal Tes & Input Seleksi',
         'role'  => ['operator', 'admin', 'kepsek'],
         'langkah' => [
-            'Buka <strong>Kelola Jadwal Tes</strong> — tambah jadwal (kode auto TES-NN), set metode & status TERJADWAL.',
+            'Buka <strong>Jadwal Ujian</strong> — tambah jadwal (kode auto TES-NN), set metode & status TERJADWAL.',
             'Klik ikon <em>chat</em> pada baris jadwal untuk kirim notifikasi WA jadwal ke seluruh wali siswa terjadwal.',
             'Buka <strong>Input Seleksi</strong> — isi nilai CBT, BTQ, Wawancara per pendaftar.',
             'Nilai akhir dihitung otomatis; ambang kelulusan default 70 (bisa diubah per form).',
@@ -136,8 +136,8 @@ $panduan = [
         'judul' => 'Peserta Ujian (Fase 6)',
         'role'  => ['operator', 'admin', 'kepsek'],
         'langkah' => [
-            'Buka <strong>Kelola Jadwal Tes</strong> — isi Ruangan & Kapasitas per jadwal (kapasitas 0 = tanpa batas).',
-            'Buka <strong>Peserta Ujian</strong> — pilih jadwal, klik <em>Atur Peserta Otomatis</em> (urut no_pendaftaran, penuhi kapasitas, transaksi DB).',
+            'Buka <strong>Jadwal Ujian</strong> — isi Ruangan & Kapasitas per jadwal (kapasitas 0 = tanpa batas).',
+            'Bagian <strong>Peserta Ujian</strong> ada di halaman yang sama, di bawah daftar jadwal — klik <em>Atur Peserta Otomatis</em> (urut no_pendaftaran, penuhi kapasitas, transaksi DB).',
             'Nomor peserta dibuat otomatis (KODE-001 dst) — unik, aman setelah hapus.',
             'Pengaturan otomatis memindahkan tahap BERKAS_TERVERIFIKASI → JADWAL_DITETAPKAN + WA jadwal.',
             'Tambah manual: pilih pendaftar BERKAS_TERVERIFIKASI yang belum terjadwal. Hapus: tahap kembali BERKAS_TERVERIFIKASI.',

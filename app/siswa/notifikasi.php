@@ -90,7 +90,7 @@ if ($pengumumanAktif) {
         'judul'   => 'Hasil seleksi resmi telah diumumkan',
         'pesan'   => 'Hasil seleksi SPMB ' . ($PENGATURAN['tahun_ajaran'] ?? '') . ' sudah dapat dilihat.',
         'tanggal' => $pengumuman['dijadwalkan_pada'] ?? null,
-        'tautan'  => url('app/siswa/ppdb.php?tab=hasil'),
+        'tautan'  => url('app/siswa/hasil.php'),
         'label'   => 'Lihat Hasil',
     ];
 } elseif (!empty($pengumuman['dijadwalkan_pada'])) {
@@ -100,8 +100,8 @@ if ($pengumumanAktif) {
         'judul'   => 'Jadwal pengumuman hasil seleksi',
         'pesan'   => 'Hasil seleksi dijadwalkan diumumkan pada ' . bulan($pengumuman['dijadwalkan_pada']) . '.',
         'tanggal' => $pengumuman['dijadwalkan_pada'],
-        'tautan'  => url('app/siswa/ppdb.php?tab=hasil'),
-        'label'   => 'Buka PPDB',
+        'tautan'  => url('app/siswa/hasil.php'),
+        'label'   => 'Buka Hasil Seleksi',
     ];
 } elseif (!empty($PENGATURAN['tanggal_pengumuman'])) {
     $info[] = [

@@ -5,6 +5,8 @@
  *
  * YANG SERING DIUBAH (cari komentar [BAGIAN: ...] di bawah):
  *   - Identitas Sekolah   → nama, alamat, WA, email, logo, banner
+ *   - Media Sosial        → tempel link Instagram/TikTok/YouTube/website
+ *                           (ikon muncul otomatis di footer halaman publik)
  *   - Warna Tema          → warna utama website
  *   - Biaya & Rekening    → biaya formulir, SPP, biaya pendaftaran, bank
  *   - Jadwal Gelombang    → tahun ajaran, gelombang, tanggal buka/tutup
@@ -116,6 +118,10 @@ $f = [
     'alamat_sekolah'       => $teks('alamat_sekolah'),
     'kontak_wa_panitia'    => $teks('kontak_wa_panitia'),
     'email_sekolah'        => $teks('email_sekolah'),
+    'sosmed_instagram'     => $teks('sosmed_instagram'),
+    'sosmed_tiktok'        => $teks('sosmed_tiktok'),
+    'sosmed_youtube'       => $teks('sosmed_youtube'),
+    'website_sekolah'      => $teks('website_sekolah'),
     'ticker_header'        => $teks('ticker_header'),
     'profil_singkat'       => $teks('profil_singkat'),
     'warna_utama'          => $teks('warna_utama', '#0056b3'),
@@ -344,6 +350,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
     if (!preg_match('/^\+?[0-9\s-]{6,20}$/', $f['kontak_wa_panitia'])) {
         $galat[] = 'Kontak WhatsApp hanya boleh berisi angka (6-20 digit).';
+    }
+    /* Tautan media sosial & website: cukup tempel alamat, skema https://
+     * ditambahkan otomatis. Kolom kosong = ikon disembunyikan di footer. */
+    foreach (['sosmed_instagram' => 'Instagram', 'sosmed_tiktok' => 'TikTok',
+              'sosmed_youtube' => 'YouTube', 'website_sekolah' => 'Website Sekolah'] as $kolomTautan => $namaTautan) {
+        try {
+            $f[$kolomTautan] = (string) tautan_normal($f[$kolomTautan]);
+        } catch (InvalidArgumentException $e) {
+            $f[$kolomTautan] = '';
+            $galat[] = 'Tautan ' . $namaTautan . ' tidak valid: ' . $e->getMessage();
+        }
     }
     foreach (['biaya_formulir', 'biaya_spp', 'estimasi_uang_masuk', 'angsuran_1_nominal', 'angsuran_2_nominal'] as $nominal) {
         if ($f[$nominal] === '' || !is_numeric($f[$nominal]) || (float) $f[$nominal] < 0) {
@@ -615,6 +632,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $stmt = $db->prepare(
                 'UPDATE pengaturan_sekolah SET
                     nama_sekolah = ?, alamat_sekolah = ?, kontak_wa_panitia = ?, email_sekolah = ?,
+                    sosmed_instagram = ?, sosmed_tiktok = ?, sosmed_youtube = ?, website_sekolah = ?,
                     ticker_header = ?, profil_singkat = ?, deskripsi_sekolah = ?, tagline = ?,
                     warna_utama = ?,
                     biaya_formulir = ?, biaya_spp = ?, estimasi_uang_masuk = ?,
@@ -641,6 +659,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $f['alamat_sekolah'] !== '' ? $f['alamat_sekolah'] : null,
                 $f['kontak_wa_panitia'],
                 $f['email_sekolah'] !== '' ? $f['email_sekolah'] : null,
+                $f['sosmed_instagram'] !== '' ? $f['sosmed_instagram'] : null,
+                $f['sosmed_tiktok'] !== '' ? $f['sosmed_tiktok'] : null,
+                $f['sosmed_youtube'] !== '' ? $f['sosmed_youtube'] : null,
+                $f['website_sekolah'] !== '' ? $f['website_sekolah'] : null,
                 $f['ticker_header'] !== '' ? $f['ticker_header'] : null,
                 $f['profil_singkat'] !== '' ? $f['profil_singkat'] : null,
                 $f['deskripsi_sekolah'] !== '' ? $f['deskripsi_sekolah'] : null,
@@ -819,7 +841,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <!-- ============ 1. IDENTITAS & KONTAK ============ -->
       <section class="card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Identitas &amp; Kontak Institusi</h2>
-        <p class="mt-1 text-[13px] text-ink-500">Nama resmi, alamat, WhatsApp panitia, dan email institusi.</p>
+        <p class="mt-1 text-[13px] text-ink-500">Nama resmi, alamat, WhatsApp panitia, email institusi, dan tautan media sosial sekolah.</p>
 
         <div class="mt-5 grid gap-4 sm:grid-cols-2">
           <div class="sm:col-span-2">
@@ -840,6 +862,36 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <div>
             <label class="label" for="email_sekolah">Email Resmi Institusi</label>
             <input id="email_sekolah" name="email_sekolah" type="email" class="input" placeholder="spmb@sekolah.sch.id" value="<?= e($f['email_sekolah']) ?>">
+          </div>
+
+          <div class="sm:col-span-2 border-t border-line pt-4">
+            <h3 class="text-[13px] font-bold text-ink-900 uppercase tracking-wide">Media Sosial &amp; Website Sekolah</h3>
+            <p class="mt-1 text-[12px] text-ink-500">
+              Cukup tempel alamatnya saja — tanpa <span class="font-mono">https://</span> pun otomatis diperbaiki.
+              Kolom yang dibiarkan kosong membuat ikonnya tidak tampil di footer halaman publik.
+            </p>
+            <div class="mt-3 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="label" for="sosmed_instagram">Instagram</label>
+                <input id="sosmed_instagram" name="sosmed_instagram" type="text" class="input" maxlength="255"
+                       placeholder="instagram.com/namasekolah" value="<?= e($f['sosmed_instagram']) ?>">
+              </div>
+              <div>
+                <label class="label" for="sosmed_tiktok">TikTok</label>
+                <input id="sosmed_tiktok" name="sosmed_tiktok" type="text" class="input" maxlength="255"
+                       placeholder="tiktok.com/@namasekolah" value="<?= e($f['sosmed_tiktok']) ?>">
+              </div>
+              <div>
+                <label class="label" for="sosmed_youtube">YouTube</label>
+                <input id="sosmed_youtube" name="sosmed_youtube" type="text" class="input" maxlength="255"
+                       placeholder="youtube.com/@namasekolah" value="<?= e($f['sosmed_youtube']) ?>">
+              </div>
+              <div>
+                <label class="label" for="website_sekolah">Website Profil Sekolah</label>
+                <input id="website_sekolah" name="website_sekolah" type="text" class="input" maxlength="255"
+                       placeholder="sekolah.sch.id" value="<?= e($f['website_sekolah']) ?>">
+              </div>
+            </div>
           </div>
         </div>
       </section>

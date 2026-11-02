@@ -6,6 +6,7 @@
  * YANG SERING DIUBAH:
  *   - Teks profil sekolah  → paragraf di kolom kiri
  *   - Kontak (alamat/WA/email) → dari CMS Pengaturan (otomatis)
+ *   - Ikon media sosial    → dari CMS Pengaturan → Media Sosial; kosong = tidak tampil
  *   - Tautan pojok kanan bawah → ganti teks & href di bagian bawah file ini
  */
 ?>
@@ -25,18 +26,40 @@
           tahfidz dan sains teknologi. Terakreditasi <strong class="text-ink-700">A (Unggul)</strong> dan
           berkomitmen mencetak peserta didik berkarakter mulia, cerdas, dan kompetitif.
         </p>
-        <div class="mt-5 flex items-center gap-2">
-          <a href="#" class="icon-box border border-line text-ink-500 hover:text-primary hover:border-primary" aria-label="Instagram"><?= icon('photo_camera') ?></a>
-          <a href="#" class="icon-box border border-line text-ink-500 hover:text-primary hover:border-primary" aria-label="YouTube"><?= icon('smart_display') ?></a>
-          <a href="#" class="icon-box border border-line text-ink-500 hover:text-primary hover:border-primary" aria-label="Facebook"><?= icon('public') ?></a>
-          <a href="#" class="icon-box border border-line text-ink-500 hover:text-primary hover:border-primary" aria-label="TikTok"><?= icon('music_note') ?></a>
-        </div>
+        <?php
+        /* Ikon media sosial dipakai hanya bila operator menempelkan tautannya
+         * di Pengaturan Sistem → Identitas & Kontak → Media Sosial.
+         * Kolom kosong = ikon tidak dirender, bukan tombol mati ke "#". */
+        $sosmedFooter = [
+            'Instagram'            => ['url' => trim((string) ($PENGATURAN['sosmed_instagram'] ?? '')), 'ikon' => 'photo_camera'],
+            'TikTok'               => ['url' => trim((string) ($PENGATURAN['sosmed_tiktok'] ?? '')),    'ikon' => 'music_note'],
+            'YouTube'              => ['url' => trim((string) ($PENGATURAN['sosmed_youtube'] ?? '')),   'ikon' => 'smart_display'],
+            'Website Profil Sekolah' => ['url' => trim((string) ($PENGATURAN['website_sekolah'] ?? '')), 'ikon' => 'language'],
+        ];
+        $sosmedTerisi = array_filter($sosmedFooter, static function ($s) { return $s['url'] !== ''; });
+        ?>
+        <?php if ($sosmedTerisi): ?>
+          <div class="mt-5 flex items-center gap-2">
+            <?php foreach ($sosmedTerisi as $namaJaringan => $s): ?>
+              <a href="<?= e($s['url']) ?>" target="_blank" rel="noopener me" title="<?= e($namaJaringan) ?>"
+                 aria-label="<?= e($namaJaringan) ?> <?= e($PENGATURAN['nama_sekolah']) ?>"
+                 class="icon-box border border-line text-ink-500 hover:text-primary hover:border-primary"><?= icon($s['ikon']) ?></a>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
       </div>
 
       <div class="md:col-span-3">
         <h4 class="text-sm font-bold text-ink-900 uppercase tracking-wide">Kontak Cepat SPMB</h4>
+        <?php $waFooterPanitia = preg_replace('/\D+/', '', (string) ($PENGATURAN['kontak_wa_panitia'] ?? '')); ?>
         <ul class="mt-4 space-y-3 text-sm text-ink-500">
-          <li class="flex gap-2"><?= icon('call', 'text-[18px] text-primary') ?><span>Panitia SPMB<br><a class="text-ink-700 font-medium" href="#">0812-9876-5501</a></span></li>
+          <li class="flex gap-2"><?= icon('call', 'text-[18px] text-primary') ?><span>Panitia SPMB<br>
+            <?php if ($waFooterPanitia !== ''): ?>
+              <a class="text-ink-700 font-medium" href="https://wa.me/<?= e($waFooterPanitia) ?>" target="_blank" rel="noopener"><?= e($PENGATURAN['kontak_wa_panitia']) ?></a>
+            <?php else: ?>
+              <span class="text-ink-700 font-medium">Nomor panitia belum diisi</span>
+            <?php endif; ?>
+          </span></li>
           <li class="flex gap-2"><?= icon('mail', 'text-[18px] text-primary') ?><span><?= e($PENGATURAN['email_sekolah']) ?></span></li>
           <li class="flex gap-2"><?= icon('schedule', 'text-[18px] text-primary') ?><span>Senin – Jumat, 08.00 – 15.00 WIB</span></li>
         </ul>

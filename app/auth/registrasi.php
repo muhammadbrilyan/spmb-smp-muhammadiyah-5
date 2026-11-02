@@ -6,7 +6,7 @@
  * YANG SERING DIUBAH:
  *   - Judul & deskripsi form    → cari "Registrasi Awal SPMB" di bagian HTML
  *   - Daftar jalur pendaftaran  → dari CMS Pengaturan → Jalur Pendaftaran Aktif
- *   - Teks bawah form           → catatan about verifikasi & link masuk portal
+ *   - Teks bawah form           → catatan singkat batas pendaftaran & verifikasi
  *   - Logo & link kembali       → tombol "Kembali ke Beranda" di atas form
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
@@ -153,7 +153,6 @@ require_once __DIR__ . '/../../includes/partials/head.php';
           <span class="block text-[11px] text-ink-500">SPMB <?= e($PENGATURAN['tahun_ajaran']) ?> · <?= e($PENGATURAN['gelombang']) ?></span>
         </span>
       </a>
-      <a href="<?= url('app/auth/login.php') ?>" class="btn btn-outline btn-sm">Masuk Portal</a>
     </div>
   </header>
 
@@ -280,7 +279,6 @@ require_once __DIR__ . '/../../includes/partials/head.php';
           <p class="flex items-start gap-2 text-xs text-ink-400 leading-relaxed">
             <?= icon('lock', 'text-[15px] mt-0.5') ?>
             Maksimal 1 pendaftaran per nomor WhatsApp + nama. Form biodata terkunci sampai verifikasi panitia.
-            Sudah daftar &amp; punya akun? <a class="underline text-primary font-semibold" href="<?= url('app/auth/login.php') ?>">Masuk portal</a>.
           </p>
         </form>
       </div>

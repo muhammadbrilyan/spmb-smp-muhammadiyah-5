@@ -3,8 +3,9 @@
  * LAPISAN QUERY — Persetujuan & tanda tangan hasil seleksi oleh Kepala Sekolah.
  *
  * Dua catatan terpisah di pengaturan_sekolah:
- *   - "disetujui": persetujuan atas DAFTAR HASIL sebelum operator menerbitkan
- *     pengumuman. Inilah yang mengunci tombol "Umumkan Sekarang".
+ *   - "disetujui": catatan resmi kepala sekolah atas DAFTAR HASIL. Sejak
+ *     revisi Nov 2026 ini tidak lagi mengunci tombol "Umumkan Sekarang" —
+ *     operator menerbitkan pengumuman langsung.
  *   - "ttd": tanda tangan atas rilis yang SUDAH terbit (arsip administratif,
  *     dipakai juga untuk pengumuman gelombang sebelumnya).
  *
@@ -139,16 +140,6 @@ function persetujuan_hapus($jenis)
             SET {$oleh} = NULL, {$at} = NULL, {$sid} = NULL
           WHERE id = 1"
     );
-}
-
-/**
- * Apakah hasil boleh diterbitkan? Hanya bila ada persetujuan yang masih sah
- * (sidik cocok dengan daftar hasil saat ini).
- */
-function persetujuan_hasil_sah()
-{
-    $s = persetujuan_baca('disetujui');
-    return $s['ada'] && !$s['batal'];
 }
 
 /**

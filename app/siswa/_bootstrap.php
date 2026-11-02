@@ -71,6 +71,9 @@ $koreksi = [];
 $koreksiBidang = koreksi_bidang();
 $siswaDiterima = false;
 $siswaAktif = false;
+$hasilBolehBuka = false;
+$hasilTerbuka = false;
+$tagihanAktif = false;
 $kelengkapan = [
     'persen' => 0, 'terisi' => 0, 'total' => 0, 'items' => [], 'kurang' => [],
     'dok_wajib' => 0, 'dok_terisi' => 0,
@@ -110,9 +113,12 @@ if ($siswa) {
     $siswaAktif = $siswaDiterima;
 
     /* Tagihan biaya masuk aktif begitu siswa LULUS dan punya penempatan kelas
-     * (atau hasil resminya sudah diumumkan). */
+     * (atau hasil resminya sudah diumumkan) DAN amplop hasilnya sudah dibuka
+     * sendiri oleh siswa di halaman Hasil Seleksi. */
+    $hasilBolehBuka = hasil_boleh_dibuka($siswa);
+    $hasilTerbuka   = $hasilBolehBuka && hasil_sudah_dibuka($siswa);
     $ringkasAngsuran = angsuran_ringkas($siswa['id']);
-    $tagihanAktif = tagihan_pendaftaran_aktif($siswa);
+    $tagihanAktif = tagihan_pendaftaran_aktif($siswa) && $hasilTerbuka;
     $tagihanUangMasuk = $tagihanAktif ? $ringkasAngsuran['total'] : 0;
 
     $bayarFormulir   = siswa_ringkas_bayar($pembayaran, 'FORMULIR', $tagihanFormulir);
@@ -125,7 +131,7 @@ if ($siswa) {
      * menunggu agar siswa tidak melihat hasil lebih awal. */
     if (($siswa['tahap'] ?? '') === 'DIUMUMKAN' && !$pengumumanAktif) {
         $tahap['label']  = 'Menunggu pengumuman hasil';
-        $tahap['desc']   = 'Hasil seleksi belum diumumkan resmi. Pantau menu PPDB & Seleksi.';
+        $tahap['desc']   = 'Hasil seleksi belum diumumkan resmi. Pantau menu Hasil Seleksi.';
         $tahap['persen'] = 95;
     }
     /* Pengingat jatuh tempo angsuran (idempoten per jadwal). */
@@ -300,10 +306,13 @@ function siswa_langkah_berikut($siswa, $bayarFormulir, $dokumen, $kartuUjian, $p
     }
 
     if (!empty($pengumuman['diumumkan'])) {
-        return ['judul' => 'Hasil seleksi sudah diumumkan', 'pesan' => 'Buka PPDB & Seleksi untuk melihat hasil resmi dan penempatan kelas.', 'ikon' => 'campaign', 'tautan' => url('app/siswa/ppdb.php?tab=hasil'), 'label' => 'Lihat Hasil', 'tone' => 'green'];
+        if (!empty($siswa['hasil_dibuka_at'])) {
+            return ['judul' => 'Hasil seleksi sudah terbuka', 'pesan' => 'Silakan lihat hasil resmi dan penempatan kelas Anda, lalu lanjut ke menu Keuangan untuk menyelesaikan tagihan.', 'ikon' => 'campaign', 'tautan' => url('app/siswa/hasil.php'), 'label' => 'Lihat Hasil', 'tone' => 'green'];
+        }
+        return ['judul' => 'Hasil seleksi sudah diumumkan', 'pesan' => 'Tekan "Buka Hasil Seleksi" pada menu Hasil Seleksi untuk melihat hasil resmi dan penempatan kelas.', 'ikon' => 'campaign', 'tautan' => url('app/siswa/hasil.php'), 'label' => 'Lihat Hasil', 'tone' => 'green'];
     }
     if (!empty($pengumuman['dijadwalkan_pada'])) {
-        return ['judul' => 'Menunggu pengumuman hasil', 'pesan' => 'Hasil seleksi dijadwalkan diumumkan pada ' . bulan($pengumuman['dijadwalkan_pada']) . '.', 'ikon' => 'schedule', 'tautan' => url('app/siswa/ppdb.php?tab=hasil'), 'label' => 'Lihat Jadwal', 'tone' => 'blue'];
+        return ['judul' => 'Menunggu pengumuman hasil', 'pesan' => 'Hasil seleksi dijadwalkan diumumkan pada ' . bulan($pengumuman['dijadwalkan_pada']) . '.', 'ikon' => 'schedule', 'tautan' => url('app/siswa/hasil.php'), 'label' => 'Lihat Jadwal', 'tone' => 'blue'];
     }
     if ($kartuUjian) {
         return ['judul' => 'Jadwal tes sudah tersedia', 'pesan' => 'Periksa kartu peserta, lokasi, dan ruang ujian Anda.', 'ikon' => 'badge', 'tautan' => url('app/siswa/ppdb.php?tab=jadwal'), 'label' => 'Lihat Jadwal Tes', 'tone' => 'blue'];
@@ -323,9 +332,9 @@ function siswa_kabar_terbaru($siswa, $pembayaran, $kartuUjian, $pengumuman, $pen
         $kabar[] = [
             'ikon' => 'campaign', 'tone' => 'green',
             'judul' => 'Hasil seleksi resmi diumumkan',
-            'pesan' => 'Hasil seleksi sudah dapat dilihat pada menu PPDB & Seleksi.',
+            'pesan' => 'Buka menu Hasil Seleksi untuk melihat hasil resmi dan penempatan kelas.',
             'tanggal' => $pengumuman['dijadwalkan_pada'] ?? null,
-            'tautan' => url('app/siswa/ppdb.php?tab=hasil'),
+            'tautan' => url('app/siswa/hasil.php'),
         ];
     } elseif (!empty($pengumuman['dijadwalkan_pada'])) {
         $kabar[] = [
@@ -333,7 +342,7 @@ function siswa_kabar_terbaru($siswa, $pembayaran, $kartuUjian, $pengumuman, $pen
             'judul' => 'Jadwal pengumuman hasil seleksi',
             'pesan' => 'Hasil seleksi dijadwalkan diumumkan pada ' . bulan($pengumuman['dijadwalkan_pada']) . '.',
             'tanggal' => $pengumuman['dijadwalkan_pada'],
-            'tautan' => url('app/siswa/ppdb.php?tab=hasil'),
+            'tautan' => url('app/siswa/hasil.php'),
         ];
     }
 
@@ -391,7 +400,7 @@ function siswa_kabar_terbaru($siswa, $pembayaran, $kartuUjian, $pengumuman, $pen
             'judul' => 'Menunggu penempatan kelas',
             'pesan' => 'Anda dinyatakan lulus. Penempatan kelas akan diinformasikan panitia.',
             'tanggal' => null,
-            'tautan' => url('app/siswa/ppdb.php?tab=hasil'),
+            'tautan' => url('app/siswa/hasil.php'),
         ];
     }
 

@@ -508,7 +508,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
     <section data-tab-panel="jadwal" class="mt-5 hidden">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <p class="text-sm text-ink-500">Kelola jadwal tes CBT, wawancara BTQ, dan seleksi minat bakat (offline / video call).</p>
-        <a href="<?= url('app/operator/jadwal.php') ?>" class="btn btn-primary"><?= icon('event_available') ?> Kelola Jadwal Tes</a>
+        <a href="<?= url('app/operator/jadwal.php') ?>" class="btn btn-primary"><?= icon('event_available') ?> Jadwal Ujian</a>
       </div>
 
       <div class="mt-4 card overflow-hidden">

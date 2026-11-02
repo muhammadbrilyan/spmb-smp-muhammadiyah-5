@@ -82,7 +82,9 @@ flowchart TD
 - `peserta_atur_otomatis()` (transaksi DB, urut no_pendaftaran, penuhi kapasitas)
 - `peserta_kartu_siswa()` — Kartu Peserta + CSS print di portal siswa
 - Blok detail pada kartu peserta kini berupa **tabel Agenda Tes** (`jadwal_terjadwal()` — fungsi yang sama dipakai tombol "Umumkan Semua Jadwal"): seluruh jadwal Terjadwal dalam kolom Tanggal · Kegiatan · Waktu · Lokasi/Ruangan, ikut tercetak oleh `cetakKartu()`
-- Halaman: `app/operator/peserta-ujian.php`
+- Halaman: `app/operator/jadwal.php` — sejak 2026-11-02 jadwal dan peserta berada
+  di satu halaman/menu **Jadwal Ujian**; bagian peserta ada di bawah daftar jadwal
+  (`#peserta`). `app/operator/peserta-ujian.php` hanya pengalih 302
 
 ### Fase 7 — Seleksi
 - `pendaftar_untuk_nilai()` difilter `tahap IN (JADWAL_DITETAPKAN, NILAI_TERINPUT)`
@@ -97,6 +99,10 @@ flowchart TD
 - Peringatan: LULUS tanpa kelas → wajib konfirmasi eksplisit
 - Cek-status publik: **wajib no_pendaftaran + 4 digit WA** (pencarian nama dihapus)
 - Hasil seleksi & penempatan disembunyikan publik/portal sampai diumumkan
+- Revisi 2026-11-02: persetujuan kepala sekolah (`app/kepsek/penetapan.php`) menjadi
+  **catatan resmi**, bukan gerbang — operator menerbitkan langsung; gerbang yang tersisa
+  hanya CSRF + konfirmasi LULUS tanpa kelas. WA pengumuman kini memuat tautan hasil
+  `app/siswa/hasil.php` (absolut via `url_abs()`)
 - Halaman: `app/operator/pengumuman.php`, API `app/api/pengumuman-wa.php`
 
 ### Fase 9 — Panduan & Dokumentasi
@@ -287,6 +293,12 @@ Lihat `.env.example`. Variabel: `DB_*`, `FONNTE_TOKEN`, `MIDTRANS_SERVER_KEY`, `
 | 12 | `database/migrations/20261017_fase12_retensi.sql` |
 | 13 | `database/migrations/20261026_fase13_koreksi_data.sql` |
 | — | `database/migrations/20261028_arsip_pendaftar.sql` (kolom `arsip_at`/`arsip_alasan`/`arsip_oleh` — pengarsipan soft-delete pendaftar) |
+| — | `database/migrations/20261028_beasiswa_cms.sql` · `20261030_nonaktifkan_jenis_dokumen.sql` · `20261030_tahap2_notifikasi_siswa_pengumuman_umum.sql` |
+| — | `database/migrations/20261031_pengingat_angsuran.sql` · `20261031_persetujuan_hasil.sql` · `20261031_tahap3_angsuran.sql` |
+| — | `database/migrations/20261101_notif_wa_bendahara.sql` (kolom `notif_wa_bendahara` — tanpanya seluruh simpan Pengaturan Sistem batal) |
+| — | `database/migrations/20261102_rincian_biaya.sql` (kolom `rincian_biaya` JSON + `ambang_kelulusan`) |
+| — | `database/migrations/20261102_hasil_dibuka.sql` (kolom `pendaftar.hasil_dibuka_at` — gerbang amplop Hasil Seleksi di portal siswa; lihat `docs/UJI-MANUAL.md` bagian T) |
+| — | `database/migrations/20261102_sosmed_sekolah.sql` (kolom `sosmed_instagram`/`sosmed_tiktok`/`sosmed_youtube`/`website_sekolah` — input link di Pengaturan Sistem + ikon footer publik) |
 
 Seed lengkap: `database/db_spmb_mualimku.sql` (gabungan semua fase).
 Dokumentasi uji: `docs/UJI-MANUAL.md`.

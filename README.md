@@ -39,7 +39,8 @@ Pemisahan alamat hanya untuk kerapian & memudahkan staf; hak akses ditegakkan
 | `docs/DEPLOY.md` | Pemasangan & rilis (termasuk hosting cPanel/Domainesia) |
 | `docs/ALUR-PENDAFTARAN.md` | Alur end-to-end, model tahap, tabel per fase |
 | `docs/UJI-MANUAL.md` | Checklist uji manual + skenario penyalahgunaan |
-| `docs/FUNGSI-KEPSEK.md` | Fungsi role kepala sekolah + gerbang persetujuan hasil |
+| `docs/FUNGSI-OPERATOR.md` | Fungsi role operator per halaman kerja (verifikasi, jadwal, pengumuman, CMS) |
+| `docs/FUNGSI-KEPSEK.md` | Fungsi role kepala sekolah + catatan persetujuan hasil (bukan gerbang penerbitan) |
 | `docs/KEBIJAKAN-DATA.md` | Draf kebijakan retensi & privasi data |
 | `app/operator/panduan.php` | SOP operasional (tampil di aplikasi) |
 

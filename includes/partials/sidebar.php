@@ -3,7 +3,7 @@
  * SIDEBAR PORTAL — menu dipisah per peran.
  *
  * - Siswa  : portal ringkas (Dashboard, Data Siswa, Keuangan, PPDB & Seleksi,
- *            Akademik, Pengumuman, Pengaturan Akun).
+ *            Hasil Seleksi, Akademik, Pengumuman, Pengaturan Akun).
  * - Operator: operasional SPMB (pendaftar, verifikasi, jadwal, tes, seleksi,
  *            penempatan, pengumuman, pengaturan).
  * - Bendahara/Kepsek: menu monitoring yang sudah ada tetap dipertahankan.
@@ -35,12 +35,17 @@ if ($role === 'siswa') {
     /* Menu calon siswa diringkas seperti peran sekolah: satu grup tanpa CTA
      * "Info SPMB" (sudah ada di ikon "?" topbar) dan tanpa "Akademik" selama
      * belum diterima — halaman itu memang kosong untuk calon siswa. */
+    /* Penanda "Baru" menemani menu Hasil Seleksi selama pengumuman sudah boleh
+     * dibuka tetapi amplopnya belum dibuka siswa — satu petunjuk bahwa ada
+     * satu hal yang menantinya di sana. */
+    $badgeHasil = (!empty($hasilBolehBuka) && empty($hasilTerbuka)) ? 'Baru' : '';
     $menuSiswa = [
         $menuItem('dashboard', 'dashboard', 'Dashboard', url('app/siswa/index.php')),
         $menuItem('notifikasi', 'notifications', 'Notifikasi & Pengumuman', url('app/siswa/notifikasi.php')),
         $menuItem('siswa', 'badge', 'Data Siswa', url('app/siswa/data-siswa.php')),
         $menuItem('keuangan', 'account_balance_wallet', 'Keuangan', url('app/siswa/keuangan.php')),
         $menuItem('ppdb', 'how_to_reg', 'PPDB & Seleksi', url('app/siswa/ppdb.php')),
+        $menuItem('hasil', 'emoji_events', 'Hasil Seleksi', url('app/siswa/hasil.php'), $badgeHasil),
     ];
     if (!empty($siswaDiterima)) {
         $menuSiswa[] = $menuItem('akademik', 'menu_book', 'Akademik', url('app/siswa/akademik.php'));
@@ -76,7 +81,6 @@ if ($role === 'siswa') {
             'judul' => 'Seleksi & Penerimaan',
             'menu'  => [
                 $menuItem('jadwal', 'event', 'Jadwal Ujian', url('app/operator/jadwal.php')),
-                $menuItem('peserta', 'event_seat', 'Peserta Ujian', url('app/operator/peserta-ujian.php')),
                 $menuItem('seleksi', 'assignment', 'Data & Status Tes', url('app/operator/seleksi.php')),
                 $menuItem('pengumuman', 'campaign', 'Pengumuman Hasil', url('app/operator/pengumuman.php')),
                 $menuItem('pengumuman-umum', 'notifications_active', 'Pengumuman Umum', url('app/operator/pengumuman-umum.php')),
@@ -227,7 +231,9 @@ foreach ($navGrup as $gNav) {
                         pembaruan jumlah selalu menemukannya. */ ?>
                 <span class="notif-badge-count badge h-[19px] min-w-[19px] px-1.5 justify-center text-[10px] <?= $notifBadge > 0 ? 'bg-red-600 text-white' : (($isActive ? 'badge-blue' : 'badge-gray') . ' hidden') ?>"><?= $notifBadge > 0 ? ($notifBadge > 99 ? '99+' : (int) $notifBadge) : '' ?></span>
               <?php elseif ($m['badge']): ?>
-                <span class="badge h-[19px] px-2 text-[10px] <?= $isActive ? 'badge-blue' : 'badge-gray' ?>"><?= e($m['badge']) ?></span>
+                <?php /* "Baru" pada menu Hasil Seleksi memakai merah agar terasa
+                        ada yang menunggu; badge lain netral seperti sebelumnya. */ ?>
+                <span class="badge h-[19px] px-2 text-[10px] <?= $m['key'] === 'hasil' ? 'bg-red-600 text-white' : ($isActive ? 'badge-blue' : 'badge-gray') ?>"><?= e($m['badge']) ?></span>
               <?php endif; ?>
             </a>
           <?php endforeach; ?>
@@ -299,6 +305,51 @@ foreach ($navGrup as $gNav) {
     d.addEventListener('toggle', function () {
       try { localStorage.setItem(kunci, d.open ? '1' : '0'); } catch (e) {}
     });
+  });
+})();
+
+/* Posisi gulir menu dipertahankan antar halaman dan menu yang sedang aktif
+ * selalu dibawa ke dalam tampilan — jadi menekan "Pengaturan Sistem" tidak
+ * melempar pengguna kembali ke puncak sidebar. */
+(function () {
+  var nav = document.querySelector('.nav-penuh');
+  var rail = document.querySelector('.nav-rel');
+
+  function pulihkan(n, kunci) {
+    if (!n) return;
+    try {
+      var simpanan = sessionStorage.getItem(kunci);
+      if (simpanan !== null) n.scrollTop = parseInt(simpanan, 10) || 0;
+    } catch (e) { /* storage diblokir */ }
+    n.addEventListener('scroll', function () {
+      try { sessionStorage.setItem(kunci, String(n.scrollTop)); } catch (e) {}
+    });
+  }
+
+  /* Geser seminimal mungkin: bila sudah terlihat, tidak disentuh sama sekali
+     supaya sidebar tidak bergeser tiap perpindahan halaman. */
+  function tampilkanAktif(n, kelasTautan) {
+    if (!n) return;
+    var t = n.querySelector(kelasTautan);
+    if (!t) return;
+    var bN = n.getBoundingClientRect(), bT = t.getBoundingClientRect();
+    if (bT.height === 0) return;
+    if (bT.top < bN.top) n.scrollTop -= (bN.top - bT.top) + 12;
+    else if (bT.bottom > bN.bottom) n.scrollTop += (bT.bottom - bN.bottom) + 12;
+  }
+
+  function jalankan() {
+    pulihkan(nav, 'nav-gulir');
+    pulihkan(rail, 'nav-rel-gulir');
+    tampilkanAktif(nav, '.nav-link-active');
+    tampilkanAktif(rail, '.rail-link-active');
+  }
+  jalankan();
+
+  /* Lipatan grup & ikon material dapat mengubah tinggi daftar setelah render. */
+  window.addEventListener('load', function () {
+    tampilkanAktif(nav, '.nav-link-active');
+    tampilkanAktif(rail, '.rail-link-active');
   });
 })();
 </script>

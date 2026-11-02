@@ -116,6 +116,37 @@ function tagihan_pendaftaran_aktif($pendaftar)
 }
 
 /**
+ * Hasil seleksi sudah DIBUKA siswa lewat tombol khusus di halaman
+ * Hasil Seleksi. Selama amplopnya belum dibuka, rincian biaya masuk
+ * sengaja tidak ditampilkan — halaman Keuangan hanya menunjukkan bahwa
+ * tagihan menunggu hasil dibuka.
+ *
+ * Baris yang tidak punya kolom ini (kueri admin tertentu) dianggap belum
+ * dibuka, sehingga tidak pernah mengungkap angka lebih dulu.
+ */
+function hasil_sudah_dibuka($pendaftar)
+{
+    return is_array($pendaftar) && !empty($pendaftar['hasil_dibuka_at']);
+}
+
+/**
+ * Hasil seleksi BOLEH dibuka: panitia sudah mengumumkan secara resmi, atau
+ * siswa itu sendiri sudah berstatus final dan punya penempatan kelas
+ * (syarat yang sama dengan tagihan_pendaftaran_aktif).
+ */
+function hasil_boleh_dibuka($pendaftar)
+{
+    if (!is_array($pendaftar)) {
+        return false;
+    }
+    $p = function_exists('pengumuman_status') ? pengumuman_status() : [];
+    if (!empty($p['diumumkan'])) {
+        return true;
+    }
+    return tagihan_pendaftaran_aktif($pendaftar);
+}
+
+/**
  * Ringkasan pembayaran biaya pendaftaran per angsuran (FIFO).
  * Baris lama tanpa angsuran_ke tetap dihitung sebagai dana terverifikasi.
  * @return array<string,mixed>

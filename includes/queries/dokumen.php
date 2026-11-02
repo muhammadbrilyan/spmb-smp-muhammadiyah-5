@@ -417,11 +417,14 @@ function berkas_keputusan($dokId, $setuju, $alasan, $verifierId = null)
             $db->rollBack();
             return ['ok' => false, 'pesan' => 'Berkas tidak ditemukan.'];
         }
-        /* Hanya berkas pendaftar berstatus BERKAS_DISUBMIT. */
+        /* Keputusan boleh diambil selama tahap pemeriksaan berkas berlangsung.
+         * BERKAS_REVISI ikut diizinkan: setelah berkas pertama ditolak, tahap
+         * langsung berpindah ke situ — tanpa ini berkas kedua dan seterusnya
+         * tidak bisa ditolak pada pemeriksaan yang sama. */
         $tahap = q_col('SELECT tahap FROM pendaftar WHERE id = ?', [$baris['pendaftar_id']]);
-        if ($tahap !== 'BERKAS_DISUBMIT') {
+        if (!in_array($tahap, ['BERKAS_DISUBMIT', 'BERKAS_REVISI'], true)) {
             $db->rollBack();
-            return ['ok' => false, 'pesan' => 'Berkas hanya dapat diputuskan saat tahap BERKAS_DISUBMIT.'];
+            return ['ok' => false, 'pesan' => 'Berkas hanya dapat diputuskan saat tahap pemeriksaan berkas (BERKAS_DISUBMIT / BERKAS_REVISI).'];
         }
 
         $st   = $setuju ? 'VERIFIED' : 'REJECTED';
@@ -441,81 +444,143 @@ function berkas_keputusan($dokId, $setuju, $alasan, $verifierId = null)
 }
 
 /**
+ * Daftar berkas berstatus DITOLAK milik satu pendaftar, sudah diformat
+ * "Nama Berkas: alasan" — dipakai notifikasi in-app, pesan WhatsApp, dan
+ * pratinjau di layar operator.
+ *
+ * @return array<int,string>
+ */
+function berkas_revisi_daftar($pendaftar_id)
+{
+    $daftar = q_all(
+        "SELECT jenis_dokumen, catatan_verifikasi FROM dokumen
+          WHERE pendaftar_id = ? AND status_verifikasi = 'REJECTED' AND file_url IS NOT NULL
+          ORDER BY jenis_dokumen",
+        [$pendaftar_id]
+    ) ?: [];
+
+    $namaJenis = [];
+    foreach (jenis_dokumen_semua() as $j) {
+        $namaJenis[$j['kode']] = $j['nama'];
+    }
+
+    $baris = [];
+    foreach ($daftar as $d) {
+        $nm = $namaJenis[$d['jenis_dokumen']] ?? $d['jenis_dokumen'];
+        $baris[] = "- {$nm}: " . ($d['catatan_verifikasi'] ?: 'Ditolak tanpa catatan');
+    }
+    return $baris;
+}
+
+/**
+ * Kirim pesan revisi berkas ke calon siswa/orang tua: lonceng portal + WA.
+ *
+ * Dipanggil otomatis saat seluruh berkas selesai diperiksa DAN bisa dikirim
+ * manual oleh operator lewat tombol "Kirim Pesan Revisi" — pesan selalu berisi
+ * SEMUA berkas yang sedang berstatus ditolak, jadi menolak beberapa berkas
+ * sekaligus cukup satu kali pemberitahuan.
+ *
+ * @return array{ok:bool, jumlah:int, terkirim:bool, pesan:string}
+ */
+function berkas_wa_revisi($pendaftar_id)
+{
+    $baris = berkas_revisi_daftar($pendaftar_id);
+    if (!$baris) {
+        return ['ok' => false, 'jumlah' => 0, 'terkirim' => false,
+                'pesan' => 'Tidak ada berkas yang berstatus ditolak pada pendaftar ini.'];
+    }
+
+    $daftarTeks = implode("\n", $baris);
+    $n = count($baris);
+
+    /* Notifikasi in-app siswa (lonceng portal). */
+    notif_siswa_kirim(
+        $pendaftar_id,
+        'BERKAS_DITOLAK',
+        'Berkas perlu diperbaiki',
+        "Panitia menolak {$n} berkas. Perbaiki / unggah ulang berkas berikut:\n"
+            . $daftarTeks
+            . "\n\nBerkas yang sudah lolos tidak perlu diunggah ulang.",
+        url('app/siswa/data-siswa.php')
+    );
+
+    /* WA orang tua: daftar berkas ditolak + alasan. */
+    try {
+        $info = q_all(
+            'SELECT p.no_pendaftaran, p.nama_siswa, o.no_whatsapp
+               FROM pendaftar p LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
+              WHERE p.id = ? LIMIT 1',
+            [$pendaftar_id]
+        );
+        $info = $info ? $info[0] : null;
+        if (!$info || trim((string) ($info['no_whatsapp'] ?? '')) === '') {
+            return ['ok' => true, 'jumlah' => $n, 'terkirim' => false,
+                    'pesan' => 'Nomor WhatsApp orang tua belum diisi — pesan revisi hanya masuk ke lonceng portal siswa.'];
+        }
+
+        $pesan = "Assalamu'alaikum.\n\n"
+            . "Hasil pemeriksaan berkas SPMB atas nama:\n"
+            . "Nama : {$info['nama_siswa']}\n"
+            . "No. Pendaftaran : {$info['no_pendaftaran']}\n\n"
+            . "Berkas berikut perlu DIPERBAIKI / diganti:\n"
+            . "{$daftarTeks}\n\n"
+            . "Silakan unggah ulang berkas tersebut melalui portal siswa, lalu klik "
+            . "\"Kirim untuk Verifikasi\" kembali. Berkas yang sudah lolos tidak perlu diunggah ulang.\n\n"
+            . "Terima kasih.\nPanitia SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5');
+
+        $r = wa_kirim($info['no_whatsapp'], $pesan);
+        wa_log_catat($info['no_whatsapp'], 'BERKAS_REVISI', $r);
+
+        return !empty($r['ok'])
+            ? ['ok' => true, 'jumlah' => $n, 'terkirim' => true,
+               'pesan' => "Pesan revisi ({$n} berkas) terkirim ke WA {$info['no_whatsapp']}."]
+            : ['ok' => true, 'jumlah' => $n, 'terkirim' => false,
+               'pesan' => "WhatsApp GAGAL terkirim: " . ($r['pesan'] ?? 'tidak diketahui')
+                          . " — pesan revisi tetap tersimpan di lonceng portal siswa."];
+    } catch (Throwable $e) {
+        return ['ok' => true, 'jumlah' => $n, 'terkirim' => false,
+                'pesan' => 'WhatsApp tidak terkirim (gangguan sistem) — pesan revisi tetap tersimpan di lonceng portal siswa.'];
+    }
+}
+
+/**
  * Evaluasi seluruh berkas pendaftar SETELAH keputusan terakhir:
  *   - semua unggahan VERIFIED  → tahap BERKAS_TERVERIFIKASI
- *   - ada REJECTED             → tahap BERKAS_REVISI + WA daftar ditolak
+ *   - ada REJECTED             → tahap BERKAS_REVISI + kirim pesan revisi
  * Ditolak → hanya berkas REJECTED yang dibuka untuk unggah ulang.
+ *
+ * Pesan revisi (in-app + WA) baru dikirim otomatis setelah SEMUA berkas
+ * terunggah sudah diputuskan, supaya satu pesan memuat seluruh catatan.
+ * Selama masih ada yang belum diputuskan, operator melanjutkan keputusan atau
+ * memakai tombol "Kirim Pesan Revisi" di layar verifikasi.
  *
  * @return array{ok:bool, tahap?:string, pesan?:string}
  */
 function berkas_evaluasi_tahap($pendaftar_id)
 {
     $tahap = q_col('SELECT tahap FROM pendaftar WHERE id = ?', [$pendaftar_id]);
-    if ($tahap !== 'BERKAS_DISUBMIT') {
-        return ['ok' => false, 'pesan' => 'Bukan tahap BERKAS_DISUBMIT.'];
+    if (!in_array($tahap, ['BERKAS_DISUBMIT', 'BERKAS_REVISI'], true)) {
+        return ['ok' => false, 'pesan' => 'Bukan tahap pemeriksaan berkas.'];
     }
 
     $jml     = (int) (q_col('SELECT COUNT(*) FROM dokumen WHERE pendaftar_id = ? AND file_url IS NOT NULL', [$pendaftar_id]) ?? 0);
     $lolos   = (int) (q_col("SELECT COUNT(*) FROM dokumen WHERE pendaftar_id = ? AND status_verifikasi = 'VERIFIED'", [$pendaftar_id]) ?? 0);
     $ditolak = (int) (q_col("SELECT COUNT(*) FROM dokumen WHERE pendaftar_id = ? AND status_verifikasi = 'REJECTED'", [$pendaftar_id]) ?? 0);
+    $belum   = (int) (q_col("SELECT COUNT(*) FROM dokumen WHERE pendaftar_id = ? AND file_url IS NOT NULL AND status_verifikasi = 'PENDING'", [$pendaftar_id]) ?? 0);
 
     if ($ditolak > 0) {
         q_exec("UPDATE pendaftar SET tahap = 'BERKAS_REVISI' WHERE id = ? AND tahap = 'BERKAS_DISUBMIT'", [$pendaftar_id]);
 
-        /* Daftar berkas ditolak + alasan — dipakai notifikasi in-app & WA. */
-        $daftar = q_all(
-            "SELECT jenis_dokumen, catatan_verifikasi FROM dokumen
-              WHERE pendaftar_id = ? AND status_verifikasi = 'REJECTED'",
-            [$pendaftar_id]
-        ) ?: [];
-        $namaJenis = [];
-        foreach (jenis_dokumen_semua() as $j) {
-            $namaJenis[$j['kode']] = $j['nama'];
-        }
-        $baris = [];
-        foreach ($daftar as $d) {
-            $nm = $namaJenis[$d['jenis_dokumen']] ?? $d['jenis_dokumen'];
-            $baris[] = "- {$nm}: " . ($d['catatan_verifikasi'] ?: 'Ditolak tanpa catatan');
+        if ($belum > 0) {
+            return ['ok' => false, 'tahap' => 'BERKAS_REVISI',
+                    'pesan' => "{$ditolak} berkas ditolak dan masih ada {$belum} berkas belum diputuskan —"
+                        . " pesan revisi belum dikirim. Selesaikan keputusan berkas lainnya agar satu pesan memuat semua catatan,"
+                        . " atau gunakan tombol Kirim Pesan Revisi."];
         }
 
-        /* Notifikasi in-app siswa (lonceng portal). */
-        notif_siswa_kirim(
-            $pendaftar_id,
-            'BERKAS_DITOLAK',
-            'Berkas perlu diperbaiki',
-            "Panitia menolak sebagian berkas. Perbaiki / unggah ulang berkas berikut:\n"
-                . implode("\n", $baris)
-                . "\n\nBerkas yang sudah lolos tidak perlu diunggah ulang.",
-            url('app/siswa/data-siswa.php')
-        );
-
-        /* WA orang tua: daftar berkas ditolak + alasan. */
-        try {
-            $info = q_all(
-                'SELECT p.no_pendaftaran, p.nama_siswa, o.no_whatsapp
-                   FROM pendaftar p LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
-                  WHERE p.id = ? LIMIT 1',
-                [$pendaftar_id]
-            );
-            $info = $info ? $info[0] : null;
-            if ($info && !empty($info['no_whatsapp'])) {
-                $daftarTeks = implode("\n", $baris);
-                $pesan = "Assalamu'alaikum.\n\n"
-                    . "Hasil pemeriksaan berkas SPMB atas nama:\n"
-                    . "Nama : {$info['nama_siswa']}\n"
-                    . "No. Pendaftaran : {$info['no_pendaftaran']}\n\n"
-                    . "Berkas berikut perlu DIPERBAIKI / diganti:\n"
-                    . "{$daftarTeks}\n\n"
-                    . "Silakan unggah ulang berkas tersebut melalui portal siswa, lalu klik "
-                    . "\"Kirim untuk Verifikasi\" kembali. Berkas yang sudah lolos tidak perlu diunggah ulang.\n\n"
-                    . "Terima kasih.\nPanitia SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5');
-                $r = wa_kirim($info['no_whatsapp'], $pesan);
-                wa_log_catat($info['no_whatsapp'], 'BERKAS_REVISI', $r);
-            }
-        } catch (Throwable $e) {
-            /* abaikan */
-        }
-        return ['ok' => true, 'tahap' => 'BERKAS_REVISI', 'pesan' => "{$ditolak} berkas ditolak — pendaftar diminta revisi."];
+        $kirim = berkas_wa_revisi($pendaftar_id);
+        return ['ok' => true, 'tahap' => 'BERKAS_REVISI',
+                'pesan' => "{$ditolak} berkas ditolak — " . $kirim['pesan']];
     }
 
     if ($jml > 0 && $lolos === $jml) {

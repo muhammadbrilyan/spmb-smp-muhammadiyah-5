@@ -3,9 +3,9 @@
 Dokumen ini memetakan seluruh fungsi yang dimiliki role **kepala sekolah**
 (6 menu) beserta status dan aturan mainnya.
 
-**Tanggal penulisan:** 31 Okt 2026
-**Cakupan:** `app/kepsek/*`, `app/bendahara/rekap.php` (akses kepsek), gerbang
-persetujuan pada `app/operator/pengumuman.php`
+**Tanggal penulisan:** 31 Okt 2026 · direvisi 2 Nov 2026 (gerbang persetujuan dilepas)
+**Cakupan:** `app/kepsek/*`, `app/bendahara/rekap.php` (akses kepsek), catatan
+persetujuan & tanda tangan hasil pada `app/kepsek/penetapan.php`
 
 ---
 
@@ -15,8 +15,8 @@ persetujuan pada `app/operator/pengumuman.php`
   Semua halamannya read-only, kecuali satu: membubuhkan/mencabut persetujuan
   dan tanda tangan pada daftar hasil.
 - Verifikasi pembayaran tetap kewenangan bendahara, penjadwalan & penerbitan
-  tetap kewenangan operator. Kepala sekolah mengendalikan **kapan boleh terbit**,
-  bukan siapa yang menerbitkan.
+  tetap kewenangan operator. Sejak Nov 2026 kepala sekolah tidak lagi menjadi
+  gerbang penerbitan — catatannya bersifat dokumentasi resmi sekolah.
 - Menu dibangun di `includes/partials/sidebar.php` (grup `Monitoring`).
 
 ---
@@ -45,8 +45,8 @@ keduanya direkam di `pengaturan_sekolah`:
 
 | Aksi | Kolom | Artinya |
 |---|---|---|
-| **Setujui Daftar Ini** | `hasil_disetujui_oleh/_at/_sidik` | Membuka gerbang "Umumkan Sekarang" & "Jadwalkan" di sisi operator |
-| **Cabut Persetujuan** | (dikosongkan) | Penerbitan terkunci lagi |
+| **Setujui Daftar Ini** | `hasil_disetujui_oleh/_at/_sidik` | Bukti daftar hasil sudah ditelaah kepsek; sejak Nov 2026 tidak membuka/mengunci tombol apa pun di sisi operator |
+| **Cabut Persetujuan** | (dikosongkan) | Catatan persetujuan hilang; penerbitan tetap berjalan seperti biasa |
 | **Tandatangani Rilis** | `hasil_ttd_oleh/_at/_sidik` | Tanda tangan atas rilis yang **sudah** terbit; muncul di blok tanda tangan hasil cetak |
 | **Cabut Tanda Tangan** | (dikosongkan) | Rilis tetap tampil publik, catatannya hilang |
 
@@ -58,7 +58,8 @@ seluruh pendaftar aktif (`arsip_at IS NULL`, diurutkan berdasarkan
 ulang:
 
 - sidik sama → catatan **sah**;
-- sidik beda → catatan **BATAL**. Operator harus meminta persetujuan baru.
+- sidik beda → catatan **BATAL**. Ini hanya menandai catatan kepsek tidak lagi
+  cocok dengan isi daftar — penerbitan pengumuman oleh operator tidak ikut berhenti.
 
 Ini yang membuat persetujuan tidak bisa "dipinjam" untuk daftar yang isinya
 sudah berubah, dan sekaligus membuat pencabutan tidak perlu menyimpan riwayat.
@@ -69,7 +70,7 @@ sudah berubah, dan sekaligus membuat pencabutan tidak perlu menyimpan riwayat.
 |---|---|
 | `persetujuan_simpan()` | hanya akun `role='kepsek'` dan `is_active=1` yang boleh menulis; sidik kosong (DB tak terbaca) ditolak |
 | `app/kepsek/penetapan.php` | admin melihat halaman ini **hanya-baca**; `aksi` di luar 4 nilai yang dikenal ditolak; `setujui`/`ttd` wajib mencentang pernyataan (`nyata=1`) |
-| `app/operator/pengumuman.php` | `umumkan_sekarang` **dan** `jadwalkan` berhenti bila `persetujuan_hasil_sah()` false |
+| `app/operator/pengumuman.php` | tidak lagi diperiksa — sejak revisi Nov 2026 operator menerbitkan pengumuman tanpa persetujuan kepsek (catatannya tetap tersimpan di halaman ini) |
 | CSRF + PRG | setiap aksi POST diverifikasi `csrf_cek()` lalu dialihkan dengan `flash()` |
 
 ### Status yang ditampilkan
@@ -125,6 +126,9 @@ khusus kepsek.
 ---
 
 ## Uji yang sudah dijalankan (31 Okt 2026)
+
+> Catatan: butir 1 dan 6 di bawah menguji gerbang persetujuan yang **sudah
+> dilepas pada 2 Nov 2026** — operator kini dapat mengumumkan tanpa persetujuan.
 
 Dijalankan lewat harness CLI sementara (session disuntik, halaman di-`require`,
 satu halaman per proses) terhadap DB lokal, lalu DB dikembalikan persis ke

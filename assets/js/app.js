@@ -344,6 +344,42 @@ document.addEventListener('DOMContentLoaded', function () {
     window.showToast(window.APP_FLASH.pesan, window.APP_FLASH.tipe);
   }
 
+  /* ---------------- Konfeti perayaan ----------------
+     Halaman menyalakannya lewat window.APP_KONFETI (mis. portal siswa tepat
+     setelah amplop hasil seleksi dibuka). Aturan CSS .konfeti-lapis sudah
+     mematikan dirinya sendiri pada prefers-reduced-motion. */
+  window.konfetiRayakan = function (opts) {
+    const opsi = opts || {};
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (document.querySelector('.konfeti-lapis')) return;
+    const warna = opsi.warna || ['#0E9F6E', '#F59E0B', '#3B82F6', '#EF4444', '#A855F7', '#14B8A6'];
+    const banyak = opsi.banyak || 90;
+    const lapis = document.createElement('div');
+    lapis.className = 'konfeti-lapis';
+    lapis.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < banyak; i++) {
+      const k = document.createElement('span');
+      k.className = 'konfeti-keping';
+      const bulat = i % 4 === 0;
+      const sisi  = (6 + Math.random() * 5).toFixed(1);
+      k.style.setProperty('--kf-x', (Math.random() * 100).toFixed(2) + '%');
+      k.style.setProperty('--kf-warna', warna[i % warna.length]);
+      k.style.setProperty('--kf-lebar', sisi + 'px');
+      k.style.setProperty('--kf-tinggi', (bulat ? sisi : (10 + Math.random() * 9).toFixed(1)) + 'px');
+      k.style.setProperty('--kf-radius', bulat ? '999px' : '2px');
+      k.style.setProperty('--kf-durasi', (2.2 + Math.random() * 1.8).toFixed(2) + 's');
+      k.style.setProperty('--kf-tunda', (Math.random() * 0.9).toFixed(2) + 's');
+      k.style.setProperty('--kf-geser', ((Math.random() - 0.5) * 160).toFixed(0) + 'px');
+      k.style.setProperty('--kf-putar', (360 + Math.random() * 720).toFixed(0) + 'deg');
+      lapis.appendChild(k);
+    }
+    document.body.appendChild(lapis);
+    setTimeout(function () { lapis.remove(); }, 5400);
+  };
+  if (window.APP_KONFETI) {
+    window.konfetiRayakan(window.APP_KONFETI === true ? {} : window.APP_KONFETI);
+  }
+
   /* ---------------- Copy rekening ---------------- */
   document.querySelectorAll('[data-copy]').forEach(function (el) {
     el.addEventListener('click', function () {

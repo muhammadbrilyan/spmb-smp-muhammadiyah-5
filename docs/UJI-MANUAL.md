@@ -7,7 +7,12 @@ Server uji: `php -S localhost:8099 -t <root proyek>` — ganti host/port sesuai 
 > (`database/migrations/20261015_fase10_gateway_opsional.sql` +
 > `20261015_fase10_keamanan.sql`) **dan migrasi Fase 11**
 > (`database/migrations/20261016_fase11_pay_token_hash.sql`) serta Fase 13
-> (`20261026_fase13_koreksi_data.sql`) + arsip (`20261028_arsip_pendaftar.sql`), serta seed diimpor
+> (`20261026_fase13_koreksi_data.sql`) + arsip (`20261028_arsip_pendaftar.sql`),
+> lalu seluruh migrasi 2026-10-31 s.d. 2026-11-02 (angsuran, jenis dokumen,
+> `notif_wa_bendahara`, `hasil_dibuka_at`, `20261102_sosmed_sekolah.sql`) —
+> daftarnya ada di tabel riwayat `docs/ALUR-PENDAFTARAN.md`. Jalankan
+> `php tools/cek-proyek.php`; pemeriksaan 5 GAGAL berarti DB masih tertinggal.
+> Seed diimpor
 > ulang bila DB masih mentah. Data demo opsional (11 tahap, berkas, ujian):
 > `mysql -u root db_spmb_mualimku < database/seed_demo.sql`.
 
@@ -179,14 +184,14 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
 | K1 | Login kepsek → sidebar **Monitoring → Persetujuan Hasil** | 200; 4 kartu ringkasan (total aktif, lulus, tidak lulus, masih proses) + tabel daftar hasil + sidik 12 karakter pertama |
-| K2 | Operator membuka `app/operator/pengumuman.php` sebelum ada persetujuan | Banner "Menunggu persetujuan kepala sekolah"; tombol **Umumkan Sekarang** & **Simpan Jadwal** `disabled`; POST langsung ditolak |
+| K2 | Operator membuka `app/operator/pengumuman.php` sebelum ada persetujuan | 200; **tombol Umumkan Sekarang & Simpan Jadwal tetap aktif** — sejak 2026-11-02 persetujuan kepala sekolah bukan lagi gerbang penerbitan. Halaman pengumuman tidak menautkan atau membaca kolom persetujuan sama sekali |
 | K3 | Kepsek menekan **Setujui Daftar Ini** → modal konfirmasi | Modal ber-`modal-root` tampil; pernyataan telaah wajib dicentang; aksi `setujui` terkirim |
 | K4 | Centang lalu simpan | Badge berubah jadi **Disetujui** + nama & waktu; kolom `hasil_disetujui_*` terisi, sidik = sidik daftar saat ini |
-| K5 | Operator memuat ulang halaman pengumuman | Banner hijau "Daftar hasil disetujui kepala sekolah"; tombol aktif; **Umumkan Sekarang** berhasil (`hasil_diumumkan_pada` terisi, tahap naik ke DIUMUMKAN) |
+| K5 | Operator memuat ulang halaman pengumuman | Tidak ada efek silang: persetujuan tersimpan sebagai catatan (badge **Disetujui** + nama & waktu), tetapi pengumuman bisa diterbitkan kapan pun oleh operator (`hasil_diumumkan_pada` terisi, tahap naik ke DIUMUMKAN) |
 | K6 | Setelah terbit, kepsek menekan **Tandatangani Rilis** | Badge **Ditandatangani**; blok tanda tangan pada hasil cetak menampilkan catatan "Sudah ditandatangani digital · tanggal" |
 | K7 | **Sebelum** ada rilis, coba tekan/batch-POST `ttd` | Tombol `disabled` dan POST ditolak: "Belum ada rilis yang ditandatangani…" |
-| K8 | Operator mengubah nilai/status satu pendaftar setelah persetujuan | Kedua catatan jadi badge **Batal** + penjelasan "daftar hasil berubah"; `persetujuan_hasil_sah()` false; penerbitan/jadwal ditolak lagi sampai ada persetujuan baru |
-| K9 | Kepsek memilih **Cabut Persetujuan** | Modal konfirmasi merah → kolom dikosongkan, penerbitan terkunci kembali |
+| K8 | Operator mengubah nilai/status satu pendaftar setelah persetujuan | Catatan berubah jadi badge **Batal** + penjelasan "daftar hasil berubah" (sidik tidak lagi cocok) — **tidak ada** efek ke halaman pengumuman: tombol operator tetap berfungsi seperti biasa |
+| K9 | Kepsek memilih **Cabut Persetujuan** | Modal konfirmasi merah → kolom dikosongkan, catatan hilang. Penerbitan operator tidak terpengaruh |
 | K10 | Pendaftar diarsipkan/dipulihkan setelah persetujuan | Sidik ikut berubah (sidik hanya atas `arsip_at IS NULL`) → catatan menjadi **Batal** — persetujuan harus diminta ulang atas daftar yang benar-benar akan terbit |
 | K11 | Kepsek mencetak halaman | Kop laporan + tabel + blok tanda tangan tercetak; filter, tombol aksi, sidebar & topbar tidak ikut (`no-print`) |
 
@@ -228,41 +233,41 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | M19 | Menerbitkan skema lama ke hosting | Wajib `mysql -u root < database/migrations/20261101_notif_wa_bendahara.sql` lebih dulu; tanpanya seluruh simpan Pengaturan Sistem batal (`1054 Unknown column 'notif_wa_bendahara'`) — terlihat sebagai GAGAL pada pemeriksaan 5 `tools/cek-proyek.php` |
 | M20 | Pembayaran selesai lewat gateway Midtrans (callback `PEMBAYARAN_GATEWAY_LUNAS` / `PEMBAYARAN_GATEWAY_MASUK`) saat **Nomor WA Operator** kosong | Nomor **WA Bendahara** tetap menerima salinan (pesan sudah berisi tautan `app/bendahara/pembayaran.php`) — dahulu tidak terkirim sama sekali karena rute bendahara hanya mengenali `BUKTI_BAYAR_MASUK` |
 
-## N. Kelola Jadwal Tes (`app/operator/jadwal.php`)
+## N. Jadwal Ujian (`app/operator/jadwal.php`)
 
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
-| N1 | Operator → sidebar **SPMB → Kelola Jadwal** | 200; tanpa tabel inline-edit 9 kolom lagi — daftar baca-saja (kartu tanggal, nama, status, kode, tanggal·jam·metode·ruangan, peserta & kapasitas) + 3 chip ringkasan (Draft / Terjadwal / Selesai) |
+| N1 | Operator → sidebar **Seleksi & Penerimaan → Jadwal Ujian** | 200; judul halaman "Jadwal Ujian" — tanpa tabel inline-edit 9 kolom lagi, daftar baca-saja (kartu tanggal, nama, status, kode, tanggal·jam·metode·ruangan, peserta & kapasitas) + 3 chip ringkasan (Draft / Terjadwal / Selesai). Sejak 2026-11-02 menu **Peserta Ujian tidak ada lagi di sidebar** dan bagiannya berada di halaman yang sama (lihat O) |
 | N2 | Lihat di layar lebar apa pun, lalu perkecil jendela sampai ~500 px | **Tidak ada scrollbar horizontal**: `overflow-x-auto` dan `min-w-[960px]` sudah dihapus, tiap baris `flex-wrap` sehingga blok aksi turun ke baris berikut |
 | N3 | Tekan **Tambah Jadwal** di kanan atas | Modal `modal-jadwal` terbuka kosong dengan bawaan 08:00–10:00, Metode Offline, Status Draft, Kapasitas 0; judul "Tambah Jadwal Tes", sub "Kode jadwal dibuat otomatis setelah disimpan" |
 | N4 | Tekan **Ubah** pada baris TES-05 | Modal yang sama terisi persis data baris itu — termasuk `<select>` Metode & Status (app.js kini mengisi `SELECT` lewat `.value`, bukan `textContent`, supaya `<option>` tidak terhapus); sub berubah jadi "Kode TES-05 tetap dan tidak ikut berubah" |
 | N5 | Tekan **Ubah** dua kali berturut-turut pada baris yang sama, lalu pada baris lain | Opsi dropdown tetap 3 dan nilai ikut baris terakhir — pembuktian bahwa pengisian ulang modal idempoten |
 | N6 | Kosongkan Nama Kegiatan lalu simpan | Validasi server menolak; halaman dimuat ulang dengan banner merah **dan** modal terbuka lagi terisi kiriman terakhir (Judul "Ubah Jadwal Tes" bila asalnya dari Ubah, lengkap dengan kode jadwalnya) |
-| N7 | Simpan Ubah pada jadwal yang `peserta_dijadwalkan`-nya terisi dari halaman Peserta Ujian | Jumlah peserta tidak hilang (field disembunyikan sebagai `<input type="hidden">` yang nilainya ikut terbawa). Uji pembanding: POST `ubah` tanpa field itu menulis ulang jadi 0 — inilah yang dicegah |
+| N7 | Simpan Ubah pada jadwal yang `peserta_dijadwalkan`-nya terisi dari bagian Peserta Ujian di bawah | Jumlah peserta tidak hilang (field disembunyikan sebagai `<input type="hidden">` yang nilainya ikut terbawa). Uji pembanding: POST `ubah` tanpa field itu menulis ulang jadi 0 — inilah yang dicegah |
 | N8 | Tekan ikon WA pada satu baris | `confirm()` muncul, POST `kirim_notifikasi` jalan, flash hasil, tetap di halaman yang sama. Penerima dibaca dari **`peserta_ujian` dan `seleksi.jadwal_id`** (dahulu hanya `seleksi`, sehingga tombol ini tidak pernah punya penerima); Lokasi memakai **Ruangan** yang diisi operator, kolom lama `lokasi` hanya cadangan |
 | N9 | Tekan ikon Hapus pada jadwal yang dipakai `seleksi` | Flash error "Jadwal tidak bisa dihapus karena sudah dipakai seleksi." — data tetap ada |
 | N10 | hapus semua jadwal (daftar kosong) | Empty state: ikon `event_busy` + "Belum ada jadwal tes" + petunjuk menekan **Tambah Jadwal**; chip ringkasan menampilkan 0/0/0 |
 | N11 | Setelah `assets/js/app.js` / `assets/css/*.css` diubah, muat halaman biasa (tanpa hard reload) | `asset()` menempel `?v=<filemtime>` sehingga URL berubah dan browser mengambil berkas baru — dahulu hanya 4 tempat di kode yang menulis penanda versi manual, sisanya memakai salinan lama (dropdown Metode/Status di modal jadwal tampak kosong persis karena ini) |
-| N12 | Lihat seksi **Umumkan Jadwal ke Wali Siswa** (di bawah chip ringkasan) | Menunjukkan "X jadwal terjadwal · Y penerima WhatsApp"; tombol hanya muncul bila keduanya > 0. Tanpa jadwal Terjadwal → peringatan "Ubah status jadwal menjadi Terjadwal lebih dulu"; tanpa penerima → tautan ke **Peserta Ujian** |
+| N12 | Lihat seksi **Umumkan Jadwal ke Wali Siswa** (di bawah chip ringkasan) | Menunjukkan "X jadwal terjadwal · Y penerima WhatsApp"; tombol hanya muncul bila keduanya > 0. Tanpa jadwal Terjadwal → peringatan "Ubah status jadwal menjadi Terjadwal lebih dulu"; tanpa penerima → tautan ke bagian **Peserta Ujian** di halaman yang sama (`#peserta`) |
 | N13 | Tekan **Umumkan Semua Jadwal** | Modal `modal-umumkan` terbuka berisi pratinjuan persis isi pesan (satu nomor per kegiatan: nama + kode, tanggal Indonesia · jam–jam WIB · metode · ruangan) dan hitungan penerima. **Batal** tidak mengirim apa pun |
 | N14 | Tekan **Kirim Sekarang** | Satu WA per wali siswa berisi SELURUH jadwal (bukan satu WA per kegiatan) + satu baris `notifikasi_siswa` tipe `JADWAL_UJIAN` (judul "Jadwal Tes SPMB (N kegiatan)", tautan `app/siswa/ppdb.php?tab=jadwal`) + baris `wa_log` tipe `JADWAL_UJIAN`. Flash: "N wali siswa menerima satu pesan berisi X jadwal" |
 | N15 | Tekan **Kirim Sekarang** dua kali berturut-turut tanpa mengubah jadwal | Kirim kedua = `lewati` semua penerima (ref_id = sidik jari susunan jadwal). Pendaftar yang WA-nya tercatat GAGAL saja yang dicoba ulang, tanpa menduplikasi baris notifikasinya |
 | N16 | Ubah tanggal salah satu jadwal, lalu kirim lagi | Sidik jari berubah → pengumuman dianggap baru dan terkirim lagi. Di portal siswa, pesan tampil utuh dengan baris-barisnya (`whitespace-pre-line` di `app/siswa/notifikasi.php`) dan lonceng bertambah 1 |
 
-## O. Peserta Ujian & Navbar Portal Siswa (rombak 2026-11-01)
+## O. Peserta Ujian — bagian `#peserta` di Jadwal Ujian (rombak 2026-11-01, digabung 2026-11-02)
 
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
-| O1 | Operator → sidebar **Seleksi & Penerimaan → Peserta Ujian** | 200; **tidak ada dropdown pilihan jadwal lagi** dan URL tidak memakai `?j=`. Semua jadwal berstatus Terjadwal tampil sekaligus sebagai kartu, diurutkan tanggal + jam |
-| O2 | Bandingkan isi kartu dengan status di Kelola Jadwal | Jadwal Draft/Selesai **tidak** punya kartu; hanya disebut pada catatan "N jadwal berstatus Draft/Selesai tidak dikelola di sini…" lengkap dengan kode, status, dan jumlah peserta yang sudah terlanjur ada |
+| O1 | Operator → `app/operator/jadwal.php#peserta` (URL lama `app/operator/peserta-ujian.php` → 302 ke sana) | 200; mendarat di bagian **Peserta Ujian** di bawah halaman Jadwal Ujian — **tidak ada dropdown pilihan jadwal lagi** dan URL tidak memakai `?j=`. Semua jadwal berstatus Terjadwal tampil sekaligus sebagai kartu, diurutkan tanggal + jam |
+| O2 | Bandingkan isi kartu dengan daftar di bagian atas halaman yang sama (`#daftar-jadwal`) | Jadwal Draft/Selesai **tidak** punya kartu; hanya disebut pada catatan "N jadwal berstatus Draft/Selesai tidak dikelola di sini…" lengkap dengan kode, status, dan jumlah peserta yang sudah terlanjur ada |
 | O3 | Lihat satu kartu | Judul kegiatan + badge kode; baris meta tanggal Indonesia · jam–jam WIB · metode · ruangan; angka "peserta/kapasitas" di kanan; bar kapasitas terisi; baris sisa kuota — dan peringatan kuning "N peserta belum punya nomor WA orang tua" hanya bila memang ada |
 | O4 | Penuhi kapasitas satu jadwal (atur otomatis pada jadwal berkapasitas kecil) | Badge **Kapasitas penuh** muncul, tombol *Atur Peserta Otomatis* dan *Tambah* jadi `disabled` (`.btn:disabled` = pudar & tidak bisa diklik), *Kirim WA Jadwal* tetap aktif |
 | O5 | Jadwal Terjadwal yang pesertanya masih 0 | *Kirim WA Jadwal* `disabled`; badan kartu menampilkan empty state "Belum ada peserta pada jadwal ini" |
-| O6 | Tekan **Atur Peserta Otomatis** / **Kirim WA Jadwal** pada salah satu kartu | `confirm()` menyebut kode jadwal itu saja; setelah PRG, halaman kembali ke daftar penuh (bukan ke satu jadwal terpilih) dan flash tetap terbaca |
+| O6 | Tekan **Atur Peserta Otomatis** / **Kirim WA Jadwal** pada salah satu kartu | `confirm()` menyebut kode jadwal itu saja; setelah PRG, halaman kembali ke `jadwal.php#peserta` (bukan ke satu jadwal terpilih) dan flash tetap terbaca |
 | O7 | Tambah manual pada dua kartu sekaligus | Tiap kartu punya `<select>` sendiri dengan id unik `pm-<id jadwal>`; pilihan yang sama (pendaftar BERKAS_TERVERIFIKASI yang belum punya jadwal mana pun, terarsip dikecualikan) dan otomatis berkurang setelah dipakai |
 | O8 | Perkecil jendela sampai ~400 px | Daftar peserta memakai `<ul>` vertikal (nomor peserta rata kiri, nama + no. pendaftaran + asal sekolah, nomor WA, ikon hapus) — **tanpa scrollbar horizontal**, pengganti tabel `min-w-[760px]` lama |
 | O9 | Buka portal siswa (peran `siswa`) | Topbar sama persis dengan topbar peran sekolah: hanya chip tahun ajaran + lonceng + `?` + avatar. **Tidak ada** breadcrumb "Portal Siswa › …" dan **tidak ada** chip "Gateway WA dikonfigurasi — % terkirim bulan ini" |
-| O10 | Lihat sidebar siswa | Satu grup **Portal Saya** berisi Dashboard, Notifikasi & Pengumuman, Data Siswa, Keuangan, PPDB & Seleksi, Pengaturan Akun. Menu *Akademik* hanya muncul bila siswa itu sudah dinyatakan diterima. Tidak ada tombol CTA "Info SPMB" (ikon `?` di topbar tetap mengarah ke Info SPMB) dan kaki sidebar hanya berisi **Keluar** — tautan *Ganti Password* dibuang karena `app/staf/ganti-password.php` menolak peran siswa; ganti sandal ada di **Pengaturan Akun** |
+| O10 | Lihat sidebar siswa | Satu grup **Portal Saya** berisi Dashboard, Notifikasi & Pengumuman, Data Siswa, Keuangan, PPDB & Seleksi, **Hasil Seleksi**, Pengaturan Akun. Menu *Akademik* hanya muncul bila siswa itu sudah dinyatakan diterima. Tidak ada tombol CTA "Info SPMB" (ikon `?` di topbar tetap mengarah ke Info SPMB) dan kaki sidebar hanya berisi **Keluar** — tautan *Ganti Password* dibuang karena `app/staf/ganti-password.php` menolak peran siswa; ganti sandal ada di **Pengaturan Akun**. Menu *Hasil Seleksi* diberi badge merah **Baru** selama panitia sudah mengumumkan tetapi amplop siswa itu belum dibuka (lihat bagian T) |
 | O11 | Login sebagai operator/bendahara/kepsek setelah perubahan O9–O10 | Sidebar & kaki mereka tidak berubah (CTA Pendaftaran Manual operator, *Ganti Password* tetap ada untuk peran sekolah) |
 
 ## P. Tabel Agenda pada Kartu Peserta (`app/siswa/ppdb.php?tab=jadwal`)
@@ -286,7 +291,7 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | Q4 | Buat Biaya Formulir ≥ Biaya Masuk | Sisa & kedua angsuran jadi **Rp 0** dan muncul catatan merah "Biaya Formulir sama atau lebih besar dari Biaya Masuk — tidak ada sisa yang ditagih." |
 | Q5 | Isi Biaya Masuk 1.000.001 dengan Biaya Formulir 200.000 (jangan Simpan) | Sisa 800.001 → Angsuran 1 = **400.001** dan Angsuran 2 = **400.000**; pembulatan selisih satu rupiah selalu jatuh ke angsuran 1 (`round()` membulatkan ke atas) |
 | Q6 | Muat landing publik → kartu "Rincian SOP & Biaya Pendaftaran" | Biaya Masuk penuh, lalu daftar **Terdiri dari** (setiap item rincian + nominal), kemudian rantai potongan: − Biaya Formulir, **= Sisa setelah lulus**, dan kalimat "…2 angsuran Rp 525.000 per tahap" |
-| Q7 | Portal siswa (siswa LULUS yang hasil sudah diumumkan **atau** sudah punya penempatan kelas) → tab Keuangan | Panel **Rincian Biaya & Sisa Pembayaran**: daftar item, Total Biaya Masuk, − Sudah dibayar & diverifikasi, **= Sisa yang harus dibayar**, plus kalimat opsi lunas / 2 angsuran dan jatuh tempo angsuran 1. "Total Tagihan" = Biaya Formulir + sisa Biaya Masuk |
+| Q7 | Portal siswa → **Hasil Seleksi** → buka amplop (bagian T) → tab Keuangan | Panel **Rincian Biaya & Sisa Pembayaran**: daftar item, Total Biaya Masuk, − Sudah dibayar & diverifikasi, **= Sisa yang harus dibayar**, plus kalimat opsi lunas / 2 angsuran dan jatuh tempo angsuran 1. "Total Tagihan" = Biaya Formulir + sisa Biaya Masuk. Sebelum amplop dibuka panel ini terkunci (T7) |
 | Q8 | Dashboard & rekap cetak Bendahara | Baris "Biaya Pendaftaran" = biaya masuk penuh, ada baris **Sisa ditagih** = dasar angsuran; catatan kaki rekap berbunyi "… — sisa yang ditagih setelah lulus: Rp 1.050.000 (angsuran 2× Rp 525.000 per tahap)." |
 | Q9 | Bayar lewat Midtrans (sandbox) untuk siswa lulus | Nominal yang ditagihkan = sisa angsuran berikutnya dari skema baru, bukan biaya masuk penuh (`app/api/snap-token.php` membaca `angsuran_skema()`) |
 | Q10 | Kosongkan **Teks Promo (opsional)** → Simpan, lalu buka halaman pendaftaran | Tidak ada badge "Promo Tersedia" dan tidak ada blok "Program Promo" sama sekali (perilaku lama "Beasiswa" sudah digantikan; kolom DB tetap `teks_beasiswa`) |
@@ -310,7 +315,9 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 ## S. Daftar Item Biaya & Input Hasil Seleksi (rombak 2026-11-02)
 
 Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_rincian_biaya.sql`
-(kolom `rincian_biaya` dan `ambang_kelulusan`).
+(kolom `rincian_biaya` dan `ambang_kelulusan`) **dan**
+`mysql -u root < database/migrations/20261102_hasil_dibuka.sql`
+(kolom `hasil_dibuka_at` — syarat halaman Hasil Seleksi, lihat bagian T).
 
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
@@ -326,7 +333,121 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_rincian_biay
 | S10 | Kosongkan kembali ketiga nilai satu baris | Nilai Akhir menjadi **—** dan Keputusan kembali ke **Proses** (baris seperti ini dilewati saat simpan) |
 | S11 | Tekan **Simpan Hasil Seleksi** dengan ambang 70 → muat ulang halaman | Flash menyebut "…(ambang kelulusan 70)." dan kolom `ambang_kelulusan` = 70.00; nilai yang tersimpan di tabel `seleksi` tidak berubah |
 | S12 | Bandingkan `seleksi.jadwal_id` sebelum & sesudah simpan nilai | Tetap sama — jadwal tidak dihapus oleh halaman ini meskipun kolomnya tidak ditampilkan |
-| S13 | Siswa LULUS yang sudah punya penempatan kelas tetapi hasil **belum** diumumkan → portal siswa → Keuangan | Panel **Rincian Biaya & Sisa Pembayaran** sudah tampil beserta kelasnya (mis. "Anda diterima di kelas 7C"), sisa = total biaya masuk − yang sudah diverifikasi |
+| S13 | Siswa LULUS yang sudah punya penempatan kelas tetapi **belum** membuka amplop hasil → portal siswa → Keuangan | Panel rincian **tidak** tampil; yang muncul kartu "**Rincian Biaya & Sisa Pembayaran Terkunci**" + tombol ke menu Hasil Seleksi (lihat T7). Setelah amplop dibuka, panel menampilkan rincian beserta kelasnya (mis. "Anda diterima di kelas 7C") dan sisa = total biaya masuk − yang sudah diverifikasi |
+
+## T. Amplop Hasil Seleksi & Perayaan Kelulusan (rombak 2026-11-02)
+
+Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_hasil_dibuka.sql`
+(kolom `pendaftar.hasil_dibuka_at`). Untuk mengulang momen pembukaan dari nol pada akun uji:
+`UPDATE pendaftar SET hasil_dibuka_at = NULL WHERE no_pendaftaran = 'REG-…';`
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| T1 | Sidebar siswa | **Hasil Seleksi** menjadi menu tersendiri (ikon `emoji_events`) di grup Portal Saya, bukan lagi tab di PPDB & Seleksi. Selama panitia sudah mengumumkan dan amplop belum dibuka, menunya memakai badge merah **Baru**; setelah dibuka badge hilang dan menu hanya menandai halaman aktif |
+| T2 | `app/siswa/ppdb.php` | Tab hanya **Formulir** & **Jadwal Tes** — tab "Hasil Seleksi" lama dihapus. Tautan lama `ppdb.php?tab=hasil` (penanda halaman WA, markah browser) mengirim 302 ke `app/siswa/hasil.php` |
+| T3 | Pengumuman belum ditekan panitia dan siswa belum lulus-dapat-kelas → Hasil Seleksi | Kartu "Pengumuman Belum Dibuka" + badge amber *Menunggu Pengumuman*; menampilkan tanggal terjadwal (`pengumuman.dijadwalkan_pada`) atau perkiraan CMS. **Tidak ada** tombol buka, **tidak ada** angka nilai |
+| T4 | Panitia sudah mengumumkan / siswa LULUS berkelas, amplop belum dibuka | Badge hijau *Siap Dibuka* + kartu "Amplop Hasil Seleksi Sudah Tiba" dengan tombol **Buka Hasil Seleksi** (ikon `mail`, denyut `amplop-nadi`). Strip kaki kartu: No. Pendaftaran · nama sekolah · "Terkunci sampai Anda buka". **View-source halaman ini tidak memuat status kelulusan, kelas, maupun nilai** |
+| T5 | Tekan **Buka Hasil Seleksi** | POST + CSRF ke `app/siswa/hasil.php`, `pendaftar.hasil_dibuka_at = NOW()` (sekali, `… IS NULL`), lalu redirect PRG ke `?baru=1` |
+| T6 | Setelah redirect | Konfeti ±90 keping (`window.konfetiRayakan()`) + kartu hijau tua "Alhamdulillah / Selamat, Kamu Dinyatakan **LULUS**" + doa «Rabbi zidnii 'ilman» (QS. Thaha: 114) + kotak **Kelasmu Sekarang** (kode — nama kelas + wali kelas). Refresh biasa setelah itu **tidak** mengulang konfeti; `?baru=1` pada URL tanpa amplop terbuka diabaikan |
+| T7 | Setelah lulus dibuka → sidebar **Keuangan** | Panel **Rincian Biaya & Sisa Pembayaran** kini terbuka: item rincian, total, sudah dibayar, **sisa**, tombol bayar. Sebelumnya panel ini terkunci dan setiap percobaan unggah bukti / bayar untuk `UANG_MASUK` ditolak server dengan pesan "… belum dapat dibayar. Buka dulu hasil seleksi Anda pada menu Hasil Seleksi." |
+| T8 | Blok hijau pada kartu LULUS | "Satu langkah lagi: selesaikan rincian biaya masuk" + tombol penuh **Buka Rincian Biaya & Pembayaran** → `app/siswa/keuangan.php`. Bila tagihan belum aktif, tombolnya versi outline "Buka Keuangan" |
+| T9 | Siswa TIDAK_LULUS membuka amplop | **Tanpa konfeti** — kartu tenang "Alhamdulillah / Terima Kasih Sudah Berusaha" + kutip QS. Al-Baqarah: 216; tidak ada ajakan membayar tagihan |
+| T10 | Amplop dibuka saat status masih PROSES (panitia membuka pengumuman sebelum nilainya ditetapkan) | "Masih Dalam Proses" + tombol Pantau Pengumuman; halaman tetap bisa dimuat ulang dan hasil otomatis menyesuaikan begitu status ditetapkan |
+| T11 | Buka hasil dua perangkat/dua tab bergantian | Pembacaan kedua langsung menampilkan hasil (tanpa tombol) dan tanggal pembukaan tidak berubah — tulisan "Hasil dibuka pada …" tetap tanggal pertama |
+| T12 | Nyalakan *reduce motion* di OS → buka amplop | Konfeti tidak dibuat (`.konfeti-lapis{display:none}`, animasi tombol dilepas), teks hasil tetap tampil normal |
+| T13 | Nonaktifkan JavaScript, tekan tombol buka | Tetap berhasil: perayaan hanya hiasan, status & kelas dirender PHP |
+| T14 | Kirim POST `aksi=ungkap` tanpa token CSRF / dengan `aksi` lain | Flash merah "Formulir kedaluwarsa…" / "Aksi tidak dikenali." dan **tidak ada** perubahan `hasil_dibuka_at` |
+| T15 | Siswa yang akunnya belum terhubung ke pendaftar | Kartu kuning "Data pendaftaran belum ditemukan untuk akun ini." — bukan error 500 |
+| T16 | Peran sekolah (operator/bendahara/kepsek) | Tidak ada perubahan: sidebar, `tagihan_pendaftaran_aktif()`, dan antrean verifikasinya tidak ikut gerbang `hasil_dibuka_at` — fungsi baru hanya dipakai portal siswa |
+
+## U. Tabel Daftar Tagihan di Portal Siswa (`app/siswa/keuangan.php?tab=tagihan`, 2026-11-02)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| U1 | Buka tab **Tagihan** | Kartu baru **Daftar Tagihan &amp; Pembayaran** tepat di bawah ringkasan: tabel `No. · Pembayaran · Jumlah Bayar · Status Bayar · Tanggal Bayar · Kanal Bayar` + baris `Total tagihan` di `<tfoot>` |
+| U2 | Perhatikan isinya | Satu baris per kewajiban bayar: **Biaya Formulir**, lalu **Angsuran ke-1 — Biaya Pendaftaran**, **Angsuran ke-2 — …** (kalau skema angsuran aktif; kalau tidak, satu baris Biaya Pendaftaran). Nominal per baris dari `angsuran_ringkas()`, bukan diketik manual |
+| U3 | Baris yang sudah diverifikasi bendahara | Status **LUNAS** hijau + ikon `check_circle`, Tanggal Bayar = `verified_at` (fallback `paid_at` → `created_at`), Kanal Bayar = `payment_method` (mis. `NEWMOBILE`) atau `metode` (`TRANSFER` → "Transfer Manual", `QRIS` → "QRIS", `GATEWAY` → "Online"); baris lama yang hanya punya bukti unggah tetap terbaca "Transfer Manual" |
+| U4 | Baris yang belum dibayar | **BELUM LUNAS** merah + ikon `schedule`, tanggal & kanal `—`, keterangan "Jatuh tempo …". Status lain yang dikenal: MENUNGGU VERIFIKASI (amber), TERBAYAR SEBAGIAN (biru, keterangan menyebut sisanya), DITOLAK (merah), LEWAT JATUH TEMPO (merah, `event_busy`) |
+| U5 | Amplop hasil belum dibuka | Baris biaya masuk tetap ada tetapi **TERKUNCI** (abu-abu, ikon `lock`), Jumlah `—`, badge kepala kartu "Tagihan Masuk Terkunci", dan kaki tabel berbunyi "Sisa Biaya Pendaftaran tampil setelah hasil seleksi dibuka." — **tidak ada satu pun nominal angsuran yang muncul** di HTML |
+| U6 | Bandingkan dengan kartu aksi di bawahnya | Blok "Jadwal Angsuran" lama **dihapus** dari kartu tagihan — informasinya sudah ada di tabel ini, jadi tidak ada dua daftar angsuran dalam satu halaman |
+| U7 | Perkecil jendela sampai < 640 px | Tabel `hidden sm:block` dan muncul daftar tumpuk `sm:hidden`: nama + status di baris pertama, keterangan di bawahnya, lalu Jumlah/Tanggal/Kanal dalam 3 kolom — **tanpa gulir samping** |
+| U8 | Siswa dengan semua baris lunas | Badge hijau "Semua tagihan lunas" dan kaki tabel "Seluruh tagihan sudah lunas dan terverifikasi." Badge tidak pernah menyebut "lunas" selama masih ada baris berstatus belum lunas (label menjadi "Belum Semua Lunas") |
+| U9 | Tab **Riwayat** | Tidak berubah — tetap daftar `pembayaran` mentah (termasuk yang menunggu/ditolak) beserta tombol Lihat bukti; tabel baru ini khusus tagihan per kewajiban bayar |
+
+## V. Revisi 2026-11-02 (Landing, Registrasi, Verifikasi, Jadwal Gabungan, Pengumuman, Sidebar)
+
+### V-a. Landing page & halaman publik
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| V1 | `app/spmb/index.php#alur` — telusuri kartu tahapan/alur | **Tidak ada** tulisan "Saldo Rekening" lagi (badge nominal pada kartu sudah dihapus) dan **tidak ada** tombol *Ajukan Skema Angsuran* — skema angsuran hanya diatur panitia |
+| V2 | Buka `app/auth/registrasi.php` sampai sukses registrasi | **Tidak ada** tombol/tautan "Masuk Portal" — langkah berikutnya hanya berupa kalimat "… masuk portal siswa untuk melengkapi biodata & berkas persyaratan" (+ instruksi WA). Pengecekan: `grep -c "app/auth/login" app/auth/registrasi.php` = 0 |
+| V3 | `app/spmb/bayar.php?t=<token aktif>` | Baris kontak berbunyi **"Hubungi panitia — klik disini"** dengan "klik disini" sebagai tautan `https://wa.me/<nomor panitia>` (`target="_blank" rel="noopener"`); nomor tidak lagi ditampilkan sebagai teks mati. Bila `kontak_wa_panitia` kosong → teks bantuan tanpa tautan (tidak ada `wa.me/` kosong) |
+| V4 | Scroll ke bagian **Informasi** paling bawah (footer publik) di halaman mana pun yang memakai `includes/partials/footer-public.php` | Baris ikon **Instagram / TikTok / YouTube / Website Profil Sekolah** tampil sesuai kolom yang terisi. Kolom kosong = **ikon tidak dirender sama sekali** (bukan tombol mati ke `#`); tiap ikon `target="_blank" rel="noopener me"` + `aria-label` "Instagram SMP Muhammadiyah 5" |
+
+### V-b. Media sosial di Pengaturan Sistem (`app/operator/pengaturan.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| V5 | Kartu **Identitas & Kontak → Media Sosial** | Empat isian teks: Instagram, TikTok, YouTube, Website Sekolah — placeholder `instagram.com/namasekolah`, `tiktok.com/@namasekolah`, `youtube.com/@namasekolah`. Operator cukup menempel alamat, tidak perlu memilih jenis akun |
+| V6 | Isi `instagram.com/spmb5tangerang` (tanpa `https://`) → **Simpan** → muat ulang | Tersimpan **dan** tampil kembali sebagai `https://instagram.com/spmb5tangerang` (`tautan_normal()` menambah skema); footer publik langsung memakai tautan itu |
+| V7 | Isi nilai bukan alamat (mis. `sekadar teks` atau `javascript:alert(1)`) → **Simpan** | Tersimpan sebagai **NULL** dengan pesan galat per kolom: "Tautan Instagram harus berbentuk alamat situs, contoh: instagram.com/namasekolah" — tidak ada tautan berbahaya masuk ke HTML publik |
+| V8 | Kosongkan keempat kolom → **Simpan** | Keempat kolom jadi `NULL` (bukan string kosong) → seluruh baris ikon hilang dari footer |
+| V9 | Hosting lain mengikuti rilis ini | Wajib jalankan `mysql -u root db_spmb_mualimku < database/migrations/20261102_sosmed_sekolah.sql` lebih dulu; tanpanya **setiap** simpan Pengaturan Sistem batal (`1054 Unknown column 'sosmed_instagram'`) dan `php tools/cek-proyek.php` pemeriksaan 5 **GAGAL** menyebut 4 kolom |
+
+### V-c. Verifikasi pendaftar — berkas (`app/operator/verifikasi.php?tab=berkas&id=…`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| V10 | Tolak 2 dari 4 berkas, berkas lain masih `PENDING` | Tahap langsung `BERKAS_REVISI`; flash menyebutkan "**2** berkas ditolak dan masih ada **2** berkas belum diputuskan — pesan revisi belum dikirim…" + saran memakai tombol. Tidak ada WA yang keluar di langkah ini |
+| V11 | Tekan **Kirim Pesan Revisi via WA** (ikon `whatshot`) | Satu WA ke nomor orang tua berisi **seluruh** berkas berstatus REJECTED beserta alasannya (`berkas_revisi_daftar()`), tanpa menunggu berkas lain dikirim ulang; baris `wa_log` tipe `BERKAS_REVISI` + baris `notifikasi_siswa` tipe `BERKAS_DITOLAK` (lonceng portal siswa, tautan `app/siswa/data-siswa.php`). Flash hijau "Pesan revisi (2 berkas) terkirim ke WA …" |
+| V12 | Tekan tombol yang sama 6× berturut-turut untuk satu pendaftar | Permintaan ke-6 ditolak: "Pesan revisi baru saja dikirim. Tunggu sebelum mengirim lagi (maks 5×/jam per pendaftar)." — pembatasnya per pendaftar, bukan global |
+| V13 | Pendaftar tanpa nomor WA orang tua → tekan tombol | Lonceng portal tetap terisi, flash merah/amber "Nomor WhatsApp orang tua belum diisi — pesan revisi hanya masuk ke lonceng portal siswa." (bukan error kosong) |
+| V14 | Gateway WA sedang gagal (`wa_kirim()` `ok=false`) | Pesan tetap masuk lonceng + flash menyebut "WhatsApp GAGAL terkirim: …" dan `wa_log` tercatat GAGAL — tidak ada pesan yang hilang diam-diam |
+| V15 | Selesaikan keputusan berkas terakhir (semua sudah diputus, ada yang REJECTED) | `berkas_evaluasi_tahap()` mengirim pesan revisi otomatis — **satu** pesan memuat semua catatan; tidak dobel dengan kiriman manual selama kuota belum tercapai |
+
+### V-d. Verifikasi pendaftar — data & tombol "Minta Perbaikan"
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| V16 | Tab **Data** → isian `catatan` dibiarkan kosong → tekan **Minta Perbaikan** | Ditolak: tombol `required` di layar **dan** server (`verifikasi_data_set()`: "Alasan penolakan wajib diisi."). Status tidak berubah |
+| V17 | Isi catatan (mis. "alamat orang tua belum lengkap") → **Minta Perbaikan** | `status_verifikasi = DITOLAK`, `catatan_verifikasi_data` tersimpan, `data_verified_at/by` dinolkan; flash "Data dikembalikan ke siswa untuk diperbaiki." |
+| V18 | Login portal siswa → `app/siswa/data-siswa.php` | Banner merah **"Panitia meminta perbaikan data"** di atas formulir berisi catatan panitia apa adanya (`whitespace-pre-line`, di-escape) + 3 langkah: baca catatan → *Simpan Data Sementara* → kirim lewat tombol **Kirim Ulang Data untuk Verifikasi**. Formulir dapat diedit lagi (tidak terkunci) |
+| V19 | Bandingkan kepala/tombol aksi di bawah | Label tombol mengikuti keadaan: `Ajukan Verifikasi Berkas` saat normal, `Kirim Ulang Data untuk Verifikasi` saat sedang diminta perbaikan — penjelasannya ikut berubah, tidak ada tombol yang berbohong tentang apa yang dikirim |
+| V20 | Perbaiki isian lalu tekan tombol kirim ulang | Status kembali `MENUNGGU_VERIFIKASI` dan pendaftar muncul lagi di antrean operator. Catatan lama tidak ditampilkan ganda (kotak catatan terpisah disembunyikan selama banner perbaikan aktif) |
+| V21 | Panitia menekan **Verifikasi Penuh** padahal data wajib belum lengkap | Tetap ditolak server: "Data belum lengkap: … Minta perbaikan terlebih dahulu." (gerbangnya tidak berpindah ke tampilan saja) |
+
+### V-e. Menu Jadwal Ujian gabungan (`app/operator/jadwal.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| V22 | Sidebar operator → grup **Seleksi & Penerimaan** | Hanya ada **Jadwal Ujian** (ikon `event`) — menu *Peserta Ujian* hilang; jumlah item menu operator turun dari 15 jadi 14 |
+| V23 | Buka `jadwal.php` | Satu halaman: daftar jadwal di atas (`#daftar-jadwal`), bagian **Peserta Ujian** di bawahnya (`#peserta`) berisi 3 kartu ringkasan + satu kartu per jadwal `TERJADWAL`. **Fitur Generate/atur peserta otomatis berada di bawah pengaturan jadwal**, sesuai permintaan |
+| V24 | Tekan tautan "…" di paragraf pengantar judul | Mendarat di `#peserta` tanpa gulir tersumbat topbar (`scroll-mt-24` pada kedua seksi) |
+| V25 | Buka URL lama `app/operator/peserta-ujian.php` (mis. dari markah browser atau notifikasi in-app) | **302** → `jadwal.php#peserta`, lalu `require_role(['operator','admin'])` tetap berlaku (URL ini tidak pernah jadi halaman publik) |
+| V26 | Jalankan **Atur Peserta Otomatis** / **Kirim WA Jadwal** / **Tambah manual** / **Hapus** pada salah satu kartu | Semua POST menuju `jadwal.php`; setelah PRG halaman kembali **ke `#peserta`** dengan flash terbaca; tidak ada lagi `?j=` atau dropdown pilihan jadwal |
+| V27 | Dua kartu jadwal aktif sekaligus, pilih pendaftar di masing-masing | `<select>` tiap kartu ber-`id="pm-<jadwal id>"` (tidak bentrok); daftar kandidat = `BERKAS_TERVERIFIKASI`, tidak terarsip, dan belum punya jadwal mana pun — berkurang otomatis setelah dipakai |
+
+### V-f. Pengumuman hasil (`app/operator/pengumuman.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| V28 | Buka halaman **sebelum** kepsek mencatat persetujuan | **Tidak ada** banner "Menunggu persetujuan kepala sekolah" dan tidak ada tombol `disabled` — `Umumkan Sekarang` & `Simpan Jadwal` langsung berfungsi. Halaman ini tidak lagi membaca `persetujuan_baca()` sama sekali |
+| V29 | POST `umumkan_sekarang` saat masih ada LULUS tanpa kelas, tanpa mencentang konfirmasi | Tetap ditolak server ("Konfirmasi diperlukan: masih ada siswa LULUS tanpa kelas.") + checkbox `required` di layar. Gerbang yang dilepas hanya persetujuan kepsek |
+| V30 | Tekan **Kirim WA ke Semua (N)** | Isi pesan (dibaca dari `pengumuman_pesan_wa()`) kini memuat **tautan hasil seleksi** `url_abs('app/siswa/hasil.php')` → lokal `http://localhost/mualimku/app/siswa/hasil.php`, plus kalimat "login memakai akun portal siswa". LULUS: pesan alhamdulillah + kelas + tautan + petunjuk daftar ulang; selain LULUS: pemberitahuan + tautan yang sama (kata "TIDAK LULUS" tidak lagi ditulis telanjang di WA — keputusan detail dibuka di tautan itu) |
+| V31 | Cek `APP_URL` di `.env` | Tautan hasil ikut absolut (`https://domain-sekolah.sch.id/…/app/siswa/hasil.php`) — tidak ada URL `localhost` yang bocor ke pesan produksi |
+| V32 | Lihat sidebar/topbar di halaman pengumuman | Nama & inisial operator **yang login** tampil benar. Dahulu halaman ini lupa mengisi `$USER_LOGIN`, jadi nama contoh dari `includes/dummy.php` ("Ahmad Fauzi" dsb.) ikut terrender |
+| V33 | Portal kepsek → `app/kepsek/penetapan.php` | Tetap ada dan bisa dipakai, tetapi seluruh teksnya kini menyebut **catatan resmi**, bukan kunci: modal "Setujui" & "Cabut" tidak lagi menjanjikan mengunci tombol operator |
+
+### V-g. UX gulir sidebar (`includes/partials/sidebar.php`)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| V34 | Operator gulir menu sampai grup **Pengaturan Sistem** terlihat → klik **Pengaturan Sistem** | Halaman baru memuat dengan posisi gulir **sama** (storage `sessionStorage` kunci `nav-gulir`) — tidak kembali ke puncak. Ini persis keluhan "scrollbarstanby di pengaturan sistem" |
+| V35 | Klik item yang belum terlihat sama sekali (mis. grup paling bawah) dari halaman lain | Item aktif digeser **seminim mungkin** ke dalam tampilan (toleransi 12 px); bila sudah terlihat, posisi tidak disentuh sama sekali — sidebar tidak "meloncat" tiap perpindahan halaman |
+| V36 | Lipat sidebar (rail ikon) lalu ulangi V34–V35 | Posisi rail ikut dipertahankan (kunci terpisah `nav-rel-gulir`) dan ikon aktif discroll-kan |
+| V37 | Buka drawer sidebar di layar sempit (< 1024 px) | Perilaku drawer tidak berubah; script hanya menyentuh `.nav-penuh` dan `.nav-rel` |
+| V38 | Mode privat / `sessionStorage` diblokir | Tidak ada galat JS — pembacaan & penulisan posisi dibungkus `try/catch`, menu tetap berfungsi |
 
 ## Skenario Penyalahgunaan (wajib lolos)
 
@@ -344,9 +465,9 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_rincian_biay
 | X10 | Cari rahasia di paket rilis / repo | `.env` absen dari zip & repo; `hak akses.txt` tiada; password hanya hash bcrypt/`!LOCKED` |
 | X11 | Edit `pay_token_hash` jadi duplikat | Ditolak DB (constraint UNIQUE) |
 | X12 | Pembatasan teks penolakan verifikasi diklik korban | Mendarat di cek-status (pemulihan aman), bukan halaman bayar |
-| X13 | Operator memaksa POST `umumkan_sekarang`/`jadwalkan` tanpa persetujuan (form dibuka lewat DevTools) | Ditolak server (`persetujuan_hasil_sah()` false) — `hasil_diumumkan_pada` tetap NULL |
+| X13 | Operator memaksa POST `umumkan_sekarang` dengan `_csrf` asing / tanpa checkbox konfirmasi saat masih ada LULUS tanpa kelas | **Kedua gerbang yang tersisa tetap ditegakkan server**: token salah → "Formulir kedaluwarsa. Muat ulang halaman."; `konfirmasi !== '1'` → "Konfirmasi diperlukan: masih ada siswa LULUS tanpa kelas." — `hasil_diumumkan_pada` tetap NULL. Sejak 2026-11-02 **tidak ada** lagi penolakan karena belum ada persetujuan kepsek |
 | X14 | Admin memaksa POST `setujui`/`ttd` di halaman kepsek | Ditolak dua lapis: layar `require_role(['kepsek','admin'])` tapi tombol nonaktif + `persetujuan_simpan()` menolak id bukan akun kepsek aktif |
-| X15 | Persetujuan lama dipakai menerbitkan daftar hasil yang sudah diubah | Sidik tidak cocok → catatan **Batal** → penerbitan terkunci lagi |
+| X15 | Persetujuan lama, lalu daftar hasil diubah operator | Di `penetapan.php` catatan jadi badge **Batal** (sidik tidak cocok) — ini hanya tanda bahwa catatan tidak lagi menggambarkan daftar; penerbitan pengumuman tidak ikut terkunci dan tidak ada kolom hasil yang berubah karena catatan persetujuan |
 | X16 | POST `aksi` sembarang / tanpa `nyata=1` ke `penetapan.php` | "Aksi tidak dikenal." / "Centang pernyataan telaah…" — tidak ada kolom yang berubah |
 
 ---

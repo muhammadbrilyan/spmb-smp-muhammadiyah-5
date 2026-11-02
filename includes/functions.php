@@ -128,6 +128,35 @@ function warna_valid($hex)
 }
 
 /**
+ * Normalisasi tautan yang diketik operator (media sosial / website).
+ *
+ * Operator cukup menempelkan alamat, misalnya "instagram.com/sekolah" atau
+ * "https://tiktok.com/@sekolah". Tanpa skema otomatis ditambah https:// agar
+ * tautan di footer langsung bisa diklik.
+ *
+ * @param  string $raw inputsan mentah
+ * @return string|null URL bersih, atau null bila kosong
+ * @throws InvalidArgumentException bila bukan URL http(s) yang sah
+ */
+function tautan_normal($raw)
+{
+    $tautan = preg_replace('/\s+/', '', trim((string) $raw));
+    if ($tautan === '') {
+        return null;
+    }
+    if (!preg_match('#^https?://#i', $tautan)) {
+        $tautan = 'https://' . ltrim($tautan, '/');
+    }
+    if (strlen($tautan) > 255) {
+        throw new InvalidArgumentException('Tautan maksimal 255 karakter.');
+    }
+    if (filter_var($tautan, FILTER_VALIDATE_URL) === false || !preg_match('~^https?://[^/?#]+\.[a-z]{2,}~i', $tautan)) {
+        throw new InvalidArgumentException('Tautan harus berbentuk alamat situs, contoh: instagram.com/namasekolah');
+    }
+    return $tautan;
+}
+
+/**
  * Campur warna hex dengan warna target.
  * @param string $hex    warna dasar (#RRGGBB)
  * @param string $target '#000000' (gelapkan) atau '#ffffff' (terangkan)

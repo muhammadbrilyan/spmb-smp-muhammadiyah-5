@@ -222,7 +222,13 @@ require_once __DIR__ . '/../../includes/partials/head.php';
       <?php endif; ?>
 
       <div class="mt-6 text-center text-xs text-ink-400">
-        Hubungi panitia: <a class="underline text-primary font-semibold" href="https://wa.me/<?= e(preg_replace('/\D+/', '', $PENGATURAN['kontak_wa_panitia'])) ?>" target="_blank" rel="noopener"><?= e($PENGATURAN['kontak_wa_panitia']) ?></a>
+        <?php $waPanitiaByr = preg_replace('/\D+/', '', (string) ($PENGATURAN['kontak_wa_panitia'] ?? '')); ?>
+        <?php if ($waPanitiaByr !== ''): ?>
+          Hubungi panitia —
+          <a class="underline text-primary font-semibold" href="https://wa.me/<?= e($waPanitiaByr) ?>" target="_blank" rel="noopener">klik disini</a>
+        <?php else: ?>
+          Hubungi panitia SPMB untuk bantuan pembayaran.
+        <?php endif; ?>
       </div>
     <?php endif; ?>
 

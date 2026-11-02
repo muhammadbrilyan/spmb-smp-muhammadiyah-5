@@ -97,7 +97,7 @@ function pengumuman_notif_hasil_semua()
             $pesan = 'Hasil seleksi SPMB telah resmi diumumkan. Berdasarkan penilaian panitia, '
                 . 'Anda dinyatakan belum lulus. Terima kasih atas partisipasi dan kepercayaan Bapak/Ibu.';
         }
-        if (notif_siswa_kirim($c['id'], 'HASIL_SELEKSI', $judul, $pesan, url('app/siswa/ppdb.php?tab=hasil'))) {
+        if (notif_siswa_kirim($c['id'], 'HASIL_SELEKSI', $judul, $pesan, url('app/siswa/hasil.php'))) {
             $n++;
         }
     }
@@ -180,6 +180,11 @@ function pengumuman_pesan_wa($pendaftarId)
     }
     $nama = $baris['nama_siswa'] ?: $baris['no_pendaftaran'];
     $sekolah = q_col('SELECT nama_sekolah FROM pengaturan_sekolah WHERE id = 1') ?: 'Sekolah';
+    /* Tautan hasil seleksi di portal siswa — orang tua/wali membuka ini dengan
+     * akun siswa (login diperlukan, jadi hasil tidak tersebar ke nomor lain). */
+    $tautanHasil = url_abs('app/siswa/hasil.php');
+    $ajakCek = "Silakan buka hasil seleksi lengkap pada tautan berikut "
+        . "(login memakai akun portal siswa):\n{$tautanHasil}";
     if ($baris['status_seleksi'] === 'LULUS') {
         $pen = q_all(
             'SELECT k.kode, k.nama_kelas FROM penempatan_kelas pk JOIN kelas k ON k.id = pk.kelas_id WHERE pk.pendaftar_id = ? LIMIT 1',
@@ -187,14 +192,15 @@ function pengumuman_pesan_wa($pendaftarId)
         );
         $kelasTxt = ($pen && $pen[0]) ? (' Kelas ' . $pen[0]['kode'] . ' — ' . $pen[0]['nama_kelas'] . '.') : '';
         return "Assalamualaikum.\n\n"
-            . "Alhamdulillah, {$nama} ({$baris['no_pendaftaran']}) **LULUS** seleksi SPMB {$sekolah}."
+            . "Alhamdulillah, {$nama} ({$baris['no_pendaftaran']}) *LULUS* seleksi SPMB {$sekolah}."
             . $kelasTxt . "\n\n"
+            . $ajakCek . "\n\n"
             . "Silakan lanjutkan proses daftar ulang sesuai jadwal panitia. Info: " . url_abs('app/spmb/cek-status.php') . "\n\n"
             . "Panitia SPMB";
     }
     return "Assalamualaikum.\n\n"
-        . "Bersama ini kami sampaikan hasil seleksi SPMB {$sekolah} atas nama {$nama} ({$baris['no_pendaftaran']}): "
-        . "*TIDAK LULUS*.\n\n"
+        . "Bersama ini kami sampaikan hasil seleksi SPMB {$sekolah} atas nama {$nama} ({$baris['no_pendaftaran']}).\n\n"
+        . $ajakCek . "\n\n"
         . "Terima kasih atas partisipasi dan kepercayaan Bapak/Ibu. Semoga sukses selalu.\n\n"
         . "Panitia SPMB";
 }

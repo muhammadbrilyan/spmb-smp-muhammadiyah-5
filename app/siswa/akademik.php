@@ -61,7 +61,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           Menu Akademik hanya terbuka bagi siswa yang sudah dinyatakan diterima dan hasil seleksinya telah diumumkan resmi oleh panitia.
         </p>
         <div class="mt-4 flex flex-wrap items-center justify-center gap-2.5">
-          <a href="<?= url('app/siswa/ppdb.php?tab=hasil') ?>" class="btn btn-primary btn-sm"><?= icon('emoji_events') ?> Lihat Status Seleksi</a>
+          <a href="<?= url('app/siswa/hasil.php') ?>" class="btn btn-primary btn-sm"><?= icon('emoji_events') ?> Lihat Status Seleksi</a>
         </div>
       </section>
 
@@ -81,7 +81,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               Anda tetap dapat melihat data pendaftaran dan hasil seleksi melalui menu terkait di bawah ini.
             </p>
             <div class="mt-4 flex flex-wrap gap-2.5">
-              <a href="<?= url('app/siswa/ppdb.php?tab=hasil') ?>" class="btn btn-outline btn-sm"><?= icon('emoji_events') ?> Hasil Seleksi</a>
+              <a href="<?= url('app/siswa/hasil.php') ?>" class="btn btn-outline btn-sm"><?= icon('emoji_events') ?> Hasil Seleksi</a>
               <a href="<?= url('app/siswa/data-siswa.php') ?>" class="btn btn-outline btn-sm"><?= icon('badge') ?> Data Siswa</a>
             </div>
           </div>
@@ -185,7 +185,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <div><dt class="text-ink-400">No. pendaftaran</dt><dd class="font-mono font-semibold text-ink-900"><?= e($siswa['no_pendaftaran']) ?></dd></div>
             <div><dt class="text-ink-400">Tahun ajaran</dt><dd class="font-semibold text-ink-900"><?= e($PENGATURAN['tahun_ajaran'] ?? '—') ?></dd></div>
           </dl>
-          <a href="<?= url('app/siswa/ppdb.php?tab=hasil') ?>" class="btn btn-outline btn-block btn-sm mt-4"><?= icon('emoji_events') ?> Lihat Hasil Seleksi</a>
+          <a href="<?= url('app/siswa/hasil.php') ?>" class="btn btn-outline btn-block btn-sm mt-4"><?= icon('emoji_events') ?> Lihat Hasil Seleksi</a>
         </section>
       </div>
 

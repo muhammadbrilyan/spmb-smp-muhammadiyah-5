@@ -14,7 +14,11 @@ require __DIR__ . '/_bootstrap.php';
 $desc  = 'Biaya formulir, ' . label_biaya_pendaftaran() . ', status verifikasi pembayaran, rincian tagihan, dan riwayat.';
 
 $skemaAngsuran = angsuran_skema();
-$pendaftaranTerbuka = $siswa ? tagihan_pendaftaran_aktif($siswa) : false;
+/* Tagihan biaya masuk hanya terbuka bila siswa sudah LULUS + punya kelas
+ * (atau hasilnya diumumkan) DAN amplop hasilnya sudah ia buka sendiri di
+ * menu Hasil Seleksi. $tagihanAktif dihitung di _bootstrap.php. */
+$pendaftaranTerbuka = $tagihanAktif;
+$tagihanMenungguHasil = $siswa && !$hasilTerbuka && tagihan_pendaftaran_aktif($siswa);
 if ($siswa && $ringkasAngsuran === null) {
     $ringkasAngsuran = angsuran_ringkas($siswa['id']);
 }
@@ -70,7 +74,9 @@ if ($siswa && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $galat[] = 'Formulir kedaluwarsa. Muat ulang halaman lalu coba lagi.';
     }
     if ($ringkas['tagihan'] <= 0) {
-        if ($jenis === 'UANG_MASUK' && !$pendaftaranTerbuka) {
+        if ($jenis === 'UANG_MASUK' && $tagihanMenungguHasil) {
+            $galat[] = label_biaya_pendaftaran() . ' belum dapat dibayar. Buka dulu hasil seleksi Anda pada menu Hasil Seleksi.';
+        } elseif ($jenis === 'UANG_MASUK' && !$pendaftaranTerbuka) {
             $galat[] = label_biaya_pendaftaran() . ' belum dapat dibayar. Tagihan dibuka setelah hasil seleksi diumumkan dan Anda dinyatakan LULUS.';
         } else {
             $galat[] = 'Nominal ' . ($jenis === 'UANG_MASUK' ? label_biaya_pendaftaran() : 'Biaya Formulir') . ' belum ditetapkan panitia.';
@@ -217,7 +223,7 @@ $bolehUnggah = function ($jenis, array $ringkas, $siswaRow) {
     if ($ringkas['pending_bukti'] > 0) {
         return false;
     }
-    if ($jenis === 'UANG_MASUK' && !tagihan_pendaftaran_aktif($siswaRow)) {
+    if ($jenis === 'UANG_MASUK' && !(tagihan_pendaftaran_aktif($siswaRow) && hasil_sudah_dibuka($siswaRow))) {
         return false;
     }
     return true;
@@ -246,8 +252,12 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <div class="flex items-center gap-2 flex-wrap">
           <span class="badge badge-blue">Keuangan SPMB</span>
           <?php if ($siswa): ?>
-            <span class="badge badge-<?= $totalSisa > 0 ? 'amber' : 'green' ?>">
-              <?= $totalSisa > 0 ? 'Sisa ' . rupiah($totalSisa) : 'Tidak Ada Sisa Tagihan' ?>
+            <span class="badge badge-<?= $tagihanMenungguHasil ? 'gray' : ($totalSisa > 0 ? 'amber' : 'green') ?>">
+              <?php if ($tagihanMenungguHasil): ?>
+                Tagihan Menunggu Hasil Dibuka
+              <?php else: ?>
+                <?= $totalSisa > 0 ? 'Sisa ' . e(rupiah($totalSisa)) : 'Tidak Ada Sisa Tagihan' ?>
+              <?php endif; ?>
             </span>
           <?php endif; ?>
         </div>
@@ -297,13 +307,35 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           </article>
           <article class="card p-5">
             <p class="text-[13px] font-medium text-ink-500">Sisa Tagihan</p>
-            <p class="mt-2 text-xl font-extrabold <?= $totalSisa > 0 ? 'text-[#B45309]' : 'text-[#0E9F6E]' ?>"><?= rupiah($totalSisa) ?></p>
+            <?php if ($tagihanMenungguHasil): ?>
+              <p class="mt-2 text-xl font-extrabold text-ink-400">Terkunci</p>
+              <p class="mt-1 text-[12px] text-ink-400">Menunggu hasil seleksi dibuka.</p>
+            <?php else: ?>
+              <p class="mt-2 text-xl font-extrabold <?= $totalSisa > 0 ? 'text-[#B45309]' : 'text-[#0E9F6E]' ?>"><?= rupiah($totalSisa) ?></p>
+            <?php endif; ?>
           </article>
         </section>
 
         <?php /* Rincian item biaya + sisa yang harus dibayar — muncul begitu siswa
-               * lulus dan sudah punya penempatan kelas. */ ?>
-        <?php if ($pendaftaranTerbuka && $skemaAngsuran['biaya_masuk'] > 0): ?>
+               * lulus dan sudah membuka amplop hasil seleksinya sendiri. */ ?>
+        <?php if ($tagihanMenungguHasil): ?>
+          <section class="mt-4 card p-5">
+            <div class="flex items-start gap-4">
+              <span class="icon-box bg-canvas text-ink-400 shrink-0"><?= icon('lock', 'text-[19px]') ?></span>
+              <div>
+                <h2 class="font-bold text-ink-900">Rincian Biaya &amp; Sisa Pembayaran Terkunci</h2>
+                <p class="mt-1 text-[13px] text-ink-500">
+                  Rincian ini baru terbuka setelah Anda membuka pengumuman hasil seleksi.
+                  Tekan tombol di bawah — setelah amplopnya dibuka, rincian biaya beserta pilihan
+                  pembayaran lunas atau angsuran muncul di halaman ini.
+                </p>
+                <a href="<?= url('app/siswa/hasil.php') ?>" class="btn btn-primary btn-sm mt-3">
+                  <?= icon('emoji_events') ?> Buka Hasil Seleksi
+                </a>
+              </div>
+            </div>
+          </section>
+        <?php elseif ($pendaftaranTerbuka && $skemaAngsuran['biaya_masuk'] > 0): ?>
           <section class="mt-4 card p-5">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -356,11 +388,311 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           </section>
         <?php endif; ?>
 
-        <!-- Tagihan per jenis — hanya tagihan yang belum lunas -->
         <?php
+        /* =================== DAFTAR TAGIHAN PER BARIS ===================
+         * Satu baris per kewajiban bayar — nama tagihan, jumlah, status,
+         * tanggal, dan kanal pembayaran — seperti daftar tagihan pada
+         * umumnya. Angkanya tetap dari angsuran_ringkas() dan tabel
+         * pembayaran; tanggal/kanal dari baris yang sudah dilunasi. */
         $tampilUangMasuk = $pendaftaranTerbuka
             || (float) $bayarUangMasuk['verified'] > 0
             || (float) $bayarUangMasuk['pending'] > 0;
+
+        $terbilangLunas = static function (array $b) {
+            return in_array((string) ($b['status'] ?? ''), ['VERIFIED', 'LUNAS', 'ANGSURAN_1', 'ANGSURAN_2'], true);
+        };
+        $kanalBayar = static function ($b) {
+            if (!is_array($b)) {
+                return '';
+            }
+            $kanal = trim((string) ($b['payment_method'] ?? ''));
+            if ($kanal !== '') {
+                return strtoupper($kanal);
+            }
+            $dariMetode = ['GATEWAY' => 'Online', 'TRANSFER' => 'Transfer Manual', 'QRIS' => 'QRIS'][(string) ($b['metode'] ?? '')] ?? '';
+            if ($dariMetode !== '') {
+                return $dariMetode;
+            }
+            /* Baris lama hasil unggah bukti tidak selalu mengisi kolom metode. */
+            return trim((string) ($b['bukti_transfer_url'] ?? '')) !== '' ? 'Transfer Manual' : '';
+        };
+        $tanggalBayar = static function ($b) {
+            if (!is_array($b)) {
+                return '';
+            }
+            $t = (string) (($b['verified_at'] ?? '') ?: ($b['paid_at'] ?? '') ?: ($b['created_at'] ?? ''));
+            return $t !== '' ? bulan($t) : '';
+        };
+        $warnaStatus = [
+            'green' => 'text-[#0E9F6E]',
+            'amber' => 'text-[#B45309]',
+            'red'   => 'text-[#991B1B]',
+            'blue'  => 'text-primary',
+            'gray'  => 'text-ink-400',
+        ];
+
+        /* Baris yang sudah lunas, dipetakan per angsuran; baris lama tanpa
+         * angsuran_ke dipakai lebih dulu untuk angsuran yang tercatat lunas. */
+        $lunasFormulir = array_values(array_filter($bayarFormulir['rows'], $terbilangLunas));
+        $lunasKe = [];
+        $lunasTanpaKe = [];
+        foreach (array_filter($bayarUangMasuk['rows'], $terbilangLunas) as $b) {
+            if (!empty($b['angsuran_ke'])) {
+                $lunasKe[(int) $b['angsuran_ke']][] = $b;
+            } else {
+                $lunasTanpaKe[] = $b;
+            }
+        }
+        $barisTerakhir = static function (array $rows) {
+            return $rows ? $rows[count($rows) - 1] : null;
+        };
+
+        $barisTagihan = [];
+
+        if ($tagihanFormulir > 0) {
+            if ($bayarFormulir['sisa'] <= 0) {
+                $s = ['LUNAS', 'green', 'check_circle'];
+                $bayarRow = $barisTerakhir($lunasFormulir);
+            } elseif ($bayarFormulir['pending_bukti'] > 0) {
+                $s = ['MENUNGGU VERIFIKASI', 'amber', 'hourglass_top'];
+                $bayarRow = null;
+            } elseif ($bayarFormulir['rejected'] > 0 && $bayarFormulir['verified'] <= 0) {
+                $s = ['DITOLAK', 'red', 'error'];
+                $bayarRow = null;
+            } elseif ($bayarFormulir['verified'] > 0) {
+                $s = ['TERBAYAR SEBAGIAN', 'blue', 'paid'];
+                $bayarRow = $barisTerakhir($lunasFormulir);
+            } else {
+                $s = ['BELUM LUNAS', 'red', 'schedule'];
+                $bayarRow = null;
+            }
+            $barisTagihan[] = [
+                'nama'    => 'Biaya Formulir',
+                'ket'     => 'Dibayar sekali di awal pendaftaran',
+                'jumlah'  => (float) $tagihanFormulir,
+                'status'  => $s[0], 'tone' => $s[1], 'ikon' => $s[2],
+                'tanggal' => $tanggalBayar($bayarRow),
+                'kanal'   => $kanalBayar($bayarRow),
+            ];
+        }
+
+        if ($tagihanMenungguHasil) {
+            $barisTagihan[] = [
+                'nama'    => label_biaya_pendaftaran(),
+                'ket'     => 'Terkunci sampai hasil seleksi dibuka',
+                'jumlah'  => null,
+                'status'  => 'TERKUNCI', 'tone' => 'gray', 'ikon' => 'lock',
+                'tanggal' => '', 'kanal' => '',
+            ];
+        } elseif ($tampilUangMasuk && $skemaAngsuran['aktif'] && (float) $ringkasAngsuran['total'] > 0) {
+            foreach ((array) $ringkasAngsuran['angsuran'] as $a) {
+                $ke = (int) $a['ke'];
+                $terlambat = in_array($a['status'], ['BELUM', 'SEBAGIAN'], true)
+                    && !empty($a['jatuh_tempo']) && $a['jatuh_tempo'] < date('Y-m-d');
+                if ($a['status'] === 'LUNAS') {
+                    $s = ['LUNAS', 'green', 'check_circle'];
+                    $bayarRow = $lunasKe[$ke][0] ?? (count($lunasTanpaKe) ? array_shift($lunasTanpaKe) : null);
+                } elseif ($a['status'] === 'MENUNGGU') {
+                    $s = ['MENUNGGU VERIFIKASI', 'amber', 'hourglass_top'];
+                    $bayarRow = null;
+                } elseif ($a['status'] === 'SEBAGIAN') {
+                    $s = ['TERBAYAR SEBAGIAN', 'blue', 'paid'];
+                    $bayarRow = $lunasKe[$ke][0] ?? (count($lunasTanpaKe) ? array_shift($lunasTanpaKe) : null);
+                } else {
+                    $s = ['BELUM LUNAS', 'red', 'schedule'];
+                    $bayarRow = null;
+                }
+                if ($terlambat) {
+                    $s = ['LEWAT JATUH TEMPO', 'red', 'event_busy'];
+                }
+                $ket = !empty($a['jatuh_tempo'])
+                    ? 'Jatuh tempo ' . bulan($a['jatuh_tempo'])
+                    : 'Dibayar setelah biaya masuk dibuka';
+                if ($a['status'] === 'SEBAGIAN') {
+                    $ket .= ' · sisa ' . rupiah((float) $a['sisa']);
+                }
+                $barisTagihan[] = [
+                    'nama'    => 'Angsuran ke-' . $ke . ' — ' . label_biaya_pendaftaran(),
+                    'ket'     => $ket,
+                    'jumlah'  => (float) $a['nominal'],
+                    'status'  => $s[0], 'tone' => $s[1], 'ikon' => $s[2],
+                    'tanggal' => $tanggalBayar($bayarRow),
+                    'kanal'   => $kanalBayar($bayarRow),
+                ];
+            }
+        } elseif ($tampilUangMasuk && (float) $bayarUangMasuk['tagihan'] > 0) {
+            if ($bayarUangMasuk['sisa'] <= 0) {
+                $s = ['LUNAS', 'green', 'check_circle'];
+                $bayarRow = $barisTerakhir($lunasTanpaKe);
+            } elseif ($bayarUangMasuk['pending_bukti'] > 0) {
+                $s = ['MENUNGGU VERIFIKASI', 'amber', 'hourglass_top'];
+                $bayarRow = null;
+            } elseif ($bayarUangMasuk['verified'] > 0) {
+                $s = ['TERBAYAR SEBAGIAN', 'blue', 'paid'];
+                $bayarRow = $barisTerakhir($lunasTanpaKe);
+            } else {
+                $s = ['BELUM LUNAS', 'red', 'schedule'];
+                $bayarRow = null;
+            }
+            $barisTagihan[] = [
+                'nama'    => label_biaya_pendaftaran(),
+                'ket'     => 'Sisa biaya masuk setelah dikurangi Biaya Formulir',
+                'jumlah'  => (float) $bayarUangMasuk['tagihan'],
+                'status'  => $s[0], 'tone' => $s[1], 'ikon' => $s[2],
+                'tanggal' => $tanggalBayar($bayarRow),
+                'kanal'   => $kanalBayar($bayarRow),
+            ];
+        }
+
+        $totalDaftar = 0.0;
+        foreach ($barisTagihan as $bt) {
+            if ($bt['jumlah'] !== null) {
+                $totalDaftar += $bt['jumlah'];
+            }
+        }
+        $sisaDaftar = $totalSisa;
+        /* Baris yang masih terbuka (bukan lunas dan bukan baris terkunci) —
+         * penjaga agar keterangan total tidak menyebut "sudah lunas" ketika
+         * masih ada baris berstatus belum lunas. */
+        $belumLunas = 0;
+        foreach ($barisTagihan as $bt) {
+            if (!in_array($bt['status'], ['LUNAS', 'TERKUNCI'], true)) {
+                $belumLunas++;
+            }
+        }
+        ?>
+        <?php if ($barisTagihan): ?>
+        <section class="mt-4 card overflow-hidden">
+          <div class="px-5 sm:px-6 py-4 border-b border-line flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 class="font-bold text-ink-900">Daftar Tagihan &amp; Pembayaran</h2>
+              <p class="mt-1 text-[13px] text-ink-500">
+                Setiap tagihan beserta status, tanggal, dan kanal pembayarannya.
+              </p>
+            </div>
+            <span class="badge badge-<?= $tagihanMenungguHasil ? 'gray' : (($sisaDaftar > 0 || $belumLunas > 0) ? 'amber' : 'green') ?>">
+              <?php if ($tagihanMenungguHasil): ?>
+                Tagihan Masuk Terkunci
+              <?php elseif ($sisaDaftar > 0): ?>
+                Sisa <?= e(rupiah($sisaDaftar)) ?>
+              <?php elseif ($belumLunas > 0): ?>
+                Belum Semua Lunas
+              <?php else: ?>
+                Semua tagihan lunas
+              <?php endif; ?>
+            </span>
+          </div>
+
+          <!-- Tabel (layar sedang ke atas) -->
+          <div class="hidden sm:block overflow-x-auto scroll-thin">
+            <table class="w-full border-collapse">
+              <thead class="thead">
+                <tr>
+                  <th class="th w-[56px]">No.</th>
+                  <th class="th">Pembayaran</th>
+                  <th class="th text-right">Jumlah Bayar</th>
+                  <th class="th">Status Bayar</th>
+                  <th class="th">Tanggal Bayar</th>
+                  <th class="th">Kanal Bayar</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-line-soft">
+                <?php foreach ($barisTagihan as $i => $bt): ?>
+                  <tr class="tr-hover">
+                    <td class="td text-[13px] text-ink-500"><?= $i + 1 ?></td>
+                    <td class="td">
+                      <p class="font-semibold text-ink-900"><?= e($bt['nama']) ?></p>
+                      <p class="mt-0.5 text-[12px] text-ink-500"><?= e($bt['ket']) ?></p>
+                    </td>
+                    <td class="td text-right font-bold text-ink-900 whitespace-nowrap">
+                      <?= $bt['jumlah'] === null ? '—' : e(rupiah($bt['jumlah'])) ?>
+                    </td>
+                    <td class="td whitespace-nowrap">
+                      <span class="inline-flex items-center gap-1.5 text-[13px] font-bold <?= $warnaStatus[$bt['tone']] ?>">
+                        <span class="ms text-[17px]" aria-hidden="true"><?= e($bt['ikon']) ?></span>
+                        <?= e($bt['status']) ?>
+                      </span>
+                    </td>
+                    <td class="td text-[13px] whitespace-nowrap <?= $bt['tanggal'] ? 'text-ink-700' : 'text-ink-400' ?>">
+                      <?= $bt['tanggal'] ? e($bt['tanggal']) : '—' ?>
+                    </td>
+                    <td class="td text-[13px] whitespace-nowrap <?= $bt['kanal'] ? 'font-semibold text-ink-900' : 'text-ink-400' ?>">
+                      <?= $bt['kanal'] ? e($bt['kanal']) : '—' ?>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+              <tfoot>
+                <tr class="border-t border-line bg-canvas">
+                  <td class="td" colspan="2"><span class="font-bold text-ink-900">Total tagihan</span></td>
+                  <td class="td text-right font-extrabold text-ink-900 whitespace-nowrap"><?= e(rupiah($totalDaftar)) ?></td>
+                  <td class="td text-[13px] text-ink-500" colspan="3">
+                    <?php if ($tagihanMenungguHasil): ?>
+                      Sisa <?= e(label_biaya_pendaftaran()) ?> tampil setelah hasil seleksi dibuka.
+                    <?php elseif ($sisaDaftar > 0): ?>
+                      Sisa yang harus dibayar: <strong class="text-[#B45309]"><?= e(rupiah($sisaDaftar)) ?></strong>
+                    <?php elseif ($belumLunas > 0): ?>
+                      Masih ada baris yang belum lunas — periksa statusnya di atas.
+                    <?php else: ?>
+                      Seluruh tagihan sudah lunas dan terverifikasi.
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Susun tumpuk (layar sempit) — tanpa gulir samping -->
+          <ul class="sm:hidden divide-y divide-line-soft">
+            <?php foreach ($barisTagihan as $i => $bt): ?>
+              <li class="p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <p class="min-w-0 text-sm font-semibold text-ink-900"><?= $i + 1 ?>. <?= e($bt['nama']) ?></p>
+                  <span class="inline-flex shrink-0 items-center gap-1 text-[12px] font-bold <?= $warnaStatus[$bt['tone']] ?>">
+                    <span class="ms text-[16px]" aria-hidden="true"><?= e($bt['ikon']) ?></span>
+                    <?= e($bt['status']) ?>
+                  </span>
+                </div>
+                <p class="mt-0.5 text-[12px] text-ink-500"><?= e($bt['ket']) ?></p>
+                <dl class="mt-2.5 grid grid-cols-3 gap-2 text-[12px]">
+                  <div>
+                    <dt class="text-ink-400">Jumlah</dt>
+                    <dd class="mt-0.5 font-bold text-ink-900"><?= $bt['jumlah'] === null ? '—' : e(rupiah($bt['jumlah'])) ?></dd>
+                  </div>
+                  <div>
+                    <dt class="text-ink-400">Tanggal</dt>
+                    <dd class="mt-0.5 <?= $bt['tanggal'] ? 'text-ink-700' : 'text-ink-400' ?>"><?= $bt['tanggal'] ? e($bt['tanggal']) : '—' ?></dd>
+                  </div>
+                  <div>
+                    <dt class="text-ink-400">Kanal</dt>
+                    <dd class="mt-0.5 <?= $bt['kanal'] ? 'font-semibold text-ink-900' : 'text-ink-400' ?>"><?= $bt['kanal'] ? e($bt['kanal']) : '—' ?></dd>
+                  </div>
+                </dl>
+              </li>
+            <?php endforeach; ?>
+            <li class="flex items-center justify-between gap-3 bg-canvas p-4">
+              <div>
+                <p class="text-sm font-bold text-ink-900">Total tagihan</p>
+                <p class="mt-0.5 text-[12px] text-ink-500">
+                  <?php if ($tagihanMenungguHasil): ?>
+                    Sisa <?= e(label_biaya_pendaftaran()) ?> tampil setelah hasil dibuka
+                  <?php elseif ($sisaDaftar > 0): ?>
+                    Sisa dibayar <?= e(rupiah($sisaDaftar)) ?>
+                  <?php elseif ($belumLunas > 0): ?>
+                    Masih ada baris yang belum lunas
+                  <?php else: ?>
+                    Seluruh tagihan lunas
+                  <?php endif; ?>
+                </p>
+              </div>
+              <p class="font-extrabold text-ink-900 whitespace-nowrap"><?= e(rupiah($totalDaftar)) ?></p>
+            </li>
+          </ul>
+        </section>
+        <?php endif; ?>
+
+        <!-- Tagihan per jenis — hanya tagihan yang belum lunas -->
+        <?php
         $angsuranAktif = $skemaAngsuran['aktif'] && $pendaftaranTerbuka;
         $kartu = [];
         if ($bayarFormulir['tagihan'] > 0 && $bayarFormulir['sisa'] > 0) {
@@ -386,7 +718,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             ];
         }
         ?>
-        <?php if (!$kartu): ?>
+        <?php if (!$kartu && !$tagihanMenungguHasil): ?>
           <section class="mt-5 rounded-2xl border border-[#A7F3D0] bg-[#ECFDF5] px-4 py-4 text-[13px] text-[#065F46]">
             <p class="font-semibold">Tidak ada tagihan yang perlu dibayar.</p>
             <p class="mt-1">Seluruh pembayaran sudah lunas. Rincian pembayaran dapat dilihat di tab
@@ -478,42 +810,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 </div>
               <?php endif; ?>
 
-              <?php if ($k['jenis'] === 'UANG_MASUK' && $angsuranAktif): ?>
-                <div class="mt-4 rounded-xl border border-line overflow-hidden">
-                  <div class="px-3.5 py-2.5 bg-canvas border-b border-line text-[12px] font-semibold uppercase tracking-wider text-ink-400">
-                    Jadwal Angsuran
-                  </div>
-                  <ul class="divide-y divide-line-soft">
-                    <?php foreach ($ringkasAngsuran['angsuran'] as $a):
-                        $tone = 'gray';
-                        $labelA = 'Belum Dibayar';
-                        if ($a['status'] === 'LUNAS') {
-                            $tone = 'green'; $labelA = 'Lunas';
-                        } elseif ($a['status'] === 'MENUNGGU') {
-                            $tone = 'amber'; $labelA = 'Menunggu Verifikasi';
-                        } elseif ($a['status'] === 'SEBAGIAN') {
-                            $tone = 'blue'; $labelA = 'Terbayar Sebagian';
-                        }
-                        $terlambat = in_array($a['status'], ['BELUM', 'SEBAGIAN'], true)
-                            && !empty($a['jatuh_tempo']) && $a['jatuh_tempo'] < date('Y-m-d');
-                        if ($terlambat) {
-                            $tone = 'red'; $labelA = 'Lewat Jatuh Tempo';
-                        }
-                    ?>
-                      <li class="px-3.5 py-2.5 flex items-center justify-between gap-3 text-[13px]">
-                        <div class="min-w-0">
-                          <p class="font-semibold text-ink-900">Angsuran <?= (int) $a['ke'] ?> · <?= rupiah($a['nominal']) ?></p>
-                          <p class="text-[12px] text-ink-500">
-                            Jatuh tempo <?= $a['jatuh_tempo'] ? e(bulan($a['jatuh_tempo'])) : '—' ?>
-                            <?php if ($a['sisa'] > 0): ?> · Sisa <?= rupiah($a['sisa']) ?><?php endif; ?>
-                          </p>
-                        </div>
-                        <span class="badge badge-<?= e($tone) ?> shrink-0"><?= e($labelA) ?></span>
-                      </li>
-                    <?php endforeach; ?>
-                  </ul>
-                </div>
-              <?php endif; ?>
+              <?php /* Jadwal angsuran tidak diulang di sini — seluruh angsuran
+                      sudah terlihat pada tabel Daftar Tagihan di atas. */ ?>
 
               <?php if ($b['rejected'] > 0): ?>
                 <div class="mt-3 rounded-xl bg-[#FEF2F2] border border-red-200 px-3.5 py-2.5 text-[13px] text-[#991B1B]">
@@ -573,7 +871,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <?php endforeach; ?>
         </div>
 
-        <?php if (!$tampilUangMasuk && ($siswa['status_seleksi'] ?? '') !== 'TIDAK_LULUS'): ?>
+        <?php if (!$tampilUangMasuk && !$tagihanMenungguHasil && ($siswa['status_seleksi'] ?? '') !== 'TIDAK_LULUS'): ?>
           <section class="mt-5 rounded-2xl border border-line bg-white px-4 py-3.5 text-[13px] text-ink-500">
             Tagihan <?= e(label_biaya_pendaftaran()) ?> akan muncul setelah hasil seleksi diumumkan dan Anda dinyatakan LULUS.
           </section>
