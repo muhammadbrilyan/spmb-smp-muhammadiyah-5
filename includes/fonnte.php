@@ -249,6 +249,6 @@ function wa_pesan_instruksi(array $r)
         . "Jalur : {$r['jalur']}\n\n"
         . "Langkah selanjutnya:\n"
         . $blok
-        . "\nCek status pendaftaran (siapkan 4 digit WA orang tua):\n   {$tautanCek}\n\n"
+        . "\nCek status pendaftaran (cukup nomor WhatsApp orang tua):\n   {$tautanCek}\n\n"
         . "Simpan nomor pendaftaran ini.";
 }

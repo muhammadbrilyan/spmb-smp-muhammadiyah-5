@@ -1,15 +1,16 @@
 <?php
 /**
- * NOTIFIKASI OPERATOR (Fase 3).
+ * NOTIFIKASI PANITIA.
  *
  * Alur:
  *   1. Simpan pesan ke tabel `notifikasi` (lencana + halaman Notifikasi).
- *   2. Kirim WhatsApp via Fonnte ke nomor di pengaturan `notif_wa_operator`
- *      (beberapa nomor dipisah koma) BILA toggle `notif_wa_aktif` aktif.
- *      Tipe pembayaran (BUKTI_BAYAR_MASUK, PEMBAYARAN_GATEWAY_MASUK,
- *      PEMBAYARAN_GATEWAY_LUNAS) juga dikirim ke `notif_wa_bendahara`
- *      (fallback: `kontak_wa_panitia`) supaya bendahara tahu begitu ada
- *      transfer masuk.
+ *   2. Kirim WhatsApp via Fonnte HANYA untuk pemicu uang masuk, ke nomor
+ *      bendahara — lihat `notif_nomor_bendahara()` — dan hanya bila toggle
+ *      `notif_wa_aktif` aktif. Pemicu lain (berkas dikirim, data diajukan
+ *      verifikasi) berhenti sebagai notifikasi in-app: akun Fonnte gratis
+ *      hanya mendaftarkan satu nomor WhatsApp, jadi kanal WA dipakai untuk
+ *      transaksi saja. Kolom `notif_wa_operator` masih ada di skema tetapi
+ *      tidak dibaca lagi sejak 2026-11-03.
  *   3. Hasil kirim (sukses/gagal) dicatat ke `wa_log`.
  *
  * PENTING: kegagalan apa pun (DB / Fonnte / jaringan) TIDAK BOLEH
@@ -17,10 +18,11 @@
  * tidak pernah melempar exception.
  *
  * Tipe pemicu:
- *   - BUKTI_BAYAR_MASUK         → unggah bukti transfer/QRIS (Fase 2)
- *   - PEMBAYARAN_GATEWAY_LUNAS  → callback Midtrans VERIFIED/LUNAS (Fase 2)
- *   - PEMBAYARAN_GATEWAY_MASUK  → callback Midtrans angsuran terverifikasi
- *   - BERKAS_DISUBMIT           → siswa submit berkas (Fase 5)
+ *   - BUKTI_BAYAR_MASUK         → unggah bukti transfer/QRIS  → in-app + WA
+ *   - PEMBAYARAN_GATEWAY_LUNAS  → callback Midtrans VERIFIED/LUNAS → in-app + WA
+ *   - PEMBAYARAN_GATEWAY_MASUK  → callback Midtrans angsuran terverifikasi → in-app + WA
+ *   - BERKAS_DISUBMIT           → siswa submit berkas  → in-app saja
+ *   - VERIFIKASI_DATA           → siswa mengajukan data  → in-app saja
  *   - (Fase lanjutan: PENOLAKAN_BAYAR, BERKAS_REVISI, JADWAL_DITETAPKAN, dll.)
  */
 
@@ -41,7 +43,8 @@ function notif_nomor_bendahara()
 }
 
 /**
- * Kirim notifikasi ke operator (in-app + WhatsApp).
+ * Catat kejadian ke panel Notifikasi panitia; kirim WhatsApp hanya bila
+ * pemicunya soal uang masuk dan pengiriman WA sedang diaktifkan.
  *
  * @param string $tipe        kode tipe pemicu (lihat daftar di atas)
  * @param string $pendaftarId id pendaftar terkait (boleh null)
@@ -67,21 +70,14 @@ function notif_operator($tipe, $pendaftarId, $pesan)
         /* diamkan — notifikasi tidak boleh merusak proses utama */
     }
 
-    /* --- 2. WhatsApp Fonnte (bila toggle aktif) --- */
+    /* --- 2. WhatsApp Fonnte — khusus uang masuk, ke nomor bendahara --- */
     try {
-        $aktif = (int) ($GLOBALS['PENGATURAN']['notif_wa_aktif'] ?? 0);
-        if ($aktif !== 1) {
+        $transaksi = in_array($tipe, ['BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS'], true);
+        if (!$transaksi || (int) ($GLOBALS['PENGATURAN']['notif_wa_aktif'] ?? 0) !== 1) {
             return;
         }
-        $daftar = (string) ($GLOBALS['PENGATURAN']['notif_wa_operator'] ?? '');
-        $tujuan = preg_split('/[,;]+/', $daftar) ?: [];
-        /* Semua pemicu uang masuk menjadi kerja bendahara — pastikan nomornya
-         * dari Pengaturan Sistem ikut menerima walau daftar operator kosong. */
-        if (in_array($tipe, ['BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS'], true)) {
-            $tujuan = array_merge($tujuan, preg_split('/[,;]+/', notif_nomor_bendahara()) ?: []);
-        }
         $sudah = [];
-        foreach ($tujuan as $no) {
+        foreach ((preg_split('/[,;]+/', notif_nomor_bendahara()) ?: []) as $no) {
             $no = trim((string) $no);
             if ($no === '') {
                 continue;

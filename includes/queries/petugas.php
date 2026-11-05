@@ -233,17 +233,19 @@ function petugas_set_aktif($id, $aktif)
 }
 
 /**
- * Nomor WA tujuan notifikasi panitia + saklar pengirimannya.
+ * Nomor WA bendahara (tujuan notifikasi uang masuk) + saklar pengirimannya.
  *
- * Kolomnya milik `pengaturan_sekolah` (sama dengan yang diisi di Pengaturan
- * Sistem); halaman Petugas hanya menyediakan jalan pintas supaya panitia
- * pemegang nomor bisa menggantinya tanpa membuka formulir CMS yang panjang.
- * Saklar `notif_wa_aktif` bersifat global — mematikannya juga menyenyapkan
- * kiriman ke nomor bendahara.
+ * Kolomnya milik `pengaturan_sekolah` (sama dengan blok *Notifikasi Transaksi*
+ * di kartu WhatsApp Gateway pada Pengaturan Sistem); halaman Petugas hanya
+ * menyediakan jalan pintas supaya pemegang nomor bisa menggantinya tanpa
+ * membuka formulir CMS yang panjang. Sejak 2026-11-03 kanal WA panitia khusus
+ * transaksi — akun Fonnte gratis mendaftarkan satu nomor — jadi daftar
+ * `notif_wa_operator` tidak dibaca/ditulis lagi.
  */
 function petugas_notif_wa_simpan($nomor, $aktif)
 {
     $aktif = $aktif ? 1 : 0;
+    $baris = pengaturan_baris() ?: [];
 
     $bagian = preg_split('/[,;]+/', (string) $nomor) ?: [];
     $bersih  = [];
@@ -259,35 +261,46 @@ function petugas_notif_wa_simpan($nomor, $aktif)
         $bersih[] = $no;
     }
     $tersimpan = $bersih === [] ? null : implode(', ', $bersih);
+    $fallback  = trim((string) ($baris['kontak_wa_panitia'] ?? ''));
 
-    if ($aktif === 1 && $tersimpan === null) {
-        return ['ok' => false, 'pesan' => 'Pengiriman WhatsApp aktif tetapi nomor WA operator kosong. '
-            . 'Isi nomornya lebih dulu, atau matikan saklarnya.'];
+    if ($aktif === 1 && $tersimpan === null && $fallback === '') {
+        return ['ok' => false, 'pesan' => 'Pengiriman WhatsApp aktif tetapi tidak ada nomor tujuan. '
+            . 'Isi nomor bendahara ini atau Kontak WhatsApp Panitia di Pengaturan Sistem, '
+            . 'atau matikan saklarnya.'];
     }
 
     $ok = q_exec(
-        'UPDATE pengaturan_sekolah SET notif_wa_operator = ?, notif_wa_aktif = ? WHERE id = 1',
+        'UPDATE pengaturan_sekolah SET notif_wa_bendahara = ?, notif_wa_aktif = ? WHERE id = 1',
         [$tersimpan, $aktif]
     );
     if (!$ok) {
         return ['ok' => false, 'pesan' => 'Gagal menyimpan nomor WhatsApp.'];
     }
 
+    if ($tersimpan === null) {
+        return [
+            'ok'    => true,
+            'pesan' => $aktif === 1
+                ? 'Nomor WA bendahara dikosongkan — kabar uang masuk dikirim ke Kontak WhatsApp Panitia (' . $fallback . ').'
+                : 'Nomor WA bendahara dikosongkan dan pengiriman WhatsApp dimatikan.',
+        ];
+    }
+
     return [
         'ok'    => true,
-        'pesan' => $tersimpan === null
-            ? 'Nomor WA operator dikosongkan — notifikasi hanya masuk ke dalam aplikasi.'
-            : 'Notifikasi WhatsApp ' . ($aktif === 1 ? 'aktif' : 'dimatikan sementara')
-                . ' — tujuan operator: ' . $tersimpan . '.',
+        'pesan' => 'Notifikasi WhatsApp transaksi ' . ($aktif === 1 ? 'aktif' : 'dimatikan sementara')
+            . ' — tujuan bendahara: ' . $tersimpan . '.',
     ];
 }
 
-/** Nilai tersimpan saat ini untuk formulir nomor WA panitia. */
+/** Nilai tersimpan saat ini untuk formulir nomor WA bendahara. */
 function petugas_notif_wa_bhawa()
 {
-    $P = $GLOBALS['PENGATURAN'] ?? [];
+    $P = pengaturan_baris() ?: ($GLOBALS['PENGATURAN'] ?? []);
+    $nomor = trim((string) ($P['notif_wa_bendahara'] ?? ''));
     return [
-        'nomor' => trim((string) ($P['notif_wa_operator'] ?? '')),
-        'aktif' => (int) ($P['notif_wa_aktif'] ?? 0) === 1,
+        'nomor'  => $nomor,
+        'aktif'  => (int) ($P['notif_wa_aktif'] ?? 0) === 1,
+        'tujuan' => $nomor !== '' ? $nomor : trim((string) ($P['kontak_wa_panitia'] ?? '')),
     ];
 }

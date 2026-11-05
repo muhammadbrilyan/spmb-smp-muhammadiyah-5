@@ -144,12 +144,17 @@ seluruh akun staf masih `!LOCKED` atau operator kehilangan akses.
 2. **Pengaturan Sistem**: lengkapi profil sekolah, rekening/QRIS, nomor WA,
    daftar berkas persyaratan, S&K (Pasal 8 Privasi — tinjau sekolah/hukum,
    draf: `docs/KEBIJAKAN-DATA.md`). Nomor WA tujuan notifikasi panitia
-   (`notif_wa_operator`) hanya tersimpan di database — ia **tidak** ikut seed,
-   jadi isi ulang di server. Sejak 2026-11-03 nomor ini juga bisa diganti dari
-   **Pengaturan Sistem → Petugas & Hak Akses** (panel *Notifikasi WhatsApp ke
-   Panitia*) tanpa menggulir formulir CMS; saklar `notif_wa_aktif` bersifat
-   global, jadi mematikannya menghentikan seluruh kiriman WA panitia
-   termasuk ke nomor bendahara. Sejak 2026-11-03 isi section **Pusat Bantuan
+   (`notif_wa_bendahara`) hanya tersimpan di database — ia **tidak** ikut seed,
+   jadi isi ulang di server. Nomor ini dipakai **khusus kabar uang masuk**
+   (bukti transfer/QRIS diunggah & pembayaran gateway terverifikasi) karena akun
+   Fonnte gratis mendaftarkan satu nomor; pemicu operasional lain hanya muncul di
+   menu Notifikasi dalam aplikasi. Isinya disunting di **kartu WhatsApp Gateway →
+   blok Notifikasi Transaksi**, atau cepat lewat **Petugas & Hak Akses →
+   Notifikasi WhatsApp Transaksi** (kolom yang sama). Saklar `notif_wa_aktif`
+   **tidak** memengaruhi pengingat angsuran orang tua (`pengingat_angsuran_wa`)
+   maupun kirim jadwal/pengumuman ke wali. Kolom lama `notif_wa_operator` sudah
+   pensiun — tidak dibaca atau ditulis lagi, jadi tidak perlu diisi di server.
+   Sejak 2026-11-03 isi section **Pusat Bantuan
    (FAQ)** halaman depan juga disunting dari blok *Tanya Jawab (FAQ) Landing*
    (kolom `pengaturan_sekolah.faq_list`) — seed mengosongkan kolom itu, jadi
    selama belum disentuh halaman masih menampilkan contoh bawaan dari

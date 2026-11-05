@@ -155,7 +155,6 @@ $f = [
     'qris_merchant'        => $teks('qris_merchant'),
     'qris_image_url'       => $PENGATURAN['qris_image_url'] ?? '',
     'kirim_akun_otomatis'  => (int) $teks('kirim_akun_otomatis', '0'),
-    'notif_wa_operator'    => $teks('notif_wa_operator'),
     'notif_wa_bendahara'   => $teks('notif_wa_bendahara'),
     'notif_wa_aktif'       => (int) $teks('notif_wa_aktif', '0'),
     'notif_email'          => $teks('notif_email'),
@@ -311,9 +310,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     /* QRIS merchant (opsional, hanya label tampilan). */
     $f['qris_merchant'] = trim((string) ($_POST['qris_merchant'] ?? ''));
 
-    /* Notifikasi WhatsApp operator & bendahara (Fase 3). */
+    /* Notifikasi WhatsApp transaksi — hanya nomor bendahara yang dipakai
+     * (akun Fonnte gratis mendaftarkan satu nomor). Kolom lama
+     * `notif_wa_operator` tidak dibaca/ditulis lagi sejak 2026-11-03. */
     $f['notif_wa_aktif']     = empty($_POST['notif_wa_aktif']) ? 0 : 1;
-    $f['notif_wa_operator']  = trim((string) ($_POST['notif_wa_operator'] ?? ''));
     $f['notif_wa_bendahara'] = trim((string) ($_POST['notif_wa_bendahara'] ?? ''));
     $nomorWaValid = function (string $daftar) {
         foreach (preg_split('/[,;]+/', $daftar) as $noWa) {
@@ -325,13 +325,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         return true;
     };
     if ($f['notif_wa_aktif']) {
-        if ($f['notif_wa_operator'] === '' && $f['notif_wa_bendahara'] === '' && $f['kontak_wa_panitia'] === '') {
-            $galat[] = 'Notifikasi WhatsApp aktif tetapi tidak ada nomor tujuan — isi nomor WA Operator/Bendahara atau Kontak WhatsApp Panitia.';
+        if ($f['notif_wa_bendahara'] === '' && $f['kontak_wa_panitia'] === '') {
+            $galat[] = 'Pengiriman WhatsApp aktif tetapi tidak ada nomor tujuan — isi Nomor WA Bendahara atau Kontak WhatsApp Panitia di bagian Identitas.';
         }
-        foreach (['notif_wa_operator' => 'operator', 'notif_wa_bendahara' => 'bendahara'] as $kunciWa => $labelWa) {
-            if ($f[$kunciWa] !== '' && !$nomorWaValid($f[$kunciWa])) {
-                $galat[] = "Format nomor WhatsApp {$labelWa} tidak valid. Pisahkan beberapa nomor dengan koma.";
-            }
+        if ($f['notif_wa_bendahara'] !== '' && !$nomorWaValid($f['notif_wa_bendahara'])) {
+            $galat[] = 'Format nomor WhatsApp bendahara tidak valid. Pisahkan beberapa nomor dengan koma.';
         }
     }
 
@@ -683,7 +681,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     midtrans_server_key = ?, midtrans_client_key = ?, midtrans_sandbox = ?,
                     bayar_gateway_aktif = ?, bayar_transfer_aktif = ?, bayar_qris_aktif = ?,
                     qris_image_url = ?, qris_merchant = ?, kirim_akun_otomatis = ?,
-                    notif_wa_operator = ?, notif_wa_bendahara = ?, notif_wa_aktif = ?, notif_email = ?,
+                    notif_wa_bendahara = ?, notif_wa_aktif = ?, notif_email = ?,
                     syarat_ketentuan = ?, syarat_versi = ?
                   WHERE id = 1'
             );
@@ -738,7 +736,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $qrisAkhir,
                 $f['qris_merchant'] !== '' ? $f['qris_merchant'] : null,
                 $f['kirim_akun_otomatis'],
-                $f['notif_wa_operator'] !== '' ? $f['notif_wa_operator'] : null,
                 $f['notif_wa_bendahara'] !== '' ? $f['notif_wa_bendahara'] : null,
                 $f['notif_wa_aktif'],
                 $f['notif_email'] !== '' ? $f['notif_email'] : null,
@@ -1397,14 +1394,29 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
         <p class="hint mt-2">Token API Fonnte dipakai untuk mengirim kredensial akun siswa. Dapatkan token di dasbor Fonnte, menu Settings, lalu Token. Setiap kali formulir ini disimpan, token diperiksa ke Fonnte lewat endpoint <code>/device</code> (tidak ada pesan WA yang dikirim).</p>
         <?php
-        /* Sidik jari token efektif (.env lalu DB) supaya operator tahu token mana
-         * yang sebenarnya dipakai — 4 karakter terakhir aman untuk ditampilkan. */
+        /* Sidik jari token (.env lalu DB) supaya operator tahu token mana yang
+         * sebenarnya dipakai — 4 karakter terakhir aman untuk ditampilkan. */
         $tokEfektif = fonnte_token();
-        $sidik      = $tokEfektif ? '••••' . substr($tokEfektif, -4) . ' (' . strlen($tokEfektif) . ' karakter)' : 'kosong';
+        $tokEnv     = trim((string) env_val('FONNTE_TOKEN', ''));
+        $tokDb      = trim((string) $f['fonnte_token']);
+        $sidik      = static function ($t) {
+            $t = trim((string) $t);
+            return $t === '' ? 'kosong' : '••••' . substr($t, -4) . ' (' . strlen($t) . ' karakter)';
+        };
+        /* Bentrok sumber token: .env selalu menang atas kolom DB. Dulu kotak ini
+         * hijau sehingga terbaca "aman", padahal operator yang mengisi token di
+         * halaman ini tidak pernah sadar nilainya diabaikan (2026-11-06: notifikasi
+         * bukti bayar GAGAL karena .env memakai perangkat yang disconnect). */
+        $bentrokToken = $tokEnv !== '' && $tokDb !== '' && $tokEnv !== $tokDb;
         ?>
         <?php if ($dariEnv): ?>
-          <div class="mt-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-[12px] text-green-800">
-            <strong>Mode .env aktif:</strong> token Fonnte dibaca dari file <code>.env</code> (FONNTE_TOKEN) — <?= e($sidik) ?>. Nilai yang diketik di bawah hanya dipakai bila .env dikosongkan.
+          <div class="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-800">
+            <strong>Token dari <code>.env</code> yang dipakai</strong> — <?= e($sidik($tokEnv)) ?>.
+            <?php if ($bentrokToken): ?>
+              <span class="block mt-1">Token yang tersimpan di halaman ini (<?= e($sidik($tokDb)) ?>) <strong>diabaikan</strong> saat pengiriman — kosongkan <code>FONNTE_TOKEN</code> pada file <code>.env</code> bila ingin memakai nilai di bawah.</span>
+            <?php else: ?>
+              <span class="block mt-1">Nilai yang diketik di bawah hanya dipakai bila <code>FONNTE_TOKEN</code> di <code>.env</code> dikosongkan.</span>
+            <?php endif; ?>
           </div>
         <?php endif; ?>
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -1413,7 +1425,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <input id="fonnte_token" name="fonnte_token" type="password" autocomplete="new-password" class="input font-mono"
                    placeholder="<?= $f['fonnte_token'] !== '' ? 'tersimpan ' . e('••••' . substr($f['fonnte_token'], -4) . ' (' . strlen($f['fonnte_token']) . ' karakter) — kosongkan bila tidak diubah') : 'tempel token Fonnte di sini' ?>">
             <p class="hint">
-              Sumber token efektif saat ini: <strong><?= $dariEnv ? '.env' : ($tokEfektif ? 'database' : 'belum ada') ?></strong> · <?= e($sidik) ?>.
+              Sumber token efektif saat ini: <strong><?= $dariEnv ? '.env' : ($tokEfektif ? 'database' : 'belum ada') ?></strong> · <?= e($sidik($tokEfektif)) ?>.
               Ketik/tempel hanya bila ingin mengganti; nilai kosong berarti tidak mengubah. Jangan bagikan token ini.
             </p>
             <label class="mt-2 flex items-center gap-2 text-[13px] text-ink-600">
@@ -1421,6 +1433,65 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               Hapus token dari database (hanya berlaku bila .env kosong)
             </label>
           </div>
+        </div>
+
+        <?php
+        /* Percobaan kirim uang masuk terakhir (wa_log). Kegagalan kirim sengaja tidak
+         * mengganggu unggahan bukti bayar, jadi tanpa baris ini operator baru sadar
+         * notifikasi tidak pernah sampai ketika nomor bendahara tidak berdenting. */
+        $waTerakhir = null;
+        try {
+            $rWa = q_all(
+                "SELECT tujuan, tipe, status, respons, created_at FROM wa_log
+                  WHERE tipe IN ('BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS')
+                  ORDER BY id DESC LIMIT 1"
+            );
+            if (is_array($rWa) && $rWa !== []) {
+                $waTerakhir = $rWa[0];
+            }
+        } catch (Throwable $e) {
+            /* abaikan — hanya informatif */
+        }
+        ?>
+        <div class="mt-4 rounded-xl border border-line p-4">
+          <p class="text-[12px] font-semibold uppercase tracking-wider text-ink-400">Notifikasi Transaksi</p>
+          <label class="mt-2 flex items-start gap-3 rounded-xl border border-line p-3 hover:bg-canvas cursor-pointer">
+            <input type="checkbox" name="notif_wa_aktif" value="1" class="mt-1 w-4 h-4 accent-primary" <?= $f['notif_wa_aktif'] ? 'checked' : '' ?>>
+            <span>
+              <span class="text-sm font-semibold text-ink-900">Kirim notifikasi uang masuk via WhatsApp</span>
+              <span class="block text-[13px] text-ink-500">
+                Pemicunya hanya bukti transfer/QRIS yang diunggah dan pembayaran gateway yang terverifikasi.
+                Berkas dikirim &amp; data diajukan verifikasi tetap masuk ke menu
+                <a href="<?= url('app/operator/notifikasi.php') ?>" class="text-primary underline">Notifikasi</a>
+                tanpa dikirim ke WhatsApp — akun Fonnte gratis mendaftarkan satu nomor saja.
+                Kegagalan kirim tidak mengganggu proses utama dan tercatat di tabel <code class="text-[12px]">wa_log</code>.
+              </span>
+            </span>
+          </label>
+          <div class="mt-3">
+            <label class="label" for="notif_wa_bendahara">Nomor WA Bendahara (dipisah koma)</label>
+            <input id="notif_wa_bendahara" name="notif_wa_bendahara" type="text" class="input font-mono"
+                   placeholder="08123456789, 08987654321" value="<?= e($f['notif_wa_bendahara']) ?>">
+            <p class="hint">Isian ini hanya <strong>tujuan</strong>, bukan pemicu. Pesan tetap berangkat dari perangkat Fonnte yang terhubung lewat token di atas, jadi nomor ini tidak perlu didaftarkan di Fonnte — tetapi tanpa token yang ter-connect, tidak ada WA yang masuk berapa pun nomor yang diisi di sini. Boleh kosong — fallback ke Kontak WhatsApp Panitia di bagian Identitas &amp; Kontak. Nomor yang sama bisa diganti cepat dari <strong>Petugas &amp; Hak Akses</strong>.</p>
+          </div>
+          <?php if ($waTerakhir !== null): ?>
+            <?php
+            $jWa   = json_decode((string) ($waTerakhir['respons'] ?? ''), true);
+            $gagal = (string) ($waTerakhir['status'] ?? '') !== 'TERKIRIM';
+            ?>
+            <div class="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-ink-500">
+              <?php if ($gagal): ?>
+                <span class="badge badge-red"><?= dot('red') ?> Kirim terakhir gagal</span>
+              <?php else: ?>
+                <span class="badge badge-green"><?= dot('green') ?> Kirim terakhir terkirim</span>
+              <?php endif; ?>
+              <span>Ke <strong class="font-mono"><?= e((string) $waTerakhir['tujuan']) ?></strong> · <?= e((string) $waTerakhir['tipe']) ?> · <?= e((string) $waTerakhir['created_at']) ?></span>
+              <?php $alasanWa = wa_teks(is_array($jWa) ? ($jWa['pesan'] ?? '') : ''); ?>
+              <?php if ($alasanWa !== ''): ?>
+                <span class="w-full">Fonnte membalas: <em><?= e($alasanWa) ?></em></span>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
         </div>
       </section>
 
@@ -1571,48 +1642,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
       </section>
 
-      <!-- 10. Notifikasi Operator (Fase 3) -->
-      <section class="card p-5 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="font-bold text-ink-900">Notifikasi Operator</h2>
-          <span class="badge badge-gray">Fase 3</span>
-        </div>
-        <p class="mt-1 text-[13px] text-ink-500">
-          Notifikasi masuk tersimpan di menu <a href="<?= url('app/operator/notifikasi.php') ?>" class="text-primary underline">Notifikasi</a>
-          (lencana di sidebar, diperbarui tiap 60 detik). Bila toggle WhatsApp aktif, notifikasi yang sama juga dikirim
-          ke nomor di bawah via Fonnte — kegagalan kirim tidak mengganggu proses utama dan tercatat di tabel <code class="text-[12px]">wa_log</code>.
-        </p>
-
-        <div class="mt-4 space-y-3">
-          <label class="flex items-start gap-3 rounded-xl border border-line p-3 hover:bg-canvas cursor-pointer">
-            <input type="checkbox" name="notif_wa_aktif" value="1" class="mt-1 w-4 h-4 accent-primary" <?= $f['notif_wa_aktif'] ? 'checked' : '' ?>>
-            <span>
-              <span class="text-sm font-semibold text-ink-900">Kirim Notifikasi via WhatsApp (Fonnte)</span>
-              <span class="block text-[13px] text-ink-500">Pemicu: bukti bayar masuk, pembayaran gateway lunas, submit berkas (berlaku setelah Fase 5). Nomor di bawah hanya dipakai bila toggle ini aktif; kegagalan kirim tidak mengganggu proses utama.</span>
-            </span>
-          </label>
-        </div>
-
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label class="label" for="notif_wa_operator">Nomor WA Operator (dipisah koma)</label>
-            <input id="notif_wa_operator" name="notif_wa_operator" type="text" class="input" placeholder="08123456789, 08987654321" value="<?= e($f['notif_wa_operator']) ?>">
-            <p class="hint">Menerima semua tipe notifikasi. Format: angka saja, boleh +, pisahkan beberapa nomor dengan koma.</p>
-          </div>
-          <div>
-            <label class="label" for="notif_wa_bendahara">Nomor WA Bendahara (dipisah koma)</label>
-            <input id="notif_wa_bendahara" name="notif_wa_bendahara" type="text" class="input" placeholder="085183076136" value="<?= e($f['notif_wa_bendahara']) ?>">
-            <p class="hint">Menerima salinan khusus bukti pembayaran masuk supaya bendahara tahu ada transfer. Boleh kosong — fallback ke Kontak WhatsApp Panitia di bagian Informasi Sekolah.</p>
-          </div>
-          <div>
-            <label class="label" for="notif_email">Email Notifikasi</label>
-            <input id="notif_email" name="notif_email" type="text" class="input opacity-60" value="<?= e($f['notif_email']) ?>" disabled>
-            <p class="hint">Email notifikasi belum diimplementasikan — kolom disiapkan sebagai titik sambungan saja (keputusan menyusul).</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 11. Daftar Berkas (Fase 5) -->
+      <!-- 10. Daftar Berkas (Fase 5) -->
       <section class="card p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="font-bold text-ink-900">Daftar Berkas Persyaratan</h2>
@@ -1629,7 +1659,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
       </section>
 
-      <!-- 12. Petugas & Hak Akses -->
+      <!-- 11. Petugas & Hak Akses -->
       <section class="card p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="font-bold text-ink-900">Petugas &amp; Hak Akses</h2>

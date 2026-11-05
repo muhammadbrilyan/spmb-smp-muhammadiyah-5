@@ -34,7 +34,7 @@ flowchart TD
 | 7 | `BERKAS_REVISI` | Ada berkas ditolak, hanya berkas itu dibuka | Keputusan tolak panitia (F5) |
 | 8 | `BERKAS_TERVERIFIKASI` | Semua berkas lolos | Setujui semua berkas (F5) |
 | 9 | `JADWAL_DITETAPKAN` | Masuk peserta ujian + nomor peserta | Atur peserta otomatis/manual (F6) |
-| 10 | `NILAI_TERINPUT` | Nilai CBT/BTQ/Wawancara tersimpan | Simpan tabel / impor CSV (F7) |
+| 10 | `NILAI_TERINPUT` | Nilai CBT/BTQ/Wawancara tersimpan | Simpan tabel input manual (F7) |
 | 11 | `DIUMUMKAN` | Hasil resmi diumumkan | Umumkan sekarang / jadwal lewat (F8) |
 
 ## Tabel & Kolom Baru per Fase
@@ -54,12 +54,14 @@ flowchart TD
 ### Fase 3 — Notifikasi Operator
 - `notifikasi` (tipe, pendaftar_id, pesan, is_read)
 - `wa_log` (tujuan, tipe, status, respons)
-- `pengaturan_sekolah.notif_wa_operator`, `notif_wa_aktif`, `notif_email` (titik sambungan)
+- `pengaturan_sekolah.notif_wa_bendahara`, `notif_wa_aktif`, `notif_email` (titik sambungan)
 - `app/api/notif-count.php` (polling sidebar 60 dtk)
-- Rute tujuan `notif_operator()`: daftar `notif_wa_operator` + (khusus tipe
-  pembayaran — `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`,
-  `PEMBAYARAN_GATEWAY_LUNAS`) `notif_wa_bendahara`, fallback `kontak_wa_panitia`
-  bila nomor bendahara kosong; dinormalisasi `wa_normalize()` lalu dideduplikasi
+- Rute tujuan `notif_operator()` (sejak 2026-11-05): WhatsApp **hanya** untuk tipe
+  uang masuk — `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`,
+  `PEMBAYARAN_GATEWAY_LUNAS` — ke `notif_wa_bendahara`, fallback `kontak_wa_panitia`
+  bila nomor bendahara kosong; dinormalisasi `wa_normalize()` lalu dideduplikasi.
+  Tipe lain (`BERKAS_DISUBMIT`, `VERIFIKASI_DATA`) berhenti sebagai notifikasi
+  in-app. Kolom `notif_wa_operator` sudah pensiun (tidak dibaca/ditulis lagi)
   supaya satu ponsel tidak menerima pesan dua kali
 - Migrasi: `database/migrations/20261101_notif_wa_bendahara.sql`
 
@@ -88,8 +90,14 @@ flowchart TD
 
 ### Fase 7 — Seleksi
 - `pendaftar_untuk_nilai()` difilter `tahap IN (JADWAL_DITETAPKAN, NILAI_TERINPUT)`
+- `seleksi_label_kolom()` + `seleksi_singkat_nama()` (2026-11-05) — judul 3 kolom
+  nilai diambil dari `jadwal_tes.nama_kegiatan` (3 pertama, urut tanggal & jam);
+  slot nilai tetap `nilai_cbt` / `nilai_btq` / `nilai_wawancara`
+- Pencarian no. pendaftaran / nama di sisi klien (hanya menyembunyikan baris;
+  input tetap berada di dalam form) — daftar itu sendiri sudah `ORDER BY
+  nama_siswa, no_pendaftaran` sejak 2026-11-05, jadi chip filter abjad dicabut
 - `seleksi_simpan()` → set `tahap=NILAI_TERINPUT` (struktur nilai TIDAK berubah)
-- `seleksi_impor_nilai()` — CSV upsert, pertahankan hasil LULUS/TIDAK_LULUS lama
+- ~~`seleksi_impor_nilai()` — CSV upsert~~ **dihapus 2026-11-05** (impor nilai CSV tidak dipakai; input manual saja)
 - `lulus_belum_ditempatkan_jumlah()` — peringatan sebelum pengumuman
 
 ### Fase 8 — Pengumuman
@@ -97,7 +105,9 @@ flowchart TD
 - `pengumuman_status()`, `pengumuman_umumkan_sekarang()`, `pengumuman_jadwalkan()`, `pengumuman_batalkan_jadwal()`
 - `pengumuman_wa_batch()` — 10 nomor per request (AJAX), `wa_log` tipe `PENGUMUMAN`
 - Peringatan: LULUS tanpa kelas → wajib konfirmasi eksplisit
-- Cek-status publik: **wajib no_pendaftaran + 4 digit WA** (pencarian nama dihapus)
+- Cek-status publik: **satu kolom isian** — nomor WhatsApp penuh langsung menampilkan status,
+  nomor pendaftaran tetap **wajib 4 digit WA** (pencarian nama dihapus; nomor pendaftaran berjalan
+  sehingga tetap dijaga). Revisi 2026-11-06.
 - Hasil seleksi & penempatan disembunyikan publik/portal sampai diumumkan
 - Revisi 2026-11-02: persetujuan kepala sekolah (`app/kepsek/penetapan.php`) menjadi
   **catatan resmi**, bukan gerbang — operator menerbitkan langsung; gerbang yang tersisa
@@ -117,9 +127,10 @@ flowchart TD
   yang **dihapus dari repository**; kolom `users.wajib_ganti_password` + gate
   `require_role()` (staf dipaksa ke Ganti Password). Upload bukti bayar: wajib CSRF +
   `pay_token` 64-hex + cek metode/tahap + hapus bukti lama + rate tiap percobaan.
-- **Bagian C**: `rate_limit_cek/catat(..., $kunci)` — rate lintas IP per no_pendaftaran
-  (cek-status & pemulihan tautan); pesan "tidak ditemukan" & "4 digit salah" **seragam**
-  (anti-enumerasi); `pengumuman_status()` **read-only** (finalisasi tahap di jalur operator).
+- **Bagian C**: `rate_limit_cek/catat(..., $kunci)` — rate lintas IP per no_pendaftaran di
+  `app/spmb/cek-status.php` (dan untuk tombol tautan bayar per pendaftar); pesan "tidak ditemukan"
+  & "4 digit salah" **seragam** (anti-enumerasi); `pengumuman_status()` **read-only**
+  (finalisasi tahap di jalur operator).
 - **Bagian D**: `url_abs()` + env `APP_URL` untuk tautan WhatsApp; **kepsek tidak lagi**
   boleh mengunduh berkas pribadi di `app/api/dokumen.php`.
 
@@ -187,10 +198,10 @@ Bendahara: Setujui (`VERIFIED+BAYAR_TERVERIFIKASI`), Tolak (wajib alasan, kembal
 `jadwal_tes` + ruangan/kapasitas/jam. `peserta_ujian` (nomor_peserta unik). "Atur Peserta Otomatis" urut no_pendaftaran penuhi kapasitas (transaksi DB). `tahap=JADWAL_DITETAPKAN` + WA. Kartu Peserta (CSS print).
 
 ### Fase 7 — Seleksi
-Hanya tampilkan `JADWAL_DITETAPKAN`/`NILAI_TERINPUT`. Struktur nilai TIDAK berubah. Setelah nilai → `NILAI_TERINPUT`. Impor CSV opsional + pratinjau. Hasil LULUS/TIDAK_LULUS tetap operator. Peringatan lulus tanpa kelas.
+Hanya tampilkan `JADWAL_DITETAPKAN`/`NILAI_TERINPUT`. Struktur nilai TIDAK berubah. Setelah nilai → `NILAI_TERINPUT`. Nilai hanya diisi manual lewat tabel (impor CSV dihapus 2026-11-05); Nilai Akhir & keputusan dihitung otomatis dari `ambang_kelulusan`. Judul kolom nilai mengikuti nama kegiatan jadwal tes (`seleksi_label_kolom()`, disingkat otomatis) sejak 2026-11-05; barisnya urut abjad nama dan ada pencarian no. pendaftaran/nama di sisi klien. Hasil LULUS/TIDAK_LULUS tetap operator. Peringatan lulus tanpa kelas.
 
 ### Fase 8 — Pengumuman
-`hasil_diumumkan_pada` (DATETIME NULL). Sembunyikan hasil sampai waktu. Halaman Pengumuman + "Umumkan Sekarang"/"Jadwalkan" (aktif bila tak ada lulus tanpa kelas / konfirmasi eksplisit). `tahap=DIUMUMKAN` + WA bertahap 10/request (AJAX progres) + `wa_log` + "Kirim ulang yang gagal". Cek-status publik: wajib no_pendaftaran + 4 digit WA.
+`hasil_diumumkan_pada` (DATETIME NULL). Sembunyikan hasil sampai waktu. Halaman Pengumuman + "Umumkan Sekarang"/"Jadwalkan" (aktif bila tak ada lulus tanpa kelas / konfirmasi eksplisit). `tahap=DIUMUMKAN` + WA bertahap 10/request (AJAX progres) + `wa_log` + "Kirim ulang yang gagal". Cek-status publik: satu kolom isian — WhatsApp penuh langsung tampil, nomor pendaftaran tetap + 4 digit WA.
 
 ### Fase 9 — Panduan & Dokumentasi
 SOP per peran. `.env.example`. Dokumen ini. Uji e2e manual lengkap.
@@ -222,7 +233,7 @@ kartu antrean operasional — read-only.
 - **Prepared statement**: semua query via PDO prepared statement.
 - **Escape output**: semua output via `e()`.
 - **Rate limit**: login (5/15mnt/IP), cek-status (10/15mnt/IP **+** 5/15mnt/no_pendaftaran),
-  pulihkan-bayar (3/jam/IP **+** 3/jam/no_pendaftaran), unggah bukti (10/menit/IP, tiap percobaan dicatat).
+  tombol tautan bayar (8/jam/pendaftar), unggah bukti (10/menit/IP, tiap percobaan dicatat).
 - **Gate dokumen**: akses file berkas via `app/api/dokumen.php` — login + kepemilikan;
   **hanya operator/admin/bendahara** (kepsek tidak lagi ikut, Fase 10).
 - **Akun**: `hak akses.txt` dihapus dari disk; reset password via CLI `tools/set-password.php`
@@ -232,10 +243,16 @@ kartu antrean operasional — read-only.
 - **Pengumuman**: `pengumuman_status()` hanya membaca (finalisasi tahap dijalankan eksplisit oleh operator).
 - **Pesan anti-enumerasi**: cek-status memakai satu pesan sama untuk "tidak ditemukan" & "4 digit salah";
   kunci rate per-nomor hanya dicatat untuk format `REG-YYYY-NNNN` valid dan hanya saat percobaan **gagal**
-  (pencarian sukses tidak menambah hitungan).
+  (pencarian sukses tidak menambah hitungan). Nomor WhatsApp penuh tidak punya pola yang bisa ditebak,
+  jadi jalur itu boleh langsung menampilkan status; satu nomor yang dipakai beberapa pendaftaran
+  menampilkan daftar pilihan, dan id kandidat disimpan di sesi agar tidak bisa dipilih dari luar.
+- **Sesi cek-status**: `$_SESSION['cek_status']` menyimpan id pendaftar yang **sudah terbukti**
+  (`verif`) dan id kandidat (`kandidat`), umur 30 menit. Tombol "Buka Halaman Pembayaran" hanya
+  melayani id di `verif`, lalu `bayar_tautan_baru()` merotasi `pay_token_hash` dan pengunjung
+  di-redirect ke `app/spmb/bayar.php?t=…` — tanpa isian tambahan.
 - **Idempotensi**: kirim akun (klik ulang tidak dobel), pengumuman (finalisasi tahap idempoten),
   registrasi ulang (reuse reg_token **+ rotasi pay_token** — tautan bayar lama mati).
-- **Transaksi DB**: penempatan otomatis, atur peserta otomatis, impor CSV, unggah bukti bayar (gagal → tanpa perubahan).
+- **Transaksi DB**: penempatan otomatis, atur peserta otomatis, unggah bukti bayar (gagal → tanpa perubahan).
 - **Token bayar**: hanya `pay_token_hash` (SHA-256, UNIQUE) tersimpan di DB; `pay_token` polos selalu NULL.
   Titik tampil token polos dibatasi 3: halaman sukses registrasi, pesan WA registrasi, hasil pemulihan cek-status.
 - **Rate limit Fase 11**: ganti-password 5/15 menit (per IP + per user), registrasi-WA 3/nomor/24 jam;

@@ -56,14 +56,15 @@ $panduan = [
     ],
     [
         'icon' => 'notifications', 'badge' => 'F3',
-        'judul' => 'Notifikasi Operator (Fase 3)',
+        'judul' => 'Notifikasi Panitia (Fase 3)',
         'role'  => ['operator', 'admin', 'bendahara'],
         'langkah' => [
-            'Notifikasi otomatis terpicu saat: bukti bayar diunggah, pembayaran gateway lunas, dan berkas disubmit.',
-            'Buka menu <strong>Notifikasi</strong> di sidebar — lencana menampilkan jumlah belum dibaca.',
-            'Pengaturan notifikasi WA operator ada di <strong>Pengaturan → Notifikasi</strong>: isi nomor (pisah koma), aktifkan toggle.',
+            'Setiap pemicu tercatat di menu <strong>Notifikasi</strong> — bukti bayar diunggah, pembayaran gateway terverifikasi/lunas, berkas disubmit, data diajukan verifikasi. Lencana sidebar menampilkan jumlah belum dibaca dan polling tiap 60 detik.',
+            'Yang dikirim lewat WhatsApp hanya kabar uang masuk, ke nomor bendahara — akun Fonnte gratis mendaftarkan satu nomor, jadi pemicu operasional berhenti di dalam aplikasi.',
+            'Pengaturannya ada di <strong>Pengaturan → WhatsApp Gateway (Fonnte) → blok Notifikasi Transaksi</strong>: nomor (pisah koma) dan saklar kirim. Nomor yang sama bisa diganti cepat dari <strong>Petugas &amp; Hak Akses</strong>.',
+            'Bila nomor bendahara kosong, kiriman jatuh ke <em>Kontak WhatsApp Panitia</em> di bagian Identitas. Kegagalan kirim dicatat di tabel <code>wa_log</code> dan tidak mengganggu proses utama — hasil percobaan uang masuk terakhir tampil di blok Notifikasi Transaksi beserta alasan dari Fonnte.',
+            'Nomor bendahara saja tidak cukup: WA berangkat dari perangkat Fonnte yang ter-connect, jadi token di kartu yang sama harus aktif. Token di <code>.env</code> (FONNTE_TOKEN) lebih utama daripada token yang diketik di halaman ini — bila keduanya beda, nilai dari database diabaikan.',
             'Email (kolom <em>notif_email</em>) hanya titik sambungan — belum dikirim sampai diimplementasikan.',
-            'Sidebar polling setiap 60 detik — tidak perlu refresh manual.',
         ],
     ],
     [
@@ -115,7 +116,7 @@ $panduan = [
             'Submit hanya bisa bila semua berkas <em>wajib</em> lengkap → pendaftar masuk BERKAS_DISUBMIT + notifikasi operator.',
             'Buka <strong>Verifikasi Pendaftar</strong> tab Berkas Persyaratan — antrean BERKAS_DISUBMIT / BERKAS_REVISI.',
             'Putuskan per berkas: Setujui / Tolak (alasan wajib). Semua lolos → BERKAS_TERVERIFIKASI; ada ditolak → BERKAS_REVISI + WA ke orang tua (hanya berkas ditolak yang dibuka kembali).',
-            'WA penolakan menautkan penerima ke halaman <strong>Cek Status Pendaftaran</strong> (bukan halaman bayar) — di sana ada tombol <em>Pulihkan Tautan</em> bila perlu tautan bayar baru.',
+            'WA penolakan menautkan penerima ke halaman <strong>Cek Status Pendaftaran</strong> (bukan halaman bayar) — di sana ada tombol <em>Buka Halaman Pembayaran</em> untuk mendapat tautan bayar baru tanpa mengetik ulang apa pun.',
         ],
     ],
     [
@@ -146,14 +147,15 @@ $panduan = [
     ],
     [
         'icon' => 'fact_check', 'badge' => 'F7',
-        'judul' => 'Seleksi & Impor Nilai (Fase 7)',
+        'judul' => 'Input Hasil Seleksi (Fase 7)',
         'role'  => ['operator', 'admin', 'kepsek'],
         'langkah' => [
             'Hanya pendaftar JADWAL_DITETAPKAN / NILAI_TERINPUT yang tampil di <strong>Input Seleksi</strong>.',
-            'Struktur nilai (CBT, BTQ, Wawancara) TIDAK berubah — tetap diisi manual atau impor.',
+            'Judul kolom nilai mengikuti <em>nama kegiatan pada jadwal tes</em> (3 kegiatan pertama, urut tanggal & jam) dan otomatis disingkat; arahkan kursor ke judul untuk nama lengkapnya.',
+            'Nilai diisi manual per baris; Nilai Akhir dan keputusan LULUS/TIDAK_LULUS terhitung otomatis dari ambang kelulusan.',
+            'Baris tersusun <strong>urut abjad nama</strong>. Kotak cari menyaring No. Pendaftaran / Nama Calon Siswa — hanya menyembunyikan baris, seluruh nilai tetap ikut tersimpan saat Simpan.',
+            'Keputusan per siswa masih bisa diubah manual sebelum disimpan.',
             'Simpan tabel → tahap otomatis NILAI_TERINPUT.',
-            'Impor CSV: kolom <code>no_pendaftaran;cbt;btq;wawancara;kode_jadwal</code> (pemisah ; atau ,). Pratinjau dulu → periksa baris galat → eksekusi Impor.',
-            'Impor TIDAK mengubah hasil LULUS/TIDAK_LULUS yang sudah diputuskan operator.',
             'Peringatan tampil bila ada LULUS tanpa penempatan kelas.',
         ],
     ],
@@ -167,7 +169,7 @@ $panduan = [
             'Umumkan Sekarang dengan siswa LULUS tanpa kelas → wajib centang konfirmasi eksplisit.',
             'Setelah diumumkan: tahap pendaftar → DIUMUMKAN, hasil tampil di cek-status publik & portal siswa.',
             'Kirim WA pengumuman batch 10 nomor per request — pantau progres di halaman. Tekan <em>Kirim Ulang yang Gagal</em> bila ada kegagalan.',
-            'Cek-status publik diperketat: wajib no_pendaftaran + 4 digit WA (pencarian nama dihapus).',
+            'Cek-status publik: satu kolom isian — nomor WhatsApp penuh langsung tampil, nomor pendaftaran tetap wajib 4 digit terakhir WA (pencarian nama dihapus).',
         ],
     ],
     [
@@ -189,10 +191,10 @@ $panduan = [
         'langkah' => [
             'Buka <strong>Pengaturan</strong> di menu operator.',
             'Seksi 1–6 mengatur konten landing (ticker, hero, statistik, biaya) — termasuk blok <strong>Tanya Jawab (FAQ) Landing</strong> yang mengisi section Pusat Bantuan di halaman depan.',
-            'Seksi 7 <strong>WhatsApp Gateway</strong>: isi token Fonnte (dari dashboard Fonnte → Settings → Token).',
+            'Seksi 7 <strong>WhatsApp Gateway</strong>: isi token Fonnte (dari dashboard Fonnte → Settings → Token) dan blok <strong>Notifikasi Transaksi</strong> di bawahnya — nomor bendahara yang terdaftar di Fonnte serta saklar kirim kabar uang masuk.',
             'Tanpa token, fitur generate akun & notifikasi jadwal tetap jalan tapi WA tidak terkirim — kredensial ditampilkan manual di halaman hasil.',
             'Seksi 8 <strong>Payment Gateway (Midtrans)</strong>: opsional — tanpa API key, sistem tetap jalan penuh dengan transfer bank manual / QRIS.',
-            'Seksi 9: metode bayar — transfer &amp; QRIS selalu tersedia, gateway online hanya bila dikonfigurasi; plus teks S&amp;K. Seksi 10: Notifikasi. Seksi 11: Daftar Berkas.',
+            'Seksi 9: metode bayar — transfer &amp; QRIS selalu tersedia, gateway online hanya bila dikonfigurasi; plus teks S&amp;K. Seksi 10: Daftar Berkas. Seksi 11: Petugas &amp; Hak Akses (di sana nomor WA bendahara juga bisa diganti cepat).',
         ],
     ],
     [
@@ -212,7 +214,7 @@ $panduan = [
         'langkah' => [
             'Buka menu <strong>Kesiapan Rilis</strong> di sidebar (hanya operator/admin) — halaman baca-saja, tidak mengubah apa pun.',
             'Skor kesiapan menampilkan persentase item siap; status: <em>SIAP</em> / <em>SIAP DENGAN CATATAN</em> / <em>BELUM SIAP</em> (ada item gagal).',
-            '13 item checklist: URL publik (APP_URL), rekening & WA panitia (deteksi nomor contoh), jadwal+S&amp;K, akun staf terkunci, hash password lemah, skema terbaru, metode bayar, kunci Midtrans, token Fonnte, izin folder, umur cadangan DB, notif WA operator.',
+            '13 item checklist: URL publik (APP_URL), rekening & WA panitia (deteksi nomor contoh), jadwal+S&amp;K, akun staf terkunci, hash password lemah, skema terbaru, metode bayar, kunci Midtrans, token Fonnte, izin folder, umur cadangan DB, notif WA uang masuk ke bendahara.',
             'Kartu <strong>Antrean Operasional</strong>: berkas disubmit, revisi siswa, bukti bayar menunggu, siap kirim akun — angka mengikuti data per tahap.',
             'Pemeriksaan teknis lanjutan (versi PHP, ekstensi, php.ini, koneksi) tetap lewat terminal: <code>php tools/cek-proyek.php</code> — keluar dengan kode 1 bila ada GAGAL.',
             'Sebelum rilis publik: pastikan tanpa item <em>Gagal</em>, jalankan cek-proyek, lalu ikuti <code>docs/UJI-MANUAL.md</code> &amp; <code>docs/DEPLOY.md</code>.',
@@ -298,8 +300,8 @@ $panduan = [
         <li><strong>Alamat masuk dipisah</strong> — pihak sekolah cukup satu alamat: <a href="<?= url('admin/') ?>" target="_blank" rel="noopener"><code><?= e(url('admin/')) ?></code></a> (Login Pihak Sekolah; otomatis lanjut ke dashboard bila sudah login), murid/orang tua lewat tombol <em>Login Siswa</em> di halaman SPMB. Bagikan alamat <code>/admin</code> hanya ke panitia — alamat pendek hanya memudahkan diingat, BUKAN pembatas akses: setiap halaman staf tetap dijaga <code>require_role()</code>.</li>
         <li><strong>GANTI PASSWORD DEFAULT sebelum go-live</strong> — akun operator/bendahara/kepsek WAJIB diganti. Buka menu <a href="<?= url('app/staf/ganti-password.php') ?>">Ganti Password</a> di sidebar. Setelah reset via CLI, staf akan otomatis dipaksa ganti password saat login berikutnya. Password lama/daftarnya tidak lagi disimpan di file <code>hak akses.txt</code> (sudah dihapus).</li>
         <li><strong>Seed SQL mengunci akun staf</strong> (Fase 11): hash <code>'!LOCKED'</code> — tidak bisa login apa pun password lama. Setelah impor database, jalankan <code>php tools/set-password.php &lt;username&gt;</code> untuk operator/bendahara/kepsek (dan <code>siswa</code> bila memakai <code>database/seed_demo.sql</code>) sebelum login pertama. <strong>Hosting tanpa SSH (cPanel):</strong> buat penanda <code>storage/.izinkan-set-password</code> via File Manager, buka <code>/tools/set-password-web.php</code>, selesaikan, lalu hapus penanda + berkas tool (Fase 12).</li>
-        <li><strong>Token bayar disimpan ter-hash</strong> (Fase 11): kolom <code>pay_token_hash</code> (SHA-256, UNIQUE); registrasi ulang dengan data sama <strong>merotasi</strong> token sehingga tautan bayar lama mati. Token mentah hanya tampil 3 tempat: halaman sukses registrasi, pesan WA registrasi, dan hasil <em>Pulihkan Tautan</em> di cek-status.</li>
-        <li><strong>Rate anti-penyalahgunaan</strong> (Fase 11): ganti password maks 5 percobaan / 15 menit (per IP &amp; per akun); kirim WA registrasi maks 3 / nomor / 24 jam; cek-status diperiksa lintas IP per nomor pendaftaran (format <code>REG-YYYY-NNNN</code> saja yang dihitung, dan hanya saat gagal).</li>
+        <li><strong>Token bayar disimpan ter-hash</strong> (Fase 11): kolom <code>pay_token_hash</code> (SHA-256, UNIQUE); registrasi ulang dengan data sama <strong>merotasi</strong> token sehingga tautan bayar lama mati. Token mentah hanya tampil 3 tempat: halaman sukses registrasi, pesan WA registrasi, dan hasil tombol <em>Buka Halaman Pembayaran</em> di cek-status — pengunjung langsung dialihkan, tokennya tidak pernah ditampilkan di halaman. Karena token baru menggantikan yang lama, tautan bayar di pesan WA ikut mati setelah tombol itu dipakai.</li>
+        <li><strong>Rate anti-penyalahgunaan</strong> (Fase 11): ganti password maks 5 percobaan / 15 menit (per IP &amp; per akun); kirim WA registrasi maks 3 / nomor / 24 jam; cek-status dihitung per IP (10 / 15 menit) dan lintas IP per nomor pendaftaran (5 / 15 menit, format <code>REG-YYYY-NNNN</code> saja yang dihitung, hanya saat gagal); tombol tautan bayar maks 8 / jam per pendaftar dan hanya untuk hasil pencarian yang terbukti di sesi ini.</li>
         <li><strong>Isi pesan WA instruksi bayar otomatis mengikuti metode aktif</strong> — jika transfer/QRIS/gateway dimatikan di Pengaturan, langkahnya ikut hilang; kalimat penutupnya selalu: "Setelah pembayaran terverifikasi, akun dan password dikirim lewat WhatsApp."</li>
         <li><strong>Cadangan data wajib dijadwalkan</strong> sebelum go-live: <code>php tools/backup-db.php</code> &amp; <code>php tools/backup-berkas.php</code> (retensi 14 hari) — lihat skrip <code>schtasks</code>/cron di <code>docs/DEPLOY.md</code>. Tool rilis (buat-paket, backup, cek-proyek, cek-statis, retensi, uji-*) bersifat CLI-only (akses web = 404); satu-satunya tool ber-web adalah <code>set-password-web.php</code> yang hanya aktif selama penanda <code>.izinkan-set-password</code> ada (Fase 12).</li>
         <li>API key Fonnte & Midtrans dibaca dari file <code>.env</code> di root proyek (di luar tree publik); bila kosong, fallback ke kolom CMS. <strong>Midtrans opsional</strong> — tanpa key, pembayaran tetap jalan via transfer manual / QRIS. <code>APP_URL</code> di <code>.env</code> dipakai untuk tautan WhatsApp absolut (kosongkan saat localhost).</li>

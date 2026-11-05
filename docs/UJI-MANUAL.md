@@ -49,20 +49,25 @@ Server uji: `php -S localhost:8099 -t <root proyek>` — ganti host/port sesuai 
 
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
-| C1 | `cek-status.php` dengan nomor **salah** | Pesan **sama persis** dengan nomor benar + 4 digit salah: "Nomor pendaftaran atau 4 digit WhatsApp tidak cocok…" |
+| C1 | `cek-status.php` dengan nomor pendaftaran **salah** | Pesan **sama persis** dengan nomor benar + 4 digit salah: "Data tidak cocok. Masukkan nomor WhatsApp yang didaftarkan…" |
 | C2 | Ulangi cek-status 6× dari IP sama (nomor sama) | Percobaan ke-6 **tetap diblokir meski IP beda** (limit per no_pendaftaran, kunci lintas IP) |
-| C3 | "Pulihkan tautan bayar" 3× (IP beda, nomor sama) | Percobaan ke-4 diblokir (3/jam per nomor) |
-| C4 | Unggah bukti 11× (IP sama) | Batas 10/menit tercapai (tiap percobaan dicatat, bukan hanya yang lolos) |
+| C3 | `cek-status.php` hanya dengan **nomor WhatsApp penuh** (tanpa nomor pendaftaran) | Status langsung tampil. Nomor WA yang tidak terdaftar → pesan seragam yang sama dengan C1 |
+| C4 | Satu nomor WA dipakai 2+ pendaftaran | Muncul daftar "Pilih pendaftaran yang ingin dilihat"; tombol **Lihat Status** menampilkan satu data; id kandidat yang tidak ada di sesi (dikirim manual) ditolak |
+| C5 | Klik **Buka Halaman Pembayaran** 9× berturut-turut (pendaftar sama) | 8 pertama redirect ke `bayar.php?t=<token baru>`; ke-9 diblokir "Terlalu sering membuat tautan pembayaran…" (8/jam per pendaftar). Tanpa id di sesi (form dikirim manual) → "Sesi pemeriksaan status berakhir…" |
+| C6 | Unggah bukti 11× (IP sama) | Batas 10/menit tercapai (tiap percobaan dicatat, bukan hanya yang lolos) |
 
-**Catatan trade-off (Fase 11 A5):** kunci rate per-nomor (`cek_status_no` /
-`pulihkan_bayar_no`) berlaku **lintas IP** — orang lain yang mengetahui nomor
-pendaftaran seseorang bisa mengunci pengecekan nomor itu selama 15 menit (3
-menit pemulihan: 1 jam) dengan sengaja mengulanginya. Ini disengaja sebagai
-perlindungan anti brute-force 4 digit WA; batas pemulihan jendela lebih panjang
-dipilih relatif terhadap nilai token bayar. Kunci per-nomor hanya dicatat untuk
-format `REG-YYYY-NNNN` valid, dan pencarian sukses tidak menambah hitungan
-sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
+**Catatan trade-off (Fase 11 A5):** kunci rate per-nomor (`cek_status_no`) berlaku **lintas IP** —
+orang lain yang mengetahui nomor pendaftaran seseorang bisa mengunci pengecekan nomor itu selama
+15 menit dengan sengaja mengulanginya. Ini disengaja sebagai perlindungan anti brute-force 4 digit
+WA. Kunci per-nomor hanya dicatat untuk format `REG-YYYY-NNNN` valid, dan pencarian sukses tidak
+menambah hitungan sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 `rate_limit` (baris >2 hari) berjalan acak ±1% request (LIMIT 1000).
+
+**Trade-off baru 2026-11-06:** pencarian dengan **nomor WhatsApp penuh** tidak lagi meminta 4 digit,
+karena nomor WA adalah rahasia pemiliknya dan tidak punya pola yang bisa ditebak (berbeda dengan
+`REG-YYYY-NNNN` yang berjalan). Konsekuensinya: siapa pun yang mengetahui nomor WA orang tua dapat
+melihat status pendaftaran yang terhubung, termasuk daftar pendaftar lain pada nomor yang sama.
+Jalur nomor pendaftaran sengaja **tetap** wajib 4 digit.
 
 ## D. Pengumuman, WA & Gate Dokumen
 
@@ -97,8 +102,8 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | E13 | Registrasi **kedua** dengan data sama saat sebelumnya sukses | Regristrasi idempoten: reuse reg_token → **pay_token dirotasi**, tautan bayar lama **404** |
 | E14 | Cek `SELECT pay_token, pay_token_hash FROM pendaftar` | `pay_token` **NULL** untuk semua baris; pencarian hanya lewat `SHA2(?,256)` pada `pay_token_hash` (UNIQUE) |
 | E15 | Halaman tautan bayar lama (`bayar.php?t=<token lama>`) | 404 / tidak mengarah ke pembayaran valid |
-| E16 | Pesan WA penolakan verifikasi dokumen | Tautan menuju **cek-status** (`app/spmb/cek-status.php`), bukan halaman bayar — ada tombol "Pulihkan Tautan" |
-| E17 | Telusuri sumber tampilan token bayar | Token polos hanya muncul di 3 tempat: sukses registrasi, pesan WA registrasi, hasil pemulihan cek-status |
+| E16 | Pesan WA penolakan verifikasi dokumen | Tautan menuju **cek-status** (`app/spmb/cek-status.php`), bukan halaman bayar — di sana ada tombol **Buka Halaman Pembayaran** |
+| E17 | Telusuri sumber tampilan token bayar | Token polos hanya muncul di 2 tempat: sukses registrasi, pesan WA registrasi. Tombol "Buka Halaman Pembayaran" **merotasi** token lalu `header('Location: …bayar.php?t=…')` — token baru tidak pernah dicetak di halaman cek-status |
 | E18 | Bendahara menolak bukti **formulir** (`verifikasi_bayar_tolak`) | WA ke orang tua berisi alasan + tautan **langsung** `app/spmb/bayar.php?t=<token baru>` — token lama mati karena dirotasi; halaman bayar menampilkan banner merah "Bukti pembayaran sebelumnya ditolak panitia" + alasan dan form unggah ulang tetap aktif. Non-formulir atau rotasi gagal → tetap fallback ke cek-status (E16) |
 
 ## F. Fase 11 — Instrumen Rilis (B1–B6)
@@ -178,9 +183,9 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | J10 | Nonaktifkan satu-satunya akun operator aktif | Ditolak: "Akun ini satu-satunya operator aktif. Buat atau aktifkan operator lain lebih dulu." |
 | J11 | Role bendahara/kepsek membuka URL `app/operator/petugas.php` | Dialihkan ke portal netral (require_role operator/admin) |
 | J12 | Kesiapan Rilis saat masih ada akun `!LOCKED` | Item "Akun staf sudah memiliki password" berwarna Perhatian dan menautkan halaman Petugas & Hak Akses |
-| J13 | Gulir ke panel **Notifikasi WhatsApp ke Panitia** (baru 2026-11-03) | Menampilkan nomor WA operator tersimpan di database + saklar "Kirim via WhatsApp (Fonnte)" + badge hijau **Aktif** bila saklar dan nomor sama-sama terisi, selain itu badge abu-abu **Belum aktif**. Menyimpan menulis `pengaturan_sekolah.notif_wa_operator` & `notif_wa_aktif` — kolom yang sama dengan Pengaturan Sistem → Kontak & Notifikasi |
+| J13 | Gulir ke panel **Notifikasi WhatsApp Transaksi** | Menampilkan **Nomor WA Bendahara** yang tersimpan di database + saklar "Kirim kabar uang masuk via WhatsApp (Fonnte)" + badge hijau **Aktif** bila saklar dan nomor tujuan sama-sama terisi, selain itu badge abu-abu **Belum aktif**. Menyimpan menulis `pengaturan_sekolah.notif_wa_bendahara` & `notif_wa_aktif` — kolom yang sama dengan blok *Notifikasi Transaksi* di kartu WhatsApp Gateway, Pengaturan Sistem. Sejak 2026-11-05 panel ini tidak lagi menyentuh `notif_wa_operator` (kolomnya pensiun; isinya dibiarkan di DB) |
 | J14 | Isi `123` atau `0811-2233-4455` lalu simpan | Ditolak server: "Format nomor WhatsApp "…" tidak valid. Gunakan 6-16 angka (boleh diawali +), pisahkan beberapa nomor dengan koma." Nilai lama tidak tertimpa. `081122334455; 081234567890` diterima dan disimpan ternormalisasi `081122334455, 081234567890` |
-| J15 | Kosongkan nomor sambil saklar tetap aktif / matikan saklar | Kosong + aktif → ditolak ("…nomor WA operator kosong"). Saklar mati → flash "Notifikasi WhatsApp dimatikan sementara — tujuan operator: …"; `notif_operator()` berhenti mengirim WA (in-app tetap tercatat) dan **juga menyenyapkan** kiriman ke nomor bendahara karena saklarnya global. Kesiapan Rilis kembali menandai item "Notifikasi WA ke operator" belum aktif bila nomor dikosongkan |
+| J15 | Kosongkan nomor sambil saklar tetap aktif / matikan saklar | Kosong + aktif **diterima** selama Kontak WhatsApp Panitia terisi — flash menyebut "…dikirim ke Kontak WhatsApp Panitia (…)", dan hint di bawah kolom menampilkan nomor tujuan efektif. Kosong + panitia juga kosong → ditolak ("…tidak ada nomor tujuan…"). Saklar mati → flash "Notifikasi WhatsApp transaksi dimatikan sementara — tujuan bendahara: …"; `notif_operator()` berhenti mengirim WA (in-app tetap tercatat). **Tidak** menyenyapkan pengingat angsuran orang tua (itu `pengingat_angsuran_wa`) maupun kirim jadwal/pengumuman ke wali. Kesiapan Rilis kembali menandai item "Notifikasi WA uang masuk (bendahara)" belum aktif bila nomor/saklar kosong |
 
 ## K. Persetujuan Penetapan Hasil (`app/kepsek/penetapan.php`)
 
@@ -231,11 +236,11 @@ sehingga orang tua sah tidak terkunci karena sering memeriksa. Pembersihan
 | M10 | Notifikasi `BUKTI_BAYAR_MASUK` di `app/operator/notifikasi.php` | Bagi operator/kepsek/bendahara yang bukan pemilik halaman, tombol **Buka** tidak dipasang — diganti chip "Ruang Kerja Bendahara" (judul tooltip); hanya bendahara/admin yang melihat tombol **Buka** → `app/bendahara/pembayaran.php` |
 | M11 | Tombol **Kirim Pengingat Jatuh Tempo** (ada di dashboard & panel antrean) | Keduanya POST ke `index.php`; flash hasil berjalan; tetap tinggal di halaman asal |
 | M12 | Operator mem-POST langsung ke `app/bendahara/verifikasi.php` (URL endpoint diketahui) | Ditolak — gerbang endpoint disamakan dengan halamannya (`bendahara`/`admin`), dahulu `operator` ikut diizinkan sehingga keputusan bayar bisa ditulis dari luar halaman bendahara |
-| M13 | Calon pendaftar unggah bukti transfer/QRIS di `app/spmb/bayar.php?t=…` (atau siswa unggah di `app/siswa/keuangan.php`) saat `notif_wa_aktif=1` | Nomor di **Nomor WA Bendahara** (`notif_wa_bendahara`, Pengaturan Sistem → Notifikasi Operator) menerima WA berisi nama, No. Pendaftaran, metode, nominal, dan tautan `app/bendahara/pembayaran.php`; tercatat di `wa_log` bertipe `BUKTI_BAYAR_MASUK` walau **Nomor WA Operator** kosong |
+| M13 | Calon pendaftar unggah bukti transfer/QRIS di `app/spmb/bayar.php?t=…` (atau siswa unggah di `app/siswa/keuangan.php`) saat `notif_wa_aktif=1` | Nomor di **Nomor WA Bendahara** (`notif_wa_bendahara`, kartu WhatsApp Gateway pada Pengaturan Sistem atau panel Petugas) menerima WA berisi nama, No. Pendaftaran, metode, nominal, dan tautan `app/bendahara/pembayaran.php`; tercatat di `wa_log` bertipe `BUKTI_BAYAR_MASUK` |
 | M14 | **Nomor WA Bendahara** kosong | Salinan bukti bayar jatuh ke **Kontak WhatsApp Panitia SPMB** (`kontak_wa_panitia`) — tidak ada pemicu yang hilang diam-diam |
-| M15 | Nomor yang sama ada di daftar **Nomor WA Operator** dan **Nomor WA Bendahara** | Hanya satu pesan terkirim — tujuan dinormalisasi (`wa_normalize`) lalu dideduplikasi, tidak ada pesan dobel ke ponsel yang sama |
-| M16 | Pemicu bukan-bayar (mis. `BERKAS_DISUBMIT`) dengan hanya nomor bendahara yang terisi | Nomor bendahara TIDAK dikirimi — rute tambahan khusus tipe pembayaran (`BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`, `PEMBAYARAN_GATEWAY_LUNAS`); pemicu lain hanya lewat `notif_wa_operator` |
-| M17 | `notif_wa_aktif=0` | Tidak ada WA sama sekali (in-app notifikasi tetap tersimpan) — toggle tetap jadi sakelar induk |
+| M15 | Nomor yang sama ditulis dua kali dalam daftar (mis. `0811…, 0811…`) | Hanya satu pesan terkirim — tujuan dinormalisasi (`wa_normalize`) lalu dideduplikasi, tidak ada pesan dobel ke ponsel yang sama |
+| M16 | Pemicu bukan-bayar (`BERKAS_DISUBMIT`, `VERIFIKASI_DATA`) dengan saklar aktif dan nomor bendahara terisi | Nomor bendahara **tidak** dikirimi apa pun — `notif_operator()` hanya mengirim tiga tipe uang masuk (`BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`, `PEMBAYARAN_GATEWAY_LUNAS`). Pemicu operasional tetap muncul di menu Notifikasi panitia (in-app), dan `wa_log` tidak mendapat baris baru |
+| M17 | `notif_wa_aktif=0` | Tidak ada WA panitia sama sekali (in-app notifikasi tetap tersimpan). Saklar ini **bukan** induk menyeluruh: pengingat angsuran ke orang tua dikendalikan `pengingat_angsuran_wa`, dan kirim jadwal/pengumuman ke wali memakai jalurnya sendiri — keduanya tetap jalan dengan saklar mati |
 | M18 | CMS: toggle aktif, **Nomor WA Operator** dan **Nomor WA Bendahara** kosong, Kontak WhatsApp Panitia terisi → Simpan | Tersimpan (dahulu gagal dengan "daftar nomor tujuan masih kosong"); ditolak hanya bila ketiga nomor kosong. Format tiap daftar nomor divalidasi terpisah, pesalan galat menyebut "operator" atau "bendahara" |
 | M19 | Menerbitkan skema lama ke hosting | Wajib `mysql -u root < database/migrations/20261101_notif_wa_bendahara.sql` lebih dulu; tanpanya seluruh simpan Pengaturan Sistem batal (`1054 Unknown column 'notif_wa_bendahara'`) — terlihat sebagai GAGAL pada pemeriksaan 5 `tools/cek-proyek.php` |
 | M20 | Pembayaran selesai lewat gateway Midtrans (callback `PEMBAYARAN_GATEWAY_LUNAS` / `PEMBAYARAN_GATEWAY_MASUK`) saat **Nomor WA Operator** kosong | Nomor **WA Bendahara** tetap menerima salinan (pesan sudah berisi tautan `app/bendahara/pembayaran.php`) — dahulu tidak terkirim sama sekali karena rute bendahara hanya mengenali `BUKTI_BAYAR_MASUK` |
@@ -341,6 +346,10 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_rincian_biay
 | S11 | Tekan **Simpan Hasil Seleksi** dengan ambang 70 → muat ulang halaman | Flash menyebut "…(ambang kelulusan 70)." dan kolom `ambang_kelulusan` = 70.00; nilai yang tersimpan di tabel `seleksi` tidak berubah |
 | S12 | Bandingkan `seleksi.jadwal_id` sebelum & sesudah simpan nilai | Tetap sama — jadwal tidak dihapus oleh halaman ini meskipun kolomnya tidak ditampilkan |
 | S13 | Siswa LULUS yang sudah punya penempatan kelas tetapi **belum** membuka amplop hasil → portal siswa → Keuangan | Panel rincian **tidak** tampil; yang muncul kartu "**Rincian Biaya & Sisa Pembayaran Terkunci**" + tombol ke menu Hasil Seleksi (lihat T7). Setelah amplop dibuka, panel menampilkan rincian beserta kelasnya (mis. "Anda diterima di kelas 7C") dan sisa = total biaya masuk − yang sudah diverifikasi |
+| S14 | Muat ulang **Input Hasil Seleksi** (2026-11-05) | Kartu **Impor Nilai CSV** beserta tombol *Pratinjau* dan tabel pratinjau **tidak ada** — nilai hanya lewat tabel manual. POST `aksi=preview_csv` / `aksi=impor_csv` lama tidak lagi melakukan apa pun (cabangnya dihapus; formulir simpan tetap butuh CSRF yang sah) |
+| S15 | Buat dua jadwal tes dengan nama berbeda (mis. "Test Baca & Tulis", "Tes BTQ", "Wawancara & Test Kesehatan") → muat ulang **Input Hasil Seleksi** | Judul kolom nilai berubah menjadi **Baca & Tulis / BTQ / Kesehatan** (kata `test`, `tes`, `ujian`, `seleksi`, `kegiatan` dibuang; bagian sesudah `&` yang dipakai). `title` pada `<th>` dan catatan di bawah tabel tetap menyebut nama lengkap + kode jadwalnya. Urutan kolom = urutan `tanggal, jam_mulai, kode`, dan **nomor tetap masuk ke slot yang sama** (`nilai_cbt`, `nilai_btq`, `nilai_wawancara`) |
+| S16 | Ketik `REG-2026-0003`, lalu `bilqis`, lalu kosongkan | Baris yang tidak cocok disembunyikan; badge berubah "1 dari 5 baris ditampilkan" → kembali "5 baris ditampilkan". Ketik kata yang tidak ada → muncul baris "Tidak ada calon siswa yang cocok dengan pencarian." Nilai yang sudah diketik pada baris tersembunyi **tidak hilang** dan tetap tersimpan saat Simpan; menekan **Enter** di kotak cari tidak mengirim form. **Chip abjad A–Z sudah dicabut** — tidak ada elemen `data-huruf` di halaman |
+| S17 | Isi nama `aisyah`, `Bilqis`, `Citra`, `Dafa`, `Zubaidah` dengan nomor pendaftaran acak → muat ulang **Input Hasil Seleksi** | Baris tersusun **urut abjad nama** (A → Z), bukan urut nomor pendaftaran; huruf kecil tetap masuk di kelompok huruf yang sama. Dua nama identik diurutkan berdasarkan `no_pendaftaran` |
 
 ## T. Amplop Hasil Seleksi & Perayaan Kelulusan (rombak 2026-11-02)
 
@@ -511,7 +520,7 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_hasil_dibuka
 | X9 | Buka `/tools/*.php` via browser | Tool CLI yang ada → **403** (`tools/.htaccess`, Fase 13 butir 1); `set-password-web.php` → **404** selama penanda `storage/.izinkan-set-password` tidak ada; dengan penanda hanya form kode instalasi |
 | X10 | Cari rahasia di paket rilis / repo | `.env` absen dari zip & repo; `hak akses.txt` tiada; password hanya hash bcrypt/`!LOCKED` |
 | X11 | Edit `pay_token_hash` jadi duplikat | Ditolak DB (constraint UNIQUE) |
-| X12 | Pembatasan teks penolakan verifikasi diklik korban | Mendarat di cek-status (pemulihan aman), bukan halaman bayar |
+| X12 | Pembatasan teks penolakan verifikasi berkas diklik korban | Mendarat di cek-status, bukan halaman bayar — dari sana satu klik **Buka Halaman Pembayaran** membuat tautan baru |
 | X13 | Operator memaksa POST `umumkan_sekarang` dengan `_csrf` asing / tanpa checkbox konfirmasi saat masih ada LULUS tanpa kelas | **Kedua gerbang yang tersisa tetap ditegakkan server**: token salah → "Formulir kedaluwarsa. Muat ulang halaman."; `konfirmasi !== '1'` → "Konfirmasi diperlukan: masih ada siswa LULUS tanpa kelas." — `hasil_diumumkan_pada` tetap NULL. Sejak 2026-11-02 **tidak ada** lagi penolakan karena belum ada persetujuan kepsek |
 | X14 | Admin memaksa POST `setujui`/`ttd` di halaman kepsek | Ditolak dua lapis: layar `require_role(['kepsek','admin'])` tapi tombol nonaktif + `persetujuan_simpan()` menolak id bukan akun kepsek aktif |
 | X15 | Persetujuan lama, lalu daftar hasil diubah operator | Di `penetapan.php` catatan jadi badge **Batal** (sidik tidak cocok) — ini hanya tanda bahwa catatan tidak lagi menggambarkan daftar; penerbitan pengumuman tidak ikut terkunci dan tidak ada kolom hasil yang berubah karena catatan persetujuan |

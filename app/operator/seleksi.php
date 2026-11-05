@@ -11,7 +11,12 @@ $USER_LOGIN = [
 ];
 
 $title = 'Input Hasil Seleksi';
-$desc  = 'Input nilai CBT, BTQ, dan wawancara — nilai akhir dan keputusan LULUS/TIDAK_LULUS dihitung otomatis.';
+
+/* Judul kolom nilai ikut nama kegiatan jadwal tes (lihat seleksi_label_kolom). */
+$kolom      = seleksi_label_kolom();
+$labelNilai = implode(', ', $kolom['label']);
+
+$desc  = 'Input nilai ' . $labelNilai . ' — nilai akhir dan keputusan LULUS/TIDAK_LULUS dihitung otomatis.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 /* Ambang nilai kelulusan — tersimpan di Pengaturan Sekolah, default 70. */
@@ -21,7 +26,6 @@ $ambangSimpan   = isset($PENGATURAN['ambang_kelulusan']) && $PENGATURAN['ambang_
 
 $galat = [];
 $tersimpan = 0;
-$pratinjau = null; /* hasil parse CSV (Fase 7) */
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!csrf_cek($_POST['_csrf'] ?? '')) {
         flash('error', 'Formulir kedaluwarsa. Muat ulang lalu coba lagi.');
@@ -30,155 +34,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
     $aksiPost = (string) ($_POST['aksi'] ?? 'simpan_tabel');
 
-    /* --- Fase 7: pratinjau impor CSV --- */
-    if ($aksiPost === 'preview_csv') {
-        $file = $_FILES['csv_nilai'] ?? null;
-        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
-            flash('error', 'Pilih berkas CSV nilai (maksimal 1 MB).');
-            header('Location: ' . url('app/operator/seleksi.php'));
-            exit;
-        }
-        if ($file['size'] > 1024 * 1024) {
-            flash('error', 'Ukuran CSV maksimal 1 MB.');
-            header('Location: ' . url('app/operator/seleksi.php'));
-            exit;
-        }
-        $isi = file_get_contents($file['tmp_name']);
-        if ($isi === false) {
-            flash('error', 'Berkas CSV tidak dapat dibaca.');
-            header('Location: ' . url('app/operator/seleksi.php'));
-            exit;
-        }
-        /* Buang BOM UTF-8 bila ada. */
-        if (strncmp($isi, "\xEF\xBB\xBF", 3) === 0) {
-            $isi = substr($isi, 3);
-        }
-        $barisCsv = preg_split('/\r\n|\r|\n/', trim($isi));
-        $pratinjau = [];
-        $nomor = 0;
-        foreach ($barisCsv as $ln => $barisRaw) {
-            if (trim($barisRaw) === '') {
-                continue;
-            }
-            $kolom = str_getcsv($barisRaw, ';');
-            if (count($kolom) < 4) {
-                $kolom = str_getcsv($barisRaw, ',');
-            }
-            if ($ln === 0 && strtolower(trim($kolom[0] ?? '')) === 'no_pendaftaran') {
-                continue; /* baris header */
-            }
-            $nomor++;
-            if ($nomor > 500) {
-                $galat[] = 'CSV dibatasi 500 baris data.';
-                break;
-            }
-            $no   = trim((string) ($kolom[0] ?? ''));
-            $cbt  = is_numeric($kolom[1] ?? null) ? max(0, min(100, (float) $kolom[1])) : null;
-            $btq  = is_numeric($kolom[2] ?? null) ? max(0, min(100, (float) $kolom[2])) : null;
-            $waw  = is_numeric($kolom[3] ?? null) ? max(0, min(100, (float) $kolom[3])) : null;
-            $jk   = trim((string) ($kolom[4] ?? '')); /* kode jadwal (opsional) */
-
-            $status = 'siap';
-            $ket    = '';
-            if ($no === '') {
-                $status = 'galat';
-                $ket    = 'Nomor pendaftaran kosong.';
-            } elseif ($cbt === null || $btq === null || $waw === null) {
-                $status = 'galat';
-                $ket    = 'Nilai CBT/BTQ/Wawancara harus angka 0–100.';
-            } else {
-                $p = q_all(
-                    "SELECT p.id, p.tahap, s.hasil
-                       FROM pendaftar p
-                  LEFT JOIN seleksi s ON s.pendaftar_id = p.id
-                      WHERE p.no_pendaftaran = ? LIMIT 1",
-                    [$no]
-                );
-                if (!$p) {
-                    $status = 'galat';
-                    $ket    = 'No. pendaftaran tidak ditemukan.';
-                } elseif (!in_array($p[0]['tahap'], ['JADWAL_DITETAPKAN', 'NILAI_TERINPUT'], true)) {
-                    $status = 'galat';
-                    $ket    = 'Tahap tidak siap dinilai (' . $p[0]['tahap'] . ').';
-                } else {
-                    $jadwalIdCsv = null;
-                    if ($jk !== '') {
-                        $jj = q_col('SELECT id FROM jadwal_tes WHERE kode = ?', [$jk]);
-                        if (!$jj) {
-                            $status = 'galat';
-                            $ket    = 'Kode jadwal "' . $jk . '" tidak ditemukan.';
-                        } else {
-                            $jadwalIdCsv = $jj;
-                        }
-                    }
-                    if ($status === 'siap') {
-                        $pratinjau[] = [
-                            'pendaftar_id' => $p[0]['id'],
-                            'no'           => $no,
-                            'cbt'          => $cbt,
-                            'btq'          => $btq,
-                            'waw'          => $waw,
-                            'jadwal_id'    => $jadwalIdCsv,
-                            'hasil_lama'   => $p[0]['hasil'] ?? 'PROSES',
-                        ];
-                        continue;
-                    }
-                }
-            }
-            $pratinjau[] = ['galat' => true, 'no' => $no, 'ket' => $ket];
-        }
-        if ($galat) {
-            flash('error', implode(' ', $galat));
-            header('Location: ' . url('app/operator/seleksi.php'));
-            exit;
-        }
-        if (!$pratinjau) {
-            flash('error', 'CSV tidak berisi baris data (format: no_pendaftaran;cbt;btq;wawancara[;kode_jadwal]).');
-            header('Location: ' . url('app/operator/seleksi.php'));
-            exit;
-        }
-    }
-
-    /* --- Fase 7: eksekusi impor (dari hasil pratinjau) --- */
-    if ($aksiPost === 'impor_csv') {
-        $noArr    = (array) ($_POST['imp_no'] ?? []);
-        $cbtArr   = (array) ($_POST['imp_cbt'] ?? []);
-        $btqArr   = (array) ($_POST['imp_btq'] ?? []);
-        $wawArr   = (array) ($_POST['imp_waw'] ?? []);
-        $jidArr   = (array) ($_POST['imp_jid'] ?? []);
-        $okImpor  = 0;
-        $gagalImpor = 0;
-        foreach ($noArr as $i => $no) {
-            $no = trim((string) $no);
-            if ($no === '' || !is_numeric($cbtArr[$i] ?? null) || !is_numeric($btqArr[$i] ?? null) || !is_numeric($wawArr[$i] ?? null)) {
-                $gagalImpor++;
-                continue;
-            }
-            $pid = q_col('SELECT id FROM pendaftar WHERE no_pendaftaran = ? AND tahap IN ("JADWAL_DITETAPKAN","NILAI_TERINPUT")', [$no]);
-            if (!$pid) {
-                $gagalImpor++;
-                continue;
-            }
-            $jid = trim((string) ($jidArr[$i] ?? ''));
-            if (seleksi_impor_nilai(
-                $pid,
-                $jid !== '' ? $jid : null,
-                max(0, min(100, (float) $cbtArr[$i])),
-                max(0, min(100, (float) $btqArr[$i])),
-                max(0, min(100, (float) $wawArr[$i]))
-            )) {
-                $okImpor++;
-            } else {
-                $gagalImpor++;
-            }
-        }
-        flash($okImpor > 0 ? 'sukses' : 'error',
-            $okImpor . ' baris nilai diimpor.' . ($gagalImpor > 0 ? ' ' . $gagalImpor . ' baris dilewati/gagal.' : ''));
-        header('Location: ' . url('app/operator/seleksi.php'));
-        exit;
-    }
-
-    /* --- Simpan tabel input manual (struktur nilai tidak berubah) --- */
+    /* --- Simpan tabel input manual (satu-satunya jalan masuk nilai) --- */
     $ambang = (float) ($_POST['ambang'] ?? $ambangSimpan);
     if ($ambang < 0 || $ambang > 100) {
         $galat[] = 'Ambang nilai harus antara 0 dan 100.';
@@ -244,7 +100,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
     <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Input Hasil Seleksi</h1>
     <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
       Hanya pendaftar berstatus <strong>JADWAL_DITETAPKAN</strong> / <strong>NILAI_TERINPUT</strong> yang tampil di sini.
-      Isi nilai CBT, BTQ, dan wawancara (0–100). Nilai akhir = rata-rata ketiga nilai.
+      Isi nilai <?= e($labelNilai) ?> (0–100). Nilai akhir = rata-rata ketiga nilai.
       Keputusan <strong>LULUS</strong> / <strong>TIDAK_LULUS</strong> ditentukan otomatis dari ambang nilai — bisa diubah manual per siswa.
     </p>
 
@@ -270,87 +126,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </div>
     <?php endif; ?>
 
-    <!-- Impor CSV (Fase 7) -->
-    <section class="mt-6 card p-5 sm:p-6">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="font-bold text-ink-900">Impor Nilai CSV</h2>
-        <span class="badge badge-gray">Opsional</span>
-      </div>
-      <p class="mt-1 text-[13px] text-ink-500">
-        Format kolom (pisah <code class="text-[12px]">;</code> atau <code class="text-[12px]">,</code>):
-        <code class="text-[12px]">no_pendaftaran;cbt;btq;wawancara;kode_jadwal</code> — kolom kode jadwal opsional.
-        Keputusan LULUS/TIDAK_LULUS yang sudah ada <strong>tidak diubah</strong> oleh impor.
-      </p>
-      <form method="post" action="<?= url('app/operator/seleksi.php') ?>" enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
-        <?= csrf_field() ?>
-        <input type="hidden" name="aksi" value="preview_csv">
-        <div class="flex-1 min-w-[240px]">
-          <label class="label" for="csv_nilai">Berkas CSV (maks 1 MB, 500 baris)</label>
-          <input id="csv_nilai" name="csv_nilai" type="file" accept=".csv,text/csv" class="input h-10 text-[13px] file:mr-3" required>
-        </div>
-        <button type="submit" class="btn btn-outline shrink-0"><?= icon('upload_file') ?> Pratinjau</button>
-      </form>
-
-      <?php if ($pratinjau !== null): $jmlSiap = count(array_filter($pratinjau, fn($r) => empty($r['galat']))); ?>
-        <div class="mt-5 border-t border-line-soft pt-4">
-          <h3 class="font-semibold text-ink-900">Pratinjau Impor — <?= count($pratinjau) ?> baris (<?= $jmlSiap ?> siap diimpor)</h3>
-          <div class="mt-3 overflow-x-auto scroll-thin">
-            <table class="w-full min-w-[640px] border-collapse">
-              <thead class="thead">
-                <tr>
-                  <th class="th">No. Pendaftaran</th>
-                  <th class="th text-center">CBT</th>
-                  <th class="th text-center">BTQ</th>
-                  <th class="th text-center">Wawancara</th>
-                  <th class="th">Keputusan Saat Ini</th>
-                  <th class="th">Status</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line-soft">
-                <?php foreach ($pratinjau as $r): ?>
-                  <tr class="tr-hover">
-                    <td class="td font-mono text-[13px]"><?= e($r['no'] ?: '—') ?></td>
-                    <?php if (!empty($r['galat'])): ?>
-                      <td class="td text-center">—</td>
-                      <td class="td text-center">—</td>
-                      <td class="td text-center">—</td>
-                      <td class="td">—</td>
-                      <td class="td text-[13px] text-red-700"><?= e($r['ket']) ?></td>
-                    <?php else: ?>
-                      <td class="td text-center"><?= e((string) $r['cbt']) ?></td>
-                      <td class="td text-center"><?= e((string) $r['btq']) ?></td>
-                      <td class="td text-center"><?= e((string) $r['waw']) ?></td>
-                      <td class="td text-[13px]"><?= e($r['hasil_lama']) ?></td>
-                      <td class="td"><?= badge('Siap', 'green') ?></td>
-                    <?php endif; ?>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
-
-          <?php if ($jmlSiap > 0): ?>
-            <form method="post" action="<?= url('app/operator/seleksi.php') ?>" class="mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-line-soft pt-4"
-                  onsubmit="return confirm('Impor <?= $jmlSiap ?> baris nilai CSV? Keputusan LULUS/TIDAK_LULUS yang sudah ada tidak berubah.');">
-              <?= csrf_field() ?>
-              <input type="hidden" name="aksi" value="impor_csv">
-              <?php foreach ($pratinjau as $r): if (!empty($r['galat'])) continue; ?>
-                <input type="hidden" name="imp_no[]" value="<?= e($r['no']) ?>">
-                <input type="hidden" name="imp_cbt[]" value="<?= e((string) $r['cbt']) ?>">
-                <input type="hidden" name="imp_btq[]" value="<?= e((string) $r['btq']) ?>">
-                <input type="hidden" name="imp_waw[]" value="<?= e((string) $r['waw']) ?>">
-                <input type="hidden" name="imp_jid[]" value="<?= e((string) ($r['jadwal_id'] ?? '')) ?>">
-              <?php endforeach; ?>
-              <a href="<?= url('app/operator/seleksi.php') ?>" class="btn btn-outline">Batal</a>
-              <button type="submit" class="btn btn-primary shadow-drop"><?= icon('download') ?> Impor <?= $jmlSiap ?> Baris</button>
-            </form>
-          <?php else: ?>
-            <p class="mt-4 text-[13px] text-red-700">Tidak ada baris siap diimpor. Perbaiki CSV lalu unggah ulang.</p>
-          <?php endif; ?>
-        </div>
-      <?php endif; ?>
-    </section>
-
     <form method="post" action="<?= url('app/operator/seleksi.php') ?>" id="form-seleksi">
       <?= csrf_field() ?>
       <input type="hidden" name="aksi" value="simpan_tabel">
@@ -361,10 +136,25 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <input id="ambang" name="ambang" type="number" min="0" max="100" step="0.5" value="<?= e((string) $ambangSimpan) ?>" class="input w-28" data-ambang>
         </div>
         <p class="hint flex-1 min-w-[200px] mb-1">
-          Nilai Akhir terhitung otomatis dari rata-rata CBT, BTQ, dan Wawancara. Bila mencapai ambang,
+          Nilai Akhir terhitung otomatis dari rata-rata <?= e($labelNilai) ?>. Bila mencapai ambang,
           keputusan terisi <strong>Lulus</strong> — masih bisa diubah manual per siswa sebelum disimpan.
           Angka ambang ikut tersimpan saat menekan <strong>Simpan Hasil Seleksi</strong>.
         </p>
+      </div>
+
+      <!-- Pencarian (hanya menyembunyikan baris, nilai tetap terkirim) -->
+      <div class="mt-4 card p-4">
+        <label class="label" for="seleksi-cari">Cari calon siswa</label>
+        <div class="relative">
+          <span class="ms absolute left-3 top-1/2 -translate-y-1/2 text-[19px] text-ink-400">search</span>
+          <input id="seleksi-cari" type="search" class="input pl-10" autocomplete="off" data-cari
+                 placeholder="No. Pendaftaran atau Nama Calon Siswa">
+        </div>
+        <div class="mt-3">
+          <span class="badge badge-gray" data-info><?= count($pendaftarList) ?> baris ditampilkan</span>
+        </div>
+        <p class="hint">Baris tersusun urut abjad nama. Menyaring hanya menyembunyikan baris — semua nilai
+          yang sudah diketik tetap ikut tersimpan saat <strong>Simpan Hasil Seleksi</strong> ditekan.</p>
       </div>
 
       <div class="mt-4 card overflow-hidden">
@@ -374,9 +164,10 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               <tr>
                 <th class="th">No. Pendaftaran</th>
                 <th class="th">Nama Calon Siswa</th>
-                <th class="th text-center">CBT</th>
-                <th class="th text-center">BTQ</th>
-                <th class="th text-center">Wawancara</th>
+                <?php for ($k = 0; $k < 3; $k++): ?>
+                  <?php $penuh = $kolom['lengkap'][$k] ?? ''; ?>
+                  <th class="th text-center" <?= $penuh !== '' ? 'title="' . e('Nama kegiatan jadwal: ' . $penuh . ' (' . $kolom['sumber'][$k] . ')') . '"' : '' ?>><?= e($kolom['label'][$k]) ?></th>
+                <?php endfor; ?>
                 <th class="th text-center">Nilai Akhir</th>
                 <th class="th text-center">Keputusan</th>
               </tr>
@@ -390,7 +181,9 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                   $akhir = $p['nilai_akhir'] !== null && $p['nilai_akhir'] !== '' ? (float) $p['nilai_akhir'] : round(($cbt + $btq + $waw) / 3, 2);
                   $hasilSaatIni = $p['hasil'] ?? 'PROSES';
                 ?>
-                <tr class="tr-hover" data-baris>
+                <tr class="tr-hover" data-baris
+                    data-no="<?= e($p['no_pendaftaran']) ?>"
+                    data-nama="<?= e($p['nama_siswa']) ?>">
                   <input type="hidden" name="pendaftar_id[]" value="<?= e($p['id']) ?>">
                   <?php /* Jadwal tidak ditampilkan di halaman ini, tetapi jangan sampai
                           * tertimpa NULL saat nilai disimpan. */ ?>
@@ -413,7 +206,11 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                   </td>
                 </tr>
               <?php endforeach; ?>
-              <?php if (!$pendaftarList): ?>
+              <?php if ($pendaftarList): ?>
+                <tr data-tidak-cocok style="display:none">
+                  <td colspan="7" class="td text-center text-ink-400">Tidak ada calon siswa yang cocok dengan pencarian.</td>
+                </tr>
+              <?php else: ?>
                 <tr><td colspan="7" class="td text-center text-ink-400">Belum ada pendaftar untuk dinilai.</td></tr>
               <?php endif; ?>
             </tbody>
@@ -423,6 +220,15 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <p class="text-[13px] text-ink-500">Baris tanpa nilai &amp; berstatus Proses akan dilewati saat disimpan.</p>
           <button type="submit" class="btn btn-primary shadow-drop"><?= icon('save') ?> Simpan Hasil Seleksi</button>
         </div>
+        <?php if ($kolom['sumber']): ?>
+          <p class="px-4 py-3 text-[12px] text-ink-400 border-t border-line-soft">
+            Judul kolom nilai diambil dari jadwal tes
+            <?php $pertama = true; foreach ($kolom['sumber'] as $i => $kd): ?><?= $pertama ? ' ' : ', ' ?><?php $pertama = false; ?><strong><?= e($kd) ?></strong> — <?= e($kolom['lengkap'][$i]) ?><?php endforeach; ?>.
+            <?php if ($kolom['lebih'] > 0): ?>
+              <?= $kolom['lebih'] ?> kegiatan jadwal lainnya tidak memiliki kolom nilai sendiri.
+            <?php endif; ?>
+          </p>
+        <?php endif; ?>
       </div>
     </form>
 
@@ -475,6 +281,41 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         if (tr.querySelector('[data-nilai]').value !== '') hitungBaris(tr);
       });
     });
+  })();
+
+  /* Pencarian no. pendaftaran / nama: baris hanya disembunyikan, tetap berada
+   * di dalam form sehingga nilainya tidak hilang saat disimpan. */
+  (function () {
+    var cari  = document.querySelector('[data-cari]');
+    var info  = document.querySelector('[data-info]');
+    if (!cari || !info) return;
+
+    var semua  = [].slice.call(document.querySelectorAll('[data-baris]'));
+    var kosong = document.querySelector('[data-tidak-cocok]');
+
+    function terapkan() {
+      var kata = cari.value.trim().toLowerCase();
+      var tampil = 0;
+      semua.forEach(function (tr) {
+        var teks = ((tr.getAttribute('data-no') || '') + ' ' + (tr.getAttribute('data-nama') || '')).toLowerCase();
+        var cocok = kata === '' || teks.indexOf(kata) !== -1;
+        tr.style.display = cocok ? '' : 'none';
+        if (cocok) tampil++;
+      });
+      if (kosong) kosong.style.display = tampil ? 'none' : '';
+      info.textContent = tampil === semua.length
+        ? semua.length + ' baris ditampilkan'
+        : tampil + ' dari ' + semua.length + ' baris ditampilkan';
+    }
+
+    /* Enter di kotak cari jangan ikut mengirim form (Simpan). */
+    cari.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+      }
+    });
+    cari.addEventListener('input', terapkan);
+    terapkan();
   })();
 </script>
 </body>

@@ -261,6 +261,12 @@ if (!$fonnteAda) {
 } elseif ($devBersih === '') {
     $sinkStatus = 'hati';
     $sinkKet    = 'Perangkat Fonnte belum terhubung ke nomor mana pun — scan QR nomor admin di dasbor Fonnte. Catatan: ' . $devCache['pesan'];
+} elseif (!$devCache['ok']) {
+    /* Nomor perangkat bisa jadi sama dengan nomor panitia, tetapi perangkatnya
+     * disconnect — kirim WA tetap ditolak Fonnte ("disconnected device").
+     * Tanpa cabang ini pemeriksaan ditandai OK padahal semua WA gagal. */
+    $sinkStatus = 'hati';
+    $sinkKet    = 'Perangkat Fonnte <strong>' . e($devWa) . '</strong> sedang tidak ter-connect — WA tidak akan terkirim sampai scan QR ulang di dasbor Fonnte. Catatan: ' . e($devCache['pesan']);
 } elseif ($panitiaBersih === '') {
     $sinkStatus = 'hati';
     $sinkKet    = 'Kontak WA panitia belum diisi — tidak ada nomor pembanding untuk memastikan pengirim dan tujuan balasan sama.';
@@ -311,13 +317,19 @@ $items[] = [
             : 'Terakhir ' . round($cadanganJam, 1) . ' jam lalu — lebih dari 48 jam, jalankan ulang backup.'),
 ];
 
-$waAktifNotif = !empty($P['notif_wa_aktif']) && trim((string) ($P['notif_wa_operator'] ?? '')) !== '';
+/* Kabar uang masuk ke bendahara — satu-satunya notifikasi panitia yang
+ * dikirim lewat WhatsApp (akun Fonnte gratis mendaftarkan satu nomor). */
+$waNotifNomor  = trim((string) ($P['notif_wa_bendahara'] ?? ''));
+$waNotifTujuan = $waNotifNomor !== '' ? $waNotifNomor : ($waBawaan ? '' : $waPanitia);
+$waAktifNotif  = !empty($P['notif_wa_aktif']) && $waNotifTujuan !== '';
 $items[] = [
     'grup' => 'Kanal', 'status' => $waAktifNotif ? 'ok' : 'hati',
-    'judul' => 'Notifikasi WA ke operator',
+    'judul' => 'Notifikasi WA uang masuk (bendahara)',
     'ket'   => $waAktifNotif
-        ? 'Aktif — notifikasi masuk dikirim ke ' . $P['notif_wa_operator'] . '.'
-        : 'Belum aktif — isi nomor WA operator & aktifkan di Pengaturan Sistem (opsional).',
+        ? 'Aktif — bukti bayar & pembayaran gateway dikirim ke ' . $waNotifTujuan . '.'
+        : 'Belum aktif — isi Nomor WA Bendahara (atau Kontak WhatsApp Panitia) lalu aktifkan saklar '
+            . 'Notifikasi Transaksi di kartu WhatsApp Gateway, Pengaturan Sistem. Pemicu lain tetap '
+            . 'masuk ke menu Notifikasi tanpa dikirim ke WhatsApp (opsional).',
 ];
 
 /* Retensi berkas pribadi (Fase 12 E7). */

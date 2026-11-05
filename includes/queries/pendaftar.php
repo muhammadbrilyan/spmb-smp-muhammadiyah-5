@@ -399,14 +399,16 @@ function pendaftar_detail_akun($pendaftar_id)
 function pendaftar_untuk_nilai()
 {
     /* Fase 7: hanya pendaftar siap dinilai — sudah terjadwal ujian
-     * (JADWAL_DITETAPKAN) atau sudah pernah dinilai (NILAI_TERINPUT). */
+     * (JADWAL_DITETAPKAN) atau sudah pernah dinilai (NILAI_TERINPUT).
+     * Urut abjad nama supaya mudah dicari saat input nilai; no_pendaftaran
+     * hanya pemecah nama yang sama. */
     $baris = q_all(
         "SELECT p.id, p.no_pendaftaran, p.nama_siswa, p.jalur, p.status_verifikasi, p.tahap,
                 s.nilai_cbt, s.nilai_btq, s.nilai_wawancara, s.nilai_akhir, s.hasil, s.jadwal_id
            FROM pendaftar p
       LEFT JOIN seleksi s ON s.pendaftar_id = p.id
           WHERE p.tahap IN ('JADWAL_DITETAPKAN', 'NILAI_TERINPUT')
-       ORDER BY p.no_pendaftaran"
+       ORDER BY p.nama_siswa, p.no_pendaftaran"
     );
     return $baris ?: [];
 }
