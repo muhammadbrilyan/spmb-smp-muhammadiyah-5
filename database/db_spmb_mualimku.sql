@@ -473,6 +473,7 @@ CREATE TABLE `users` (
   `jabatan` varchar(100) DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `wajib_ganti_password` tinyint(1) NOT NULL DEFAULT 0,
+  `notif_mulai_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),

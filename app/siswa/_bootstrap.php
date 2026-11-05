@@ -80,6 +80,13 @@ $tahap = null;
 $langkahBerikut = null;
 
 if ($siswa) {
+    /* Garis awal notifikasi: pada kunjungan pertama, users.notif_mulai_at diisi
+     * sekarang sehingga peristiwa panitia yang terjadi SEBELUM akun ini pernah
+     * dipakai tidak ikut tampil. Ditulis di sini — sebelum ada sisi efek yang
+     * mengirim notifikasi (pengingat angsuran di bawah) — supaya kabar yang
+     * baru lahir pada kunjungan pertama itu sendiri tetap terlihat. */
+    notif_siswa_batas($siswa['id']);
+
     $pembayaran = pembayaran_siswa($siswa['id']);
     $seleksi    = seleksi_siswa($siswa['id']);
     $penempatan = penempatan_siswa($siswa['id']);

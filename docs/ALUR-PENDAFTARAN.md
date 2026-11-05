@@ -64,6 +64,12 @@ flowchart TD
   in-app. Kolom `notif_wa_operator` sudah pensiun (tidak dibaca/ditulis lagi)
   supaya satu ponsel tidak menerima pesan dua kali
 - Migrasi: `database/migrations/20261101_notif_wa_bendahara.sql`
+- Lonceng **siswa** (`notifikasi_siswa`, per penerima) punya garis awal
+  `users.notif_mulai_at`: peristiwa panitia yang tercatat sebelum akun pernah
+  dibuka (mis. pembayaran ditolak saat akun baru dibuat) tidak ditampilkan di
+  portal — dilihat dari kunjungan pertama. Barisnya tetap tersimpan; hanya
+  `notif_siswa_daftar()` / `notif_siswa_belum_dibaca()` yang menyaring.
+  Migrasi: `database/migrations/20261106_notifikasi_baseline.sql`
 
 ### Fase 4 — Verifikasi Bayar + Kirim Akun
 - `pendaftar.tahap` nilai `BAYAR_TERVERIFIKASI` & `AKUN_TERKIRIM`
@@ -317,6 +323,7 @@ Lihat `.env.example`. Variabel: `DB_*`, `FONNTE_TOKEN`, `MIDTRANS_SERVER_KEY`, `
 | — | `database/migrations/20261102_hasil_dibuka.sql` (kolom `pendaftar.hasil_dibuka_at` — gerbang amplop Hasil Seleksi di portal siswa; lihat `docs/UJI-MANUAL.md` bagian T) |
 | — | `database/migrations/20261102_sosmed_sekolah.sql` (kolom `sosmed_instagram`/`sosmed_tiktok`/`sosmed_youtube`/`website_sekolah` — input link di Pengaturan Sistem + ikon footer publik) |
 | — | `database/migrations/20261103_faq_cms.sql` (kolom `faq_list` JSON — pertanyaan section Pusat Bantuan di halaman depan kini disunting dari Pengaturan Sistem, bukan dari `includes/dummy.php`) |
+| — | `database/migrations/20261106_notifikasi_baseline.sql` (kolom `users.notif_mulai_at` — garis awal lonceng portal siswa; peristiwa sebelum masuk pertama tidak ditampilkan, lihat `docs/UJI-MANUAL.md` W19–W23) |
 
 Seed lengkap: `database/db_spmb_mualimku.sql` (gabungan semua fase).
 Dokumentasi uji: `docs/UJI-MANUAL.md`.

@@ -65,6 +65,7 @@ $panduan = [
             'Bila nomor bendahara kosong, kiriman jatuh ke <em>Kontak WhatsApp Panitia</em> di bagian Identitas. Kegagalan kirim dicatat di tabel <code>wa_log</code> dan tidak mengganggu proses utama — hasil percobaan uang masuk terakhir tampil di blok Notifikasi Transaksi beserta alasan dari Fonnte.',
             'Nomor bendahara saja tidak cukup: WA berangkat dari perangkat Fonnte yang ter-connect, jadi token di kartu yang sama harus aktif. Token di <code>.env</code> (FONNTE_TOKEN) lebih utama daripada token yang diketik di halaman ini — bila keduanya beda, nilai dari database diabaikan.',
             'Email (kolom <em>notif_email</em>) hanya titik sambungan — belum dikirim sampai diimplementasikan.',
+            'Lonceng <strong>portal siswa</strong> berbeda: riwayat yang dibuat sebelum akun siswa itu pertama kali dibuka (mis. keputusan pembayaran saat akun baru saja dikirim) tidak ditampilkan — daftar mereka dimulai dari masuk pertama. Barisnya tetap ada di <code>notifikasi_siswa</code> dan papan panitia ini tidak terpotong, jadi kalau orang tua bertanya "kok tidak ada kabar", itu bukan pesan hilang: cukup minta mereka membuka menu <em>Informasi</em>, atau kirim ulang pesannya dari halaman terkait.',
         ],
     ],
     [

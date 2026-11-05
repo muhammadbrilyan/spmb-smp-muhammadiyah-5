@@ -388,6 +388,8 @@ Untuk kondisi awal di mana **belum ada** akun staf yang bisa login (semua
 
 ---
 
+| 50 | **Siswa baru pertama login langsung disambut "pembayaran ditolak" dari uji sebelumnya** (2026-11-06) | Bukan bug pengiriman: akun siswa dibuat bendahara **setelah** rentetan keputusan pembayaran terjadi, sementara `notifikasi_siswa` menyimpan peristiwa itu tanpa peduli akun sudah dipakai atau belum. Sekarang ada garis awal: kolom baru `users.notif_mulai_at` (NULL → ditulis `NOW()` pada kunjungan pertama, sekali saja, `database/migrations/20261106_notifikasi_baseline.sql`) dan helper `notif_siswa_batas($pendaftar_id)` (`includes/queries/notifikasi-siswa.php`, hasil di-`static cache` per request). `notif_siswa_daftar()` **dan** `notif_siswa_belum_dibaca()` menyaring `created_at >= batas` sehingga halaman Informasi, badge sidebar/topbar, dan `app/api/notif-count.php` konsisten: peristiwa sebelum login pertama tidak muncul sama sekali dan badge 0. Barisnya **tidak** dihapus maupun ditandai dibaca — riwayat audit tetap utuh dan keputusan bendahara yang lama masih terlihat di papan operator. Penulisan batas dilakukan di `app/siswa/_bootstrap.php` sebelum `angsuran_kirim_pengingat()` supaya pengingat yang lahir pada kunjungan pertama itu sendiri tidak ikut tersembunyi. Yang sengaja TIDAK disaring: kartu "Informasi Pendaftaran"/kabar di dashboard (dihitung dari status data saat ini, bukan peristiwa) dan Pengumuman Panitia. Konsekuensi yang diterima: riwayat lama tidak bisa lagi dilihat siswa di portal — itu memang permintaan. Uji: `docs/UJI-MANUAL.md` W19–W23 |
+
 ## Sisa Pekerjaan
 
 ### ❌ Tidak berfungsi (3)

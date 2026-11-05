@@ -505,6 +505,16 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_hasil_dibuka
 | W17 | Siswa TIDAK_LULUS membuka amplop | Baris tombol hanya berisi **Info Pendaftaran** → `app/spmb/index.php`; tombol "Jadwal & Kartu Ujian" tidak ada lagi. Teks lain pada kartu (kutip QS. Al-Baqarah: 216, "Hasil dibuka pada …") tidak berubah |
 | W18 | Sidebar siswa tetap | Menu **Jadwal & Kartu Ujian** masih ada di sidebar dan tetap bisa dibuka dari sana — yang dihapus hanya tombol pintasan di halaman hasil (`app/siswa/ppdb.php` tidak diubah; docblock `hasil.php` baris 5 masih menyebut nama lama sebagai catatan historis) |
 
+### W-e. Lonceng portal siswa: riwayat sebelum masuk pertama tidak ditampilkan (2026-11-06)
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| W19 | Buat pendaftar sampai akun siswanya terkirim (kredensial diserahkan bendahara), lalu **jangan** buka portal. Tekan **Tolak** pada pembayarannya dari sisi bendahara | Baris `notifikasi_siswa` tipe `BAYAR_DITOLAK` terbentuk (tabel tetap mencatat untuk audit), tetapi belum ada yang melihatnya di portal |
+| W20 | Login **pertama kali** dengan akun siswa itu → `app/siswa/notifikasi.php` | Halaman terbuka dengan **Bagian Notifikasi kosong** ("Belum ada notifikasi") dan badge "0 belum dibaca" — tidak ada satu pun kartu "Pembayaran Ditolak". Lonceng sidebar/topbar & `app/api/notif-count.php` juga 0 |
+| W21 | `SELECT u.notif_mulai_at FROM users u JOIN pendaftar p ON p.user_id = u.id WHERE p.no_pendaftaran = 'REG-…';` | Kolom terisi satu timestamp (waktu kunjungan pertama) dan **tidak berubah** walau halaman beberapa kali dimuat ulang. Baris `notifikasi_siswa` lama **masih ada** di tabel — tidak dihapus, tidak ditandai dibaca |
+| W22 | Bendahara menolak/menyetujui pembayaran **setelah** siswa itu login pertama, lalu muat ulang Informasi | Notifikasi baru **muncul** sebagai kartu "Baru" dan badge bertambah — jalur notifikasi biasa tidak ikut terpotong |
+| W23 | Siswa LULUS yang pada kunjungan pertamanya sekaligus memancing pengingat angsuran (`app/siswa/_bootstrap.php` → `angsuran_kirim_pengingat()`) | Pengingat yang baru lahir pada kunjungan pertama itu **tetap tampil** (garis awal ditulis sebelum pengirimannya), bukan tersembunyi di belakang batas |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |
