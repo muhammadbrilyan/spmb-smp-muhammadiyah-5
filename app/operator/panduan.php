@@ -93,6 +93,7 @@ $panduan = [
             'Tagihan setelah lulus adalah <strong>sisa</strong> ' . e(label_biaya_pendaftaran()) . ' — Biaya Masuk dikurangi Biaya Formulir yang sudah dibayar saat registrasi. Boleh dibayar lunas atau 2 angsuran: status menjadi ANGSURAN_1 setelah dana pertama menutup setengah sisa, dan LUNAS setelah totalnya menutup seluruh sisa.',
             'Tombol <em>Kirim Pengingat Jatuh Tempo</em> mengirim notifikasi in-app (dan WhatsApp bila diaktifkan di Pengaturan) ke siswa yang angsurannya mendekati/melewati jatuh tempo.',
             'Rekap pembayaran dicetak dari tombol <em>Cetak Rekap Keuangan</em> (siap PDF) atau diunduh sebagai CSV lewat <em>Export CSV</em>.',
+            'Menu <strong>Riwayat Pembayaran</strong> menjawab pertanyaan per calon: sudah bayar apa, berapa, lewat kanal mana, kapan, dan siapa yang memverifikasi. Tabel <em>Daftar Tagihan &amp; Pembayaran</em>-nya memakai fungsi yang sama dengan portal siswa, jadi angkanya tidak mungkin berbeda baca. Halaman ini baca saja — setujui/tolak tetap di Verifikasi Pembayaran.',
         ],
     ],
     [
@@ -145,7 +146,7 @@ $panduan = [
             'Pengaturan otomatis menaikkan tahap BERKAS_TERVERIFIKASI → JADWAL_DITETAPKAN; calon yang sudah bernilai atau sudah diumumkan tidak dipundahkan tahapnya.',
             'Tambah manual: pilih calon siap jadwal yang belum ada di kartu ini — yang sudah ikut kegiatan lain ditandai <em>(sudah: KODE)</em>. Hapus: tahap kembali BERKAS_TERVERIFIKASI hanya bila ia sudah tidak punya jadwal sama sekali.',
             '<em>Kirim WA Jadwal</em> pada satu kartu mengirim pesan sekaligus <strong>notifikasi lonceng portal</strong> untuk wali calon di kartu itu saja; klik ganda pada kartu yang sama dilewati. <em>Umumkan Semua Jadwal</em> memakai pengirim yang sama untuk seluruh kegiatan Terjadwal dalam satu pesan.',
-            'Siswa melihat <em>Kartu Peserta</em> (kegiatan terdekat yang belum lewat) dan tabel <em>Agenda Tes</em> berisi kegiatan miliknya sendiri di portal (cetak via tombol Print).',
+            'Siswa melihat <em>Kartu Peserta</em> dengan nomor peserta dari <strong>kegiatan terdekat yang belum lewat</strong>, plus tabel <em>Agenda Tes</em> yang berisi <strong>seluruh kegiatan berstatus Terjadwal</strong> — sama seperti isi WA "Umumkan Semua Jadwal". Jadi cukup tetapkan status kartunya; tidak perlu menempatkan tiap calon di tiap kartu supaya jadwalnya muncul. Kartu Draft belum terlihat oleh siswa (cetak via tombol Print).',
         ],
     ],
     [

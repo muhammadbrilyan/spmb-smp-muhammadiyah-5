@@ -147,31 +147,6 @@ function jadwal_terjadwal()
 }
 
 /**
- * Kegiatan yang harus dikerjakan SATU calon siswa: hanya jadwal berstatus
- * Terjadwal tempat ia benar-benar ditempatkan. Dua sumber penjadwalan dipakai
- * (peserta_ujian dan seleksi.jadwal_id) supaya calon yang dijadwalkan lewat
- * Input Nilai juga muncul. Kolomnya sama persis dengan jadwal_terjadwal()
- * agar tabel Agenda di portal siswa dan pesan WA memakai bentuk data yang sama.
- */
-function jadwal_agenda_siswa($pendaftar_id)
-{
-    $baris = q_all(
-        "SELECT j.id, j.kode, j.nama_kegiatan, j.tanggal, j.jam_mulai, j.jam_selesai, j.mode, j.lokasi, j.ruangan
-           FROM jadwal_tes j
-          WHERE j.status = 'TERJADWAL'
-            AND (
-                  EXISTS (SELECT 1 FROM peserta_ujian pu
-                           WHERE pu.jadwal_id = j.id AND pu.pendaftar_id = ?)
-               OR EXISTS (SELECT 1 FROM seleksi s
-                           WHERE s.jadwal_id = j.id AND s.pendaftar_id = ?)
-                )
-       ORDER BY j.tanggal, j.jam_mulai, j.kode",
-        [(string) $pendaftar_id, (string) $pendaftar_id]
-    );
-    return $baris ?: [];
-}
-
-/**
  * Penanda kumpulan jadwal saat ini (jadi ref_id notifikasi).
  * Berubah begitu ada jadwal baru/diubah/ditarik, sehingga pengumuman
  * berikutnya dianggap hal baru — sementara klik ganda pada susunan yang

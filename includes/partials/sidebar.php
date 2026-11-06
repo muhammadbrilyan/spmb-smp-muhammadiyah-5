@@ -113,6 +113,8 @@ if ($role === 'siswa') {
                  * verifikasi pembayaran = antrean yang harus diputus. */
                 $menuItem('dashboard', 'dashboard', 'Dashboard Bendahara', url('app/bendahara/index.php')),
                 $menuItem('pembayaran', 'fact_check', 'Verifikasi Pembayaran', url('app/bendahara/pembayaran.php')),
+                /* Riwayat per calon memakai tabel tagihan yang sama dengan portal siswa. */
+                $menuItem('riwayat-bayar', 'receipt_long', 'Riwayat Pembayaran', url('app/bendahara/riwayat.php')),
                 $menuItem('rekap', 'account_balance_wallet', 'Rekap Keuangan', url('app/bendahara/rekap.php')),
                 $menuItem('notifikasi', 'notifications', 'Notifikasi', url('app/operator/notifikasi.php')),
                 $menuItem('panduan', 'support_agent', 'Panduan & SOP', url('app/operator/panduan.php')),

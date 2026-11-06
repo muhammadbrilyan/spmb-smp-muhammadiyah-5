@@ -128,8 +128,8 @@ if ($siswa) {
     $tagihanAktif = tagihan_pendaftaran_aktif($siswa) && $hasilTerbuka;
     $tagihanUangMasuk = $tagihanAktif ? $ringkasAngsuran['total'] : 0;
 
-    $bayarFormulir   = siswa_ringkas_bayar($pembayaran, 'FORMULIR', $tagihanFormulir);
-    $bayarUangMasuk  = siswa_ringkas_bayar($pembayaran, 'UANG_MASUK', $tagihanUangMasuk);
+    $bayarFormulir   = ringkas_bayar_jenis($pembayaran, 'FORMULIR', $tagihanFormulir);
+    $bayarUangMasuk  = ringkas_bayar_jenis($pembayaran, 'UANG_MASUK', $tagihanUangMasuk);
     $totalTerverifikasi = $bayarFormulir['verified'] + $bayarUangMasuk['verified'];
     $kelengkapan = siswa_kelengkapan($siswa, $dokumen);
     $tahap = siswa_tahap($siswa['tahap'] ?? '');
@@ -152,61 +152,11 @@ if ($siswa) {
 
 /* ==================================================================
  * Helper tampilan & ringkasan
+ *
+ * Ringkasan pembayaran per jenis ada di lapisan query: ringkas_bayar_jenis()
+ * di includes/queries/pembayaran.php — supaya bendahara membaca angka yang
+ * sama dengan yang dilihat orang tua.
  * ================================================================== */
-
-/** Ringkas pembayaran per jenis. Hanya status terverifikasi yang dihitung lunas. */
-function siswa_ringkas_bayar(array $pembayaran, $jenis, $tagihan)
-{
-    $tagihan = (float) $tagihan;
-    $out = [
-        'tagihan' => $tagihan,
-        'verified' => 0.0,
-        'pending' => 0.0,
-        'pending_bukti' => 0.0,
-        'rejected' => 0.0,
-        'sisa' => 0.0,
-        'label' => 'Belum Dibayar',
-        'tone' => 'gray',
-        'rows' => [],
-    ];
-    foreach ($pembayaran as $b) {
-        if (($b['jenis_pembayaran'] ?? '') !== $jenis) {
-            continue;
-        }
-        $out['rows'][] = $b;
-        $nominal = (float) ($b['nominal'] ?? 0);
-        $status = (string) ($b['status'] ?? 'PENDING');
-        if (in_array($status, ['VERIFIED', 'LUNAS', 'ANGSURAN_1', 'ANGSURAN_2'], true)) {
-            $out['verified'] += $nominal;
-        } elseif ($status === 'PENDING') {
-            $out['pending'] += $nominal;
-            if (!empty($b['bukti_transfer_url'])) {
-                $out['pending_bukti'] += $nominal;
-            }
-        } elseif ($status === 'REJECTED') {
-            $out['rejected'] += $nominal;
-        }
-    }
-    $out['sisa'] = max(0, $tagihan - $out['verified']);
-
-    if ($tagihan > 0 && $out['verified'] >= $tagihan) {
-        $out['label'] = 'Lunas / Terverifikasi';
-        $out['tone'] = 'green';
-    } elseif ($out['pending_bukti'] > 0) {
-        $out['label'] = 'Menunggu Verifikasi';
-        $out['tone'] = 'amber';
-    } elseif ($out['rejected'] > 0) {
-        $out['label'] = 'Ditolak — Perlu Unggah Ulang';
-        $out['tone'] = 'red';
-    } elseif ($out['verified'] > 0) {
-        $out['label'] = 'Terbayar Sebagian';
-        $out['tone'] = 'blue';
-    } elseif ($out['pending'] > 0) {
-        $out['label'] = 'Belum Dibayar';
-        $out['tone'] = 'gray';
-    }
-    return $out;
-}
 
 /** Indikator kelengkapan data (bukan pengganti verifikasi petugas). */
 function siswa_kelengkapan(array $siswa, array $dokumen)

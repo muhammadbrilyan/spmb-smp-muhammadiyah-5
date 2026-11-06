@@ -390,39 +390,27 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
         <?php
         /* =================== DAFTAR TAGIHAN PER BARIS ===================
-         * Satu baris per kewajiban bayar — nama tagihan, jumlah, status,
-         * tanggal, dan kanal pembayaran — seperti daftar tagihan pada
-         * umumnya. Angkanya tetap dari angsuran_ringkas() dan tabel
-         * pembayaran; tanggal/kanal dari baris yang sudah dilunasi. */
+         * Satu baris per kewajiban bayar — namanya disusun oleh
+         * daftar_tagihan_baris() di lapisan query, halaman yang sama yang
+         * dipakai riwayat bendahara. Orang tua dan bendahara karenanya
+         * membaca angka, status, tanggal, dan kanal yang identik. */
+        $daftar = daftar_tagihan_baris([
+            'pendaftar_id'        => $siswa['id'],
+            'rows'               => $pembayaran,
+            'tagihan_formulir'   => $tagihanFormulir,
+            'tagihan_uang_masuk' => $tagihanUangMasuk,
+            'terbuka'            => $pendaftaranTerbuka,
+            'menunggu_hasil'     => $tagihanMenungguHasil,
+            'ringkas'            => $ringkasAngsuran,
+        ]);
+        $barisTagihan = $daftar['rows'];
+        $totalDaftar  = $daftar['total'];
+        $sisaDaftar   = $daftar['sisa'];
+        $belumLunas   = $daftar['belum_lunas'];
         $tampilUangMasuk = $pendaftaranTerbuka
             || (float) $bayarUangMasuk['verified'] > 0
             || (float) $bayarUangMasuk['pending'] > 0;
 
-        $terbilangLunas = static function (array $b) {
-            return in_array((string) ($b['status'] ?? ''), ['VERIFIED', 'LUNAS', 'ANGSURAN_1', 'ANGSURAN_2'], true);
-        };
-        $kanalBayar = static function ($b) {
-            if (!is_array($b)) {
-                return '';
-            }
-            $kanal = trim((string) ($b['payment_method'] ?? ''));
-            if ($kanal !== '') {
-                return strtoupper($kanal);
-            }
-            $dariMetode = ['GATEWAY' => 'Online', 'TRANSFER' => 'Transfer Manual', 'QRIS' => 'QRIS'][(string) ($b['metode'] ?? '')] ?? '';
-            if ($dariMetode !== '') {
-                return $dariMetode;
-            }
-            /* Baris lama hasil unggah bukti tidak selalu mengisi kolom metode. */
-            return trim((string) ($b['bukti_transfer_url'] ?? '')) !== '' ? 'Transfer Manual' : '';
-        };
-        $tanggalBayar = static function ($b) {
-            if (!is_array($b)) {
-                return '';
-            }
-            $t = (string) (($b['verified_at'] ?? '') ?: ($b['paid_at'] ?? '') ?: ($b['created_at'] ?? ''));
-            return $t !== '' ? bulan($t) : '';
-        };
         $warnaStatus = [
             'green' => 'text-[#0E9F6E]',
             'amber' => 'text-[#B45309]',
@@ -430,137 +418,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             'blue'  => 'text-primary',
             'gray'  => 'text-ink-400',
         ];
-
-        /* Baris yang sudah lunas, dipetakan per angsuran; baris lama tanpa
-         * angsuran_ke dipakai lebih dulu untuk angsuran yang tercatat lunas. */
-        $lunasFormulir = array_values(array_filter($bayarFormulir['rows'], $terbilangLunas));
-        $lunasKe = [];
-        $lunasTanpaKe = [];
-        foreach (array_filter($bayarUangMasuk['rows'], $terbilangLunas) as $b) {
-            if (!empty($b['angsuran_ke'])) {
-                $lunasKe[(int) $b['angsuran_ke']][] = $b;
-            } else {
-                $lunasTanpaKe[] = $b;
-            }
-        }
-        $barisTerakhir = static function (array $rows) {
-            return $rows ? $rows[count($rows) - 1] : null;
-        };
-
-        $barisTagihan = [];
-
-        if ($tagihanFormulir > 0) {
-            if ($bayarFormulir['sisa'] <= 0) {
-                $s = ['LUNAS', 'green', 'check_circle'];
-                $bayarRow = $barisTerakhir($lunasFormulir);
-            } elseif ($bayarFormulir['pending_bukti'] > 0) {
-                $s = ['MENUNGGU VERIFIKASI', 'amber', 'hourglass_top'];
-                $bayarRow = null;
-            } elseif ($bayarFormulir['rejected'] > 0 && $bayarFormulir['verified'] <= 0) {
-                $s = ['DITOLAK', 'red', 'error'];
-                $bayarRow = null;
-            } elseif ($bayarFormulir['verified'] > 0) {
-                $s = ['TERBAYAR SEBAGIAN', 'blue', 'paid'];
-                $bayarRow = $barisTerakhir($lunasFormulir);
-            } else {
-                $s = ['BELUM LUNAS', 'red', 'schedule'];
-                $bayarRow = null;
-            }
-            $barisTagihan[] = [
-                'nama'    => 'Biaya Formulir',
-                'ket'     => 'Dibayar sekali di awal pendaftaran',
-                'jumlah'  => (float) $tagihanFormulir,
-                'status'  => $s[0], 'tone' => $s[1], 'ikon' => $s[2],
-                'tanggal' => $tanggalBayar($bayarRow),
-                'kanal'   => $kanalBayar($bayarRow),
-            ];
-        }
-
-        if ($tagihanMenungguHasil) {
-            $barisTagihan[] = [
-                'nama'    => label_biaya_pendaftaran(),
-                'ket'     => 'Terkunci sampai hasil seleksi dibuka',
-                'jumlah'  => null,
-                'status'  => 'TERKUNCI', 'tone' => 'gray', 'ikon' => 'lock',
-                'tanggal' => '', 'kanal' => '',
-            ];
-        } elseif ($tampilUangMasuk && $skemaAngsuran['aktif'] && (float) $ringkasAngsuran['total'] > 0) {
-            foreach ((array) $ringkasAngsuran['angsuran'] as $a) {
-                $ke = (int) $a['ke'];
-                $terlambat = in_array($a['status'], ['BELUM', 'SEBAGIAN'], true)
-                    && !empty($a['jatuh_tempo']) && $a['jatuh_tempo'] < date('Y-m-d');
-                if ($a['status'] === 'LUNAS') {
-                    $s = ['LUNAS', 'green', 'check_circle'];
-                    $bayarRow = $lunasKe[$ke][0] ?? (count($lunasTanpaKe) ? array_shift($lunasTanpaKe) : null);
-                } elseif ($a['status'] === 'MENUNGGU') {
-                    $s = ['MENUNGGU VERIFIKASI', 'amber', 'hourglass_top'];
-                    $bayarRow = null;
-                } elseif ($a['status'] === 'SEBAGIAN') {
-                    $s = ['TERBAYAR SEBAGIAN', 'blue', 'paid'];
-                    $bayarRow = $lunasKe[$ke][0] ?? (count($lunasTanpaKe) ? array_shift($lunasTanpaKe) : null);
-                } else {
-                    $s = ['BELUM LUNAS', 'red', 'schedule'];
-                    $bayarRow = null;
-                }
-                if ($terlambat) {
-                    $s = ['LEWAT JATUH TEMPO', 'red', 'event_busy'];
-                }
-                $ket = !empty($a['jatuh_tempo'])
-                    ? 'Jatuh tempo ' . bulan($a['jatuh_tempo'])
-                    : 'Dibayar setelah biaya masuk dibuka';
-                if ($a['status'] === 'SEBAGIAN') {
-                    $ket .= ' · sisa ' . rupiah((float) $a['sisa']);
-                }
-                $barisTagihan[] = [
-                    'nama'    => 'Angsuran ke-' . $ke . ' — ' . label_biaya_pendaftaran(),
-                    'ket'     => $ket,
-                    'jumlah'  => (float) $a['nominal'],
-                    'status'  => $s[0], 'tone' => $s[1], 'ikon' => $s[2],
-                    'tanggal' => $tanggalBayar($bayarRow),
-                    'kanal'   => $kanalBayar($bayarRow),
-                ];
-            }
-        } elseif ($tampilUangMasuk && (float) $bayarUangMasuk['tagihan'] > 0) {
-            if ($bayarUangMasuk['sisa'] <= 0) {
-                $s = ['LUNAS', 'green', 'check_circle'];
-                $bayarRow = $barisTerakhir($lunasTanpaKe);
-            } elseif ($bayarUangMasuk['pending_bukti'] > 0) {
-                $s = ['MENUNGGU VERIFIKASI', 'amber', 'hourglass_top'];
-                $bayarRow = null;
-            } elseif ($bayarUangMasuk['verified'] > 0) {
-                $s = ['TERBAYAR SEBAGIAN', 'blue', 'paid'];
-                $bayarRow = $barisTerakhir($lunasTanpaKe);
-            } else {
-                $s = ['BELUM LUNAS', 'red', 'schedule'];
-                $bayarRow = null;
-            }
-            $barisTagihan[] = [
-                'nama'    => label_biaya_pendaftaran(),
-                'ket'     => 'Sisa biaya masuk setelah dikurangi Biaya Formulir',
-                'jumlah'  => (float) $bayarUangMasuk['tagihan'],
-                'status'  => $s[0], 'tone' => $s[1], 'ikon' => $s[2],
-                'tanggal' => $tanggalBayar($bayarRow),
-                'kanal'   => $kanalBayar($bayarRow),
-            ];
-        }
-
-        $totalDaftar = 0.0;
-        foreach ($barisTagihan as $bt) {
-            if ($bt['jumlah'] !== null) {
-                $totalDaftar += $bt['jumlah'];
-            }
-        }
-        $sisaDaftar = $totalSisa;
-        /* Baris yang masih terbuka (bukan lunas dan bukan baris terkunci) —
-         * penjaga agar keterangan total tidak menyebut "sudah lunas" ketika
-         * masih ada baris berstatus belum lunas. */
-        $belumLunas = 0;
-        foreach ($barisTagihan as $bt) {
-            if (!in_array($bt['status'], ['LUNAS', 'TERKUNCI'], true)) {
-                $belumLunas++;
-            }
-        }
         ?>
+
         <?php if ($barisTagihan): ?>
         <section class="mt-4 card overflow-hidden">
           <div class="px-5 sm:px-6 py-4 border-b border-line flex flex-wrap items-start justify-between gap-2">

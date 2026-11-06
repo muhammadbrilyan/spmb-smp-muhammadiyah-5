@@ -188,6 +188,10 @@ $flash = flash();
                 <td class="td">
                   <div class="font-semibold text-ink-900"><?= e($p['nama']) ?></div>
                   <div class="text-[12px] text-ink-500"><?= e($p['sekolah']) ?> · WA <?= e($p['wa']) ?></div>
+                  <a href="<?= url('app/bendahara/riwayat.php?p=' . rawurlencode((string) $p['pendaftar_id'])) ?>"
+                     class="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:underline">
+                    <?= icon('history', 'text-[15px]') ?> Riwayat Pembayaran
+                  </a>
                 </td>
 
                 <td class="td">

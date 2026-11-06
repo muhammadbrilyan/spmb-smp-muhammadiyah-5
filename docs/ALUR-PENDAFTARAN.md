@@ -81,7 +81,12 @@ flowchart TD
 - Idempoten: `verifikasi_kirim_akun()` — klik ulang tidak dobel
 - Pemicu: `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_LUNAS`
 - Halaman: `app/bendahara/pembayaran.php` (antrean setujui/tolak, saringan `?s=`)
-  dan `app/bendahara/index.php` (dashboard angka) — dahulu keduanya disatukan di `index.php`
+  dan `app/bendahara/index.php` (dashboard angka) — dahulu keduanya disatukan di `index.php`.
+  Sejak 2026-11-06 ada `app/bendahara/riwayat.php` (menu **Riwayat Pembayaran**, baca saja):
+  rincian tagihan + seluruh transaksi satu calon, termasuk siapa yang memverifikasi. Tabel
+  tagihannya memakai `daftar_tagihan_baris()` — fungsi yang sama dengan portal siswa — sehingga
+  wali dan bendahara tidak mungkin membaca angka berbeda; bedanya, bendahara tidak terkena
+  gerbang "terkunci sampai hasil dibuka" karena setoran harus tetap bisa dicocokkan
 
 ### Fase 5 — Berkas Dinamis
 - `jenis_dokumen` (nama, kode, wajib, format, maks_kb, is_aktif; seed 6 jenis)
@@ -106,12 +111,15 @@ flowchart TD
 - `peserta_kartu_siswa()` — Kartu Peserta + CSS print di portal siswa; pilihannya
   **kegiatan terdekat yang belum lewat** (bila semua sudah lewat, yang paling akhir),
   bukan lagi satu-satunya baris yang ada
-- Blok detail pada kartu peserta kini berupa **tabel Agenda Tes**
-  (`jadwal_agenda_siswa()` — sumber yang sama dengan tombol "Kirim WA Jadwal" per
-  kartu): hanya kegiatan yang memang ditugaskan ke siswa itu, kolom Tanggal ·
-  Kegiatan · Waktu · Lokasi/Ruangan, ikut tercetak oleh `cetakKartu()`. Bila siswa
-  belum ditempatkan di kartu mana pun, Agenda jatuh ke `jadwal_terjadwal()`
-  (seluruh jadwal sekolah) sebagai pengumuman umum, lalu ke kartu ujian saja.
+- Blok detail pada kartu peserta kini berupa **tabel Agenda Tes** yang berisi
+  **seluruh kartu kegiatan berstatus Terjadwal** (`jadwal_terjadwal()`) — sama
+  seperti isi WA *Umumkan Semua Jadwal* — jadi jadwal baru langsung terlihat di
+  kartu tanpa menunggu calon ditempatkan pada tiap kartu; kartu Draft tidak
+  pernah tampil. Kolom Tanggal · Kegiatan · Waktu · Lokasi/Ruangan, ikut
+  tercetak oleh `cetakKartu()`. Bila belum ada satu pun kartu Terjadwal, Agenda
+  jatuh ke kartu ujian calon itu saja. (Sejak 2026-11-06; sebelumnya Agenda
+  disaring per penempatan calon lewat `jadwal_agenda_siswa()` — fungsi itu sudah
+  dihapus karena membuat kegiatan yang sudah diumumkan panitia tidak muncul.)
 - Halaman: `app/operator/jadwal.php` — sejak 2026-11-02 jadwal dan peserta berada
   di satu halaman/menu **Jadwal Ujian**; bagian peserta ada di bawah daftar jadwal
   (`#peserta`). `app/operator/peserta-ujian.php` hanya pengalih 302
