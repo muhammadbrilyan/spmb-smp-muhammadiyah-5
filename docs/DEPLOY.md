@@ -32,12 +32,16 @@ Tanpa Composer/npm — Tailwind sudah di-build statis.
 3. Verifikasi: tabel `pengaturan_sekolah`, `pendaftar`, `users`, dst. muncul.
 4. Migrasi tambahan per fase (idempoten, aman dijalankan ulang): buka tiap
    file di `database/migrations/` secara berurutan (nama file = urut waktu)
-   di phpMyAdmin → tab SQL → Run.
+   di phpMyAdmin → tab SQL → Run. **Ganti dulu baris `USE db_spmb_mualimku;`
+   di kepala file dengan nama database hosting** (`USERNAME_spmb`) atau hapus
+   baris itu dan pastikan database-nya sedang dipilih di panel kiri — kalau
+   tidak, MySQL menjawab `Unknown database` dan migrasi tidak berjalan sama
+   sekali.
 5. **Jalankan langkah 4 setiap kali menarik kode baru.** Kolom yang tertinggal
    membuat halaman gagal menyimpan secara menyeluruh, bukan sebagian — satu
    `UPDATE` 49 kolom dibatalkan MySQL (`1054 Unknown column`) sehingga seluruh
    perubahan operator hangus. Dengan akses CLI, `php tools/cek-proyek.php`
-   pemeriksaan 5 membandingkan semua kolom seed terhadap database (251 kolom)
+   pemeriksaan 5 membandingkan semua kolom seed terhadap database (262 kolom)
    dan menyebut nama kolom yang belum ada.
    **Perhatian:** pemeriksaan 5 hanya membaca **kolom**, bukan indeks.
    `20261106_peserta_ujian_multi_jadwal.sql` (satu calon boleh ikut beberapa
