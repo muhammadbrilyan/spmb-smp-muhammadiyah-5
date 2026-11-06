@@ -163,46 +163,41 @@ function pengumuman_batalkan_jadwal()
 
 /**
  * Pesan WA pengumuman untuk satu pendaftar.
+ *
+ * Satu kalimat yang sama untuk SEMUA penerima (lulus maupun tidak): WhatsApp
+ * hanya mengabar bahwa hasil sudah rilis + tautannya, sementara isi hasilnya
+ * dibaca lewat lonceng/akun portal siswa. Dengan begitu nomor wali yang
+ * tersalah catat tidak pernah membuka aib anak orang lain, dan keluarga yang
+ * membaca layar ponsel wali tidak ikut tahu sebelum amplopnya dibuka.
+ * Kalimatnya disunting di Pengaturan Sistem → Teks Pesan WhatsApp
+ * (kunci `hasil_seleksi`).
+ *
  * @return string
  */
 function pengumuman_pesan_wa($pendaftarId)
 {
-    $p = q_all(
-        "SELECT p.no_pendaftaran, p.nama_siswa, p.status_seleksi, o.nama_orang_tua, o.no_whatsapp
+    $baris = q_all(
+        "SELECT p.no_pendaftaran, p.nama_siswa,
+                (SELECT CONCAT(k.kode, ' — ', k.nama_kelas)
+                   FROM penempatan_kelas pk JOIN kelas k ON k.id = pk.kelas_id
+                  WHERE pk.pendaftar_id = p.id LIMIT 1) AS kelas
            FROM pendaftar p
            JOIN orang_tua o ON o.pendaftar_id = p.id
           WHERE p.id = ? LIMIT 1",
         [$pendaftarId]
     );
-    $baris = $p ? ($p[0] ?? null) : null;
+    $baris = $baris ? ($baris[0] ?? null) : null;
     if (!$baris) {
         return '';
     }
-    $nama = $baris['nama_siswa'] ?: $baris['no_pendaftaran'];
-    $sekolah = q_col('SELECT nama_sekolah FROM pengaturan_sekolah WHERE id = 1') ?: 'Sekolah';
-    /* Tautan hasil seleksi di portal siswa — orang tua/wali membuka ini dengan
-     * akun siswa (login diperlukan, jadi hasil tidak tersebar ke nomor lain). */
-    $tautanHasil = url_abs('app/siswa/hasil.php');
-    $ajakCek = "Silakan buka hasil seleksi lengkap pada tautan berikut "
-        . "(login memakai akun portal siswa):\n{$tautanHasil}";
-    if ($baris['status_seleksi'] === 'LULUS') {
-        $pen = q_all(
-            'SELECT k.kode, k.nama_kelas FROM penempatan_kelas pk JOIN kelas k ON k.id = pk.kelas_id WHERE pk.pendaftar_id = ? LIMIT 1',
-            [$pendaftarId]
-        );
-        $kelasTxt = ($pen && $pen[0]) ? (' Kelas ' . $pen[0]['kode'] . ' — ' . $pen[0]['nama_kelas'] . '.') : '';
-        return "Assalamualaikum.\n\n"
-            . "Alhamdulillah, {$nama} ({$baris['no_pendaftaran']}) *LULUS* seleksi SPMB {$sekolah}."
-            . $kelasTxt . "\n\n"
-            . $ajakCek . "\n\n"
-            . "Silakan lanjutkan proses daftar ulang sesuai jadwal panitia. Info: " . url_abs('app/spmb/cek-status.php') . "\n\n"
-            . "Panitia SPMB";
-    }
-    return "Assalamualaikum.\n\n"
-        . "Bersama ini kami sampaikan hasil seleksi SPMB {$sekolah} atas nama {$nama} ({$baris['no_pendaftaran']}).\n\n"
-        . $ajakCek . "\n\n"
-        . "Terima kasih atas partisipasi dan kepercayaan Bapak/Ibu. Semoga sukses selalu.\n\n"
-        . "Panitia SPMB";
+    return wa_teks_isi('hasil_seleksi', [
+        'sekolah'        => (string) (q_col('SELECT nama_sekolah FROM pengaturan_sekolah WHERE id = 1') ?: 'Sekolah'),
+        'tautan_hasil'   => url_abs('app/siswa/hasil.php'),
+        'tautan_cek'     => url_abs('app/spmb/cek-status.php'),
+        'nama'           => (string) $baris['nama_siswa'],
+        'no_pendaftaran' => (string) $baris['no_pendaftaran'],
+        'kelas'          => (string) ($baris['kelas'] ?? ''),
+    ]);
 }
 
 /**

@@ -351,29 +351,31 @@ function angsuran_pengingat_kandidat(array $ringkas)
     return $kandidat;
 }
 
-/** Pesan WhatsApp pengingat jatuh tempo untuk orang tua/wali. */
+/**
+ * Pesan WhatsApp pengingat jatuh tempo untuk orang tua/wali. Kalimatnya
+ * disunting di Pengaturan Sistem (kunci `pengingat_biaya`); blok transfer
+ * dan baris bantuan panitia dikosongkan bila metodenya/nonaktif sehingga
+ * barisnya ikut hilang dari pesan.
+ */
 function angsuran_pesan_wa(array $siswa, array $kandidat)
 {
     $P = $GLOBALS['PENGATURAN'];
-    $teks = "Assalamu'alaikum.\n\n"
-        . 'Pengingat pembayaran ' . label_biaya_pendaftaran() . ' '
-        . ($P['nama_sekolah'] ?? APP_NAME) . ".\n\n"
-        . 'Nama : ' . ($siswa['nama_siswa'] ?? '-') . "\n"
-        . 'No. Pendaftaran : ' . ($siswa['no_pendaftaran'] ?? '-') . "\n\n"
-        . $kandidat['pesan'] . "\n";
-    if (!empty($P['bayar_transfer_aktif'])) {
-        $teks .= "\nTransfer ke:\n"
-            . '   ' . ($P['nama_bank'] ?? '') . "\n"
-            . '   No. Rek : ' . ($P['no_rekening'] ?? '') . "\n"
-            . '   a.n. ' . ($P['atas_nama_rekening'] ?? '') . "\n";
-    }
-    $teks .= "\nRincian & pembayaran: " . url_abs('app/siswa/keuangan.php') . "\n";
     $kontak = trim((string) ($P['kontak_wa_panitia'] ?? ''));
-    if ($kontak !== '') {
-        $teks .= 'Bantuan panitia: ' . $kontak . "\n";
-    }
-    $teks .= "\nSalam,\nPanitia SPMB " . ($P['nama_sekolah'] ?? APP_SHORT);
-    return $teks;
+    $transfer = !empty($P['bayar_transfer_aktif'])
+        ? "Transfer ke:\n   " . ($P['nama_bank'] ?? '') . "\n   No. Rek : " . ($P['no_rekening'] ?? '')
+          . "\n   a.n. " . ($P['atas_nama_rekening'] ?? '')
+        : '';
+
+    return wa_teks_isi('pengingat_biaya', [
+        'sekolah'        => ($P['nama_sekolah'] ?? APP_NAME),
+        'nama'           => ($siswa['nama_siswa'] ?? '-'),
+        'no_pendaftaran' => ($siswa['no_pendaftaran'] ?? '-'),
+        'nama_biaya'     => label_biaya_pendaftaran(),
+        'rincian'        => (string) ($kandidat['pesan'] ?? ''),
+        'transfer'       => $transfer,
+        'tautan'         => url_abs('app/siswa/keuangan.php'),
+        'bantuan'        => $kontak !== '' ? 'Bantuan panitia: ' . $kontak : '',
+    ]);
 }
 
 /**
@@ -1259,16 +1261,16 @@ function verifikasi_bayar_tolak($pembayaranId, $alasan, $verifierId = null)
         $namaBiaya = $baris['jenis_pembayaran'] === 'UANG_MASUK'
             ? label_biaya_pendaftaran() . (($baris['jenis_pembayaran'] === 'UANG_MASUK' && !empty($baris['angsuran_ke'])) ? ' angsuran ' . (int) $baris['angsuran_ke'] : '')
             : 'biaya formulir';
-        $waPesan = "Assalamu'alaikum.\n\n"
-            . "Mohon maaf, pembayaran {$namaBiaya} SPMB atas nama:\n"
-            . "Nama : {$baris['nama_siswa']}\n"
-            . "No. Pendaftaran : {$baris['no_pendaftaran']}\n"
-            . "Nominal : " . rupiah($baris['nominal']) . "\n\n"
-            . "BELUM DAPAT kami setujui.\n"
-            . "Alasan : {$alasan}\n\n"
-            . "{$petunjuk}\n"
-            . "{$tautan}\n\n"
-            . "Terima kasih.\nPanitia SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5');
+        $waPesan = wa_teks_isi('bukti_ditolak', [
+            'sekolah'        => ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5'),
+            'nama'           => $baris['nama_siswa'],
+            'no_pendaftaran' => $baris['no_pendaftaran'],
+            'nama_biaya'     => $namaBiaya,
+            'nominal'        => rupiah($baris['nominal']),
+            'alasan'         => $alasan,
+            'petunjuk'       => $petunjuk,
+            'tautan'         => $tautan,
+        ]);
         $r = wa_kirim($baris['no_whatsapp'], $waPesan);
         wa_log_catat($baris['no_whatsapp'], 'PENOLAKAN_BAYAR', $r);
         $waOk = !empty($r['ok']);

@@ -65,6 +65,8 @@ function notif_sasaran($tipe)
             return ['tautan' => url('app/operator/verifikasi.php?tab=berkas'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
         case 'VERIFIKASI_DATA':
             return ['tautan' => url('app/operator/verifikasi.php?tab=data'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
+        case 'PENDAFTAR_BARU':
+            return ['tautan' => url('app/operator/pendaftar.php'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
         case 'KOREKSI_DATA':
             /* Tipe lama: antrean koreksi sudah ditutup, notifikasinya tetap
                bisa dibuka lewat antrean verifikasi data. */

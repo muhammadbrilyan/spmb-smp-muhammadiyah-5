@@ -14,6 +14,9 @@
  *   - FAQ Landing         → daftar pertanyaan section Pusat Bantuan
  *                            (kolom JSON pengaturan_sekolah.faq_list)
  *   - WhatsApp Fonnte     → token API untuk kirim WA otomatis
+ *   - Teks Pesan WA       → kalimat yang dikirim ke wali calon murid
+ *                            (kolom JSON pengaturan_sekolah.wa_teks;
+ *                             katalog teks & placeholder: includes/queries/wa-teks.php)
  *   - Pengaturan Lainnya  → estimasi, deskripsi gelombang
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
@@ -290,6 +293,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
     $f['faq_list'] = faq_json($faqBaru);
 
+    /* Teks pesan WhatsApp: wa_teks[kunci] — satu textarea per jenis pesan.
+     * Kosong = pakai kalimat bawaan aplikasi, jadi upgrade berikutnya tetap
+     * membawa kalimat terbaru selama operator tidak menyentuh field-nya.
+     * Teks yang persis sama dengan bawaan juga tidak disimpan (lihat
+     * wa_teks_json) supaya kolom hanya berisi hasil suntingan sungguhan. */
+    $waTeksInput = [];
+    foreach (array_keys(wa_teks_katalog()) as $kunciTeks) {
+        $waTeksInput[$kunciTeks] = str_replace(
+            ["\r\n", "\r"],
+            "\n",
+            trim((string) ($_POST['wa_teks'][$kunciTeks] ?? ''))
+        );
+    }
+    foreach (wa_teks_galat($waTeksInput) as $g) {
+        $galat[] = $g;
+    }
+    $f['wa_teks'] = wa_teks_json($waTeksInput);
+
     /* Metode pembayaran: checkbox bayar_*_aktif — wajib minimal 1 aktif. */
     $f['bayar_gateway_aktif']  = empty($_POST['bayar_gateway_aktif'])  ? 0 : 1;
     $f['bayar_transfer_aktif'] = empty($_POST['bayar_transfer_aktif']) ? 0 : 1;
@@ -310,8 +331,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     /* QRIS merchant (opsional, hanya label tampilan). */
     $f['qris_merchant'] = trim((string) ($_POST['qris_merchant'] ?? ''));
 
-    /* Notifikasi WhatsApp transaksi — hanya nomor bendahara yang dipakai
-     * (akun Fonnte gratis mendaftarkan satu nomor). Kolom lama
+    /* Notifikasi WhatsApp panitia — satu daftar tujuan (`notif_wa_bendahara`)
+     * dipakai bersama untuk kabar uang masuk dan kabar operasional. Kolom lama
      * `notif_wa_operator` tidak dibaca/ditulis lagi sejak 2026-11-03. */
     $f['notif_wa_aktif']     = empty($_POST['notif_wa_aktif']) ? 0 : 1;
     $f['notif_wa_bendahara'] = trim((string) ($_POST['notif_wa_bendahara'] ?? ''));
@@ -326,10 +347,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     };
     if ($f['notif_wa_aktif']) {
         if ($f['notif_wa_bendahara'] === '' && $f['kontak_wa_panitia'] === '') {
-            $galat[] = 'Pengiriman WhatsApp aktif tetapi tidak ada nomor tujuan — isi Nomor WA Bendahara atau Kontak WhatsApp Panitia di bagian Identitas.';
+            $galat[] = 'Pengiriman WhatsApp aktif tetapi tidak ada nomor tujuan — isi Nomor WA Panitia & Bendahara atau Kontak WhatsApp Panitia di bagian Identitas.';
         }
         if ($f['notif_wa_bendahara'] !== '' && !$nomorWaValid($f['notif_wa_bendahara'])) {
-            $galat[] = 'Format nomor WhatsApp bendahara tidak valid. Pisahkan beberapa nomor dengan koma.';
+            $galat[] = 'Format nomor WhatsApp panitia tidak valid. Pisahkan beberapa nomor dengan koma.';
         }
     }
 
@@ -677,6 +698,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     deskripsi_gelombang = ?, logo_url = ?, hero_banner_url = ?, login_banner_url = ?,
                     jalur_aktif = ?,
                     faq_list = ?,
+                    wa_teks = ?,
                     fonnte_token = ?,
                     midtrans_server_key = ?, midtrans_client_key = ?, midtrans_sandbox = ?,
                     bayar_gateway_aktif = ?, bayar_transfer_aktif = ?, bayar_qris_aktif = ?,
@@ -726,6 +748,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $loginBannerAkhir,
                 $f['jalur_aktif'],
                 $f['faq_list'] ?? null,
+                $f['wa_teks'] ?? null,
                 $f['fonnte_token'] !== '' ? $f['fonnte_token'] : null,
                 $f['midtrans_server_key'] !== '' ? $f['midtrans_server_key'] : null,
                 $f['midtrans_client_key'] !== '' ? $f['midtrans_client_key'] : null,
@@ -1436,14 +1459,15 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
 
         <?php
-        /* Percobaan kirim uang masuk terakhir (wa_log). Kegagalan kirim sengaja tidak
-         * mengganggu unggahan bukti bayar, jadi tanpa baris ini operator baru sadar
-         * notifikasi tidak pernah sampai ketika nomor bendahara tidak berdenting. */
+        /* Percobaan kirim terakhir (wa_log). Kegagalan kirim sengaja tidak
+         * mengganggu proses utama, jadi tanpa baris ini operator baru sadar
+         * notifikasi tidak pernah sampai ketika ponsel panitia tidak berdenting. */
         $waTerakhir = null;
         try {
             $rWa = q_all(
                 "SELECT tujuan, tipe, status, respons, created_at FROM wa_log
-                  WHERE tipe IN ('BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS')
+                  WHERE tipe IN ('BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS',
+                                 'PENDAFTAR_BARU', 'VERIFIKASI_DATA', 'BERKAS_DISUBMIT')
                   ORDER BY id DESC LIMIT 1"
             );
             if (is_array($rWa) && $rWa !== []) {
@@ -1454,25 +1478,26 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         }
         ?>
         <div class="mt-4 rounded-xl border border-line p-4">
-          <p class="text-[12px] font-semibold uppercase tracking-wider text-ink-400">Notifikasi Transaksi</p>
+          <p class="text-[12px] font-semibold uppercase tracking-wider text-ink-400">Notifikasi WhatsApp Panitia</p>
           <label class="mt-2 flex items-start gap-3 rounded-xl border border-line p-3 hover:bg-canvas cursor-pointer">
             <input type="checkbox" name="notif_wa_aktif" value="1" class="mt-1 w-4 h-4 accent-primary" <?= $f['notif_wa_aktif'] ? 'checked' : '' ?>>
             <span>
-              <span class="text-sm font-semibold text-ink-900">Kirim notifikasi uang masuk via WhatsApp</span>
+              <span class="text-sm font-semibold text-ink-900">Kirim notifikasi panitia via WhatsApp</span>
               <span class="block text-[13px] text-ink-500">
-                Pemicunya hanya bukti transfer/QRIS yang diunggah dan pembayaran gateway yang terverifikasi.
-                Berkas dikirim &amp; data diajukan verifikasi tetap masuk ke menu
+                Yang berbunyi: bukti transfer/QRIS masuk, pembayaran gateway terverifikasi/lunas,
+                ada calon siswa baru mendaftar, data diajukan (termasuk kirim ulang yang tadi ditolak),
+                dan berkas dikirim. Pemicu lain tetap masuk ke menu
                 <a href="<?= url('app/operator/notifikasi.php') ?>" class="text-primary underline">Notifikasi</a>
-                tanpa dikirim ke WhatsApp — akun Fonnte gratis mendaftarkan satu nomor saja.
-                Kegagalan kirim tidak mengganggu proses utama dan tercatat di tabel <code class="text-[12px]">wa_log</code>.
+                tanpa dikirim ke WhatsApp. Kabar operasional dibatasi 3 pesan/jam per pendaftar supaya
+                kuota Fonnte tidak jebol oleh klik berulang.
               </span>
             </span>
           </label>
           <div class="mt-3">
-            <label class="label" for="notif_wa_bendahara">Nomor WA Bendahara (dipisah koma)</label>
+            <label class="label" for="notif_wa_bendahara">Nomor WA Panitia &amp; Bendahara (dipisah koma)</label>
             <input id="notif_wa_bendahara" name="notif_wa_bendahara" type="text" class="input font-mono"
                    placeholder="08123456789, 08987654321" value="<?= e($f['notif_wa_bendahara']) ?>">
-            <p class="hint">Isian ini hanya <strong>tujuan</strong>, bukan pemicu. Pesan tetap berangkat dari perangkat Fonnte yang terhubung lewat token di atas, jadi nomor ini tidak perlu didaftarkan di Fonnte — tetapi tanpa token yang ter-connect, tidak ada WA yang masuk berapa pun nomor yang diisi di sini. Boleh kosong — fallback ke Kontak WhatsApp Panitia di bagian Identitas &amp; Kontak. Nomor yang sama bisa diganti cepat dari <strong>Petugas &amp; Hak Akses</strong>.</p>
+            <p class="hint">Isian ini hanya <strong>tujuan</strong>, bukan pemicu — satu daftar dipakai bersama untuk kabar uang masuk dan kabar operasional. Pesan tetap berangkat dari perangkat Fonnte yang terhubung lewat token di atas, jadi nomor ini tidak perlu didaftarkan di Fonnte — tetapi tanpa token yang ter-connect, tidak ada WA yang masuk berapa pun nomor yang diisi di sini. Boleh kosong — fallback ke Kontak WhatsApp Panitia di bagian Identitas &amp; Kontak. Nomor yang sama bisa diganti cepat dari <strong>Petugas &amp; Hak Akses</strong>.</p>
           </div>
           <?php if ($waTerakhir !== null): ?>
             <?php
@@ -1493,6 +1518,76 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             </div>
           <?php endif; ?>
         </div>
+      </section>
+
+      <!-- ============ 7b. TEKS PESAN WHATSAPP ============ -->
+      <?php
+      /* Satu textarea per jenis pesan. Nilai yang tampil = override CMS bila
+       * ada, selain itu kalimat bawaan kode (wa_teks_editor) — jadi kotak tidak
+       * pernah kosong dan "hapus suntingan" cukup dengan mengosongkannya.
+       * Setelah POST yang gagal validasi, yang ditampilkan hasil ketikan
+       * barunya, bukan nilai lama di database. */
+      $waKatalog = wa_teks_katalog();
+      $waTampil  = [];
+      foreach ($waKatalog as $waKunci => $waMeta) {
+          $waTampil[$waKunci] = isset($waTeksInput[$waKunci]) ? $waTeksInput[$waKunci] : wa_teks_editor($waKunci);
+      }
+      $waDiubah = wa_teks_ubah($waTampil);
+      ?>
+      <section class="card p-5 sm:p-6">
+        <h2 class="font-bold text-ink-900">Teks Pesan WhatsApp ke Calon Murid</h2>
+        <p class="mt-1 text-[13px] text-ink-500">
+          Semua kalimat yang berangkat otomatis ke wali calon murid bisa diubah dari sini — tanpa menyentuh kode.
+          <strong>Kosongkan</strong> salah satu kolom untuk kembali ke kalimat bawaan aplikasi.
+        </p>
+        <p class="hint mt-2">
+          Tag di dalam kurung kurawal diisi sistem saat pesan dikirim, mis. <code>{nama}</code> menjadi nama siswa.
+          Tag bertanda <strong>wajib</strong> tidak boleh dihapus, dan tag baru yang tidak dikenal ditolak saat menyimpan.
+          Maksimal <?= WA_TEKS_MAX_PANJANG ?> karakter per pesan.
+        </p>
+
+        <div class="mt-5 space-y-4">
+          <?php foreach ($waKatalog as $waKunci => $waMeta): ?>
+            <?php
+            $waNilai    = $waTampil[$waKunci];
+            $waBaris    = max(6, min(16, substr_count($waNilai, "\n") + 3));
+            $waWajib    = $waMeta['wajib'];
+            $waDiubahIni = array_key_exists($waKunci, $waDiubah);
+            ?>
+            <div class="rounded-2xl border border-line p-4" id="wa-<?= e($waKunci) ?>">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="font-semibold text-ink-900 text-sm"><?= e($waMeta['label']) ?></p>
+                <?php if ($waDiubahIni): ?>
+                  <span class="badge badge-amber"><?= dot('amber') ?> Sudah diubah dari bawaan</span>
+                <?php else: ?>
+                  <span class="badge badge-gray"><?= dot('gray') ?> Teks bawaan</span>
+                <?php endif; ?>
+              </div>
+              <p class="mt-1 text-[12px] text-ink-500"><?= e($waMeta['kapan']) ?></p>
+
+              <textarea class="textarea mt-3 font-mono text-[12px]" rows="<?= $waBaris ?>"
+                        maxlength="<?= WA_TEKS_MAX_PANJANG ?>"
+                        name="wa_teks[<?= e($waKunci) ?>]"
+                        placeholder="<?= $waDiubahIni ? 'Kosongkan untuk kembali ke teks bawaan.' : '' ?>"
+                        aria-label="Teks pesan: <?= e($waMeta['label']) ?>"><?= e($waNilai) ?></textarea>
+
+              <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ink-500">
+                <?php foreach ($waMeta['placeholder'] as $waTag => $waKet): ?>
+                  <span>
+                    <code class="<?= in_array($waTag, $waWajib, true) ? 'text-amber-700 font-semibold' : '' ?>"><?= e($waTag) ?></code>
+                    <?= e($waKet) ?><?= in_array($waTag, $waWajib, true) ? ' (wajib)' : '' ?>
+                  </span>
+                <?php endforeach; ?>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+
+        <p class="hint mt-3 mb-0">
+          Perubahan hanya berlaku untuk pesan yang dikirim <strong>setelah</strong> tombol Simpan ditekan.
+          Riwayat pesan yang sudah terkirim tidak berubah, dan hasil LULUS / TIDAK LULUS sengaja tidak ditulis
+          di WhatsApp — rinciannya hanya tampil di lonceng portal siswa setelah login.
+        </p>
       </section>
 
       <!-- 8. Payment Gateway (Midtrans) -->

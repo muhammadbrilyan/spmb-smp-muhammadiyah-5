@@ -335,6 +335,7 @@ CREATE TABLE `pengaturan_sekolah` (
   `deskripsi_sekolah` text DEFAULT NULL,
   `tagline` varchar(255) DEFAULT 'Berakhlak & Berprestasi',
   `faq_list` text DEFAULT NULL,
+  `wa_teks` text DEFAULT NULL,
   `tahun_ajaran` varchar(20) DEFAULT '2027/2028',
   `gelombang` varchar(50) DEFAULT 'Gelombang 1',
   `tanggal_buka_ppdb` date DEFAULT NULL,
@@ -403,8 +404,8 @@ CREATE TABLE `peserta_ujian` (
   `ruangan` varchar(100) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_peserta_pendaftar` (`pendaftar_id`),
   UNIQUE KEY `uq_peserta_nomor` (`nomor_peserta`),
+  UNIQUE KEY `uq_peserta_jadwal` (`pendaftar_id`,`jadwal_id`),
   KEY `idx_peserta_jadwal` (`jadwal_id`),
   CONSTRAINT `peserta_ujian_ibfk_1` FOREIGN KEY (`pendaftar_id`) REFERENCES `pendaftar` (`id`) ON DELETE CASCADE,
   CONSTRAINT `peserta_ujian_ibfk_2` FOREIGN KEY (`jadwal_id`) REFERENCES `jadwal_tes` (`id`) ON DELETE CASCADE

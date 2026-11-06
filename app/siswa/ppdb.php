@@ -42,12 +42,14 @@ if (!empty($jadwalSiswa['tautan_video'])) {
     }
 }
 
-/* Agenda = SELURUH jadwal berstatus Terjadwal, fungsi yang sama dipakai tombol
- * "Umumkan Semua Jadwal" operator — sehingga tabel pada kartu ini dan pesan
- * WhatsApp wali siswa tidak pernah berbeda isi. Bila jadwal siswa sendiri
- * belum berstatus Terjadwal, kartunya tetap ditampilkan sebagai satu baris. */
+/* Agenda = kegiatan yang memang ditugaskan ke siswa ini (sumber datanya sama
+ * dengan tombol "Kirim WA Jadwal" per kartu), sehingga tabel di kartu ini dan
+ * pesan WhatsApp wali siswa tidak pernah berbeda isi. Kalau ia belum
+ * ditempatkan di kartu mana pun, seluruh jadwal sekolah yang ditampilkan
+ * seperti sebelumnya — masih berlaku sebagai pengumuman umum. */
 $labelMetode = ['OFFLINE' => 'Offline', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video Call'];
-$agendaTes   = $siswa ? jadwal_terjadwal() : [];
+$agendaSaya  = $siswa ? jadwal_agenda_siswa($siswa['id']) : [];
+$agendaTes   = $agendaSaya ?: ($siswa ? jadwal_terjadwal() : []);
 $agendaBaris = $agendaTes ?: ($kartuUjian ? [$kartuUjian] : []);
 
 require_once __DIR__ . '/../../includes/partials/head.php';

@@ -59,11 +59,11 @@ $panduan = [
         'judul' => 'Notifikasi Panitia (Fase 3)',
         'role'  => ['operator', 'admin', 'bendahara'],
         'langkah' => [
-            'Setiap pemicu tercatat di menu <strong>Notifikasi</strong> — bukti bayar diunggah, pembayaran gateway terverifikasi/lunas, berkas disubmit, data diajukan verifikasi. Lencana sidebar menampilkan jumlah belum dibaca dan polling tiap 60 detik.',
-            'Yang dikirim lewat WhatsApp hanya kabar uang masuk, ke nomor bendahara — akun Fonnte gratis mendaftarkan satu nomor, jadi pemicu operasional berhenti di dalam aplikasi.',
-            'Pengaturannya ada di <strong>Pengaturan → WhatsApp Gateway (Fonnte) → blok Notifikasi Transaksi</strong>: nomor (pisah koma) dan saklar kirim. Nomor yang sama bisa diganti cepat dari <strong>Petugas &amp; Hak Akses</strong>.',
-            'Bila nomor bendahara kosong, kiriman jatuh ke <em>Kontak WhatsApp Panitia</em> di bagian Identitas. Kegagalan kirim dicatat di tabel <code>wa_log</code> dan tidak mengganggu proses utama — hasil percobaan uang masuk terakhir tampil di blok Notifikasi Transaksi beserta alasan dari Fonnte.',
-            'Nomor bendahara saja tidak cukup: WA berangkat dari perangkat Fonnte yang ter-connect, jadi token di kartu yang sama harus aktif. Token di <code>.env</code> (FONNTE_TOKEN) lebih utama daripada token yang diketik di halaman ini — bila keduanya beda, nilai dari database diabaikan.',
+            'Setiap pemicu tercatat di menu <strong>Notifikasi</strong> — bukti bayar diunggah, pembayaran gateway terverifikasi/lunas, pendaftar baru, berkas disubmit, data diajukan verifikasi. Lencana sidebar menampilkan jumlah belum dibaca dan polling tiap 60 detik.',
+            'Yang berbunyi di WhatsApp panitia: uang masuk (bukti transfer/QRIS &amp; gateway), <strong>calon siswa baru mendaftar</strong>, <strong>data diajukan</strong> — termasuk kirim ulang data yang tadi ditolak — dan <strong>berkas dikirim</strong>. Kabar operasional itu dibatasi 3 pesan/jam per pendaftar supaya klik berulang tidak menjebol kuota Fonnte.',
+            'Pengaturannya ada di <strong>Pengaturan → WhatsApp Gateway (Fonnte) → blok Notifikasi WhatsApp Panitia</strong>: nomor tujuan (pisah koma) dan saklar kirim. Satu daftar nomor dipakai bersama untuk kabar uang masuk dan kabar operasional; bisa diganti cepat dari <strong>Petugas &amp; Hak Akses</strong>.',
+            'Bila nomor panitia kosong, kiriman jatuh ke <em>Kontak WhatsApp Panitia</em> di bagian Identitas. Kegagalan kirim dicatat di tabel <code>wa_log</code> dan tidak mengganggu proses utama — hasil percobaan kirim terakhir tampil di blok yang sama beserta alasan dari Fonnte.',
+            'Nomor tujuan saja tidak cukup: WA berangkat dari perangkat Fonnte yang ter-connect, jadi token di kartu yang sama harus aktif. Token di <code>.env</code> (FONNTE_TOKEN) lebih utama daripada token yang diketik di halaman ini — bila keduanya beda, nilai dari database diabaikan.',
             'Email (kolom <em>notif_email</em>) hanya titik sambungan — belum dikirim sampai diimplementasikan.',
             'Lonceng <strong>portal siswa</strong> berbeda: riwayat yang dibuat sebelum akun siswa itu pertama kali dibuka (mis. keputusan pembayaran saat akun baru saja dikirim) tidak ditampilkan — daftar mereka dimulai dari masuk pertama. Barisnya tetap ada di <code>notifikasi_siswa</code> dan papan panitia ini tidak terpotong, jadi kalau orang tua bertanya "kok tidak ada kabar", itu bukan pesan hilang: cukup minta mereka membuka menu <em>Informasi</em>, atau kirim ulang pesannya dari halaman terkait.',
         ],
@@ -130,7 +130,7 @@ $panduan = [
             'Buka <strong>Input Seleksi</strong> — isi nilai CBT, BTQ, Wawancara per pendaftar.',
             'Nilai akhir dihitung otomatis; ambang kelulusan default 70 (bisa diubah per form).',
             'Pilih keputusan: PROSES (menunggu), LULUS, atau TIDAK_LULUS.',
-            'Klik <em>Hitung Ulang</em> bila ingin sistem menghitung ulang nilai akhir & ambang.',
+            'Ganti ambang atau nilai lalu <em>Simpan</em> — Nilai Akhir dan keputusan langsung terhitung ulang.',
         ],
     ],
     [
@@ -140,10 +140,12 @@ $panduan = [
         'langkah' => [
             'Buka <strong>Jadwal Ujian</strong> — isi Ruangan & Kapasitas per jadwal (kapasitas 0 = tanpa batas).',
             'Bagian <strong>Peserta Ujian</strong> ada di halaman yang sama, di bawah daftar jadwal — klik <em>Atur Peserta Otomatis</em> (urut no_pendaftaran, penuhi kapasitas, transaksi DB).',
-            'Nomor peserta dibuat otomatis (KODE-001 dst) — unik, aman setelah hapus.',
-            'Pengaturan otomatis memindahkan tahap BERKAS_TERVERIFIKASI → JADWAL_DITETAPKAN + WA jadwal.',
-            'Tambah manual: pilih pendaftar BERKAS_TERVERIFIKASI yang belum terjadwal. Hapus: tahap kembali BERKAS_TERVERIFIKASI.',
-            'Siswa melihat <em>Kartu Peserta</em> di portal (cetak via tombol Print).',
+            'Yang dilewati otomatis hanyalah calon yang <strong>sudah ada di kartu itu</strong>. Satu calon bisa ikut beberapa kegiatan, jadi yang absen di Tes Baca & Tulis bisa dijaring ulang pada jadwal susulan tanpa menghapus barisnya lebih dulu.',
+            'Nomor peserta dibuat otomatis (KODE-001 dst) — unik, dan tiap kegiatan punya nomornya sendiri.',
+            'Pengaturan otomatis menaikkan tahap BERKAS_TERVERIFIKASI → JADWAL_DITETAPKAN; calon yang sudah bernilai atau sudah diumumkan tidak dipundahkan tahapnya.',
+            'Tambah manual: pilih calon siap jadwal yang belum ada di kartu ini — yang sudah ikut kegiatan lain ditandai <em>(sudah: KODE)</em>. Hapus: tahap kembali BERKAS_TERVERIFIKASI hanya bila ia sudah tidak punya jadwal sama sekali.',
+            '<em>Kirim WA Jadwal</em> pada satu kartu mengirim pesan sekaligus <strong>notifikasi lonceng portal</strong> untuk wali calon di kartu itu saja; klik ganda pada kartu yang sama dilewati. <em>Umumkan Semua Jadwal</em> memakai pengirim yang sama untuk seluruh kegiatan Terjadwal dalam satu pesan.',
+            'Siswa melihat <em>Kartu Peserta</em> (kegiatan terdekat yang belum lewat) dan tabel <em>Agenda Tes</em> berisi kegiatan miliknya sendiri di portal (cetak via tombol Print).',
         ],
     ],
     [
@@ -192,7 +194,8 @@ $panduan = [
         'langkah' => [
             'Buka <strong>Pengaturan</strong> di menu operator.',
             'Seksi 1–6 mengatur konten landing (ticker, hero, statistik, biaya) — termasuk blok <strong>Tanya Jawab (FAQ) Landing</strong> yang mengisi section Pusat Bantuan di halaman depan.',
-            'Seksi 7 <strong>WhatsApp Gateway</strong>: isi token Fonnte (dari dashboard Fonnte → Settings → Token) dan blok <strong>Notifikasi Transaksi</strong> di bawahnya — nomor bendahara yang terdaftar di Fonnte serta saklar kirim kabar uang masuk.',
+            'Seksi 7 <strong>WhatsApp Gateway</strong>: isi token Fonnte (dari dashboard Fonnte → Settings → Token) dan blok <strong>Notifikasi WhatsApp Panitia</strong> di bawahnya — nomor tujuan yang menerima kabar uang masuk, pendaftar baru, pengajuan data, dan berkas, serta saklar kirim.',
+            'Seksi 7b <strong>Teks Pesan WhatsApp ke Calon Murid</strong>: kalimat tujuh pesan keluar (instruksi bayar, akun &amp; password, jadwal tes, hasil seleksi, pengingat biaya, bukti bayar ditolak, berkas ditolak) bisa diubah di sini — tidak perlu menyunting kode. Biarkan kotak kosong (atau isi persis kalimat bawaannya) untuk tetap memakai kalimat aplikasi; <code>{placeholder}</code> yang bertanda <em>(wajib)</em> harus ada, dan teks maksimal 1.200 karakter. Perubahan hanya berlaku untuk pesan yang dikirim sesudah tombol Simpan.',
             'Tanpa token, fitur generate akun & notifikasi jadwal tetap jalan tapi WA tidak terkirim — kredensial ditampilkan manual di halaman hasil.',
             'Seksi 8 <strong>Payment Gateway (Midtrans)</strong>: opsional — tanpa API key, sistem tetap jalan penuh dengan transfer bank manual / QRIS.',
             'Seksi 9: metode bayar — transfer &amp; QRIS selalu tersedia, gateway online hanya bila dikonfigurasi; plus teks S&amp;K. Seksi 10: Daftar Berkas. Seksi 11: Petugas &amp; Hak Akses (di sana nomor WA bendahara juga bisa diganti cepat).',
@@ -303,7 +306,7 @@ $panduan = [
         <li><strong>Seed SQL mengunci akun staf</strong> (Fase 11): hash <code>'!LOCKED'</code> — tidak bisa login apa pun password lama. Setelah impor database, jalankan <code>php tools/set-password.php &lt;username&gt;</code> untuk operator/bendahara/kepsek (dan <code>siswa</code> bila memakai <code>database/seed_demo.sql</code>) sebelum login pertama. <strong>Hosting tanpa SSH (cPanel):</strong> buat penanda <code>storage/.izinkan-set-password</code> via File Manager, buka <code>/tools/set-password-web.php</code>, selesaikan, lalu hapus penanda + berkas tool (Fase 12).</li>
         <li><strong>Token bayar disimpan ter-hash</strong> (Fase 11): kolom <code>pay_token_hash</code> (SHA-256, UNIQUE); registrasi ulang dengan data sama <strong>merotasi</strong> token sehingga tautan bayar lama mati. Token mentah hanya tampil 3 tempat: halaman sukses registrasi, pesan WA registrasi, dan hasil tombol <em>Buka Halaman Pembayaran</em> di cek-status — pengunjung langsung dialihkan, tokennya tidak pernah ditampilkan di halaman. Karena token baru menggantikan yang lama, tautan bayar di pesan WA ikut mati setelah tombol itu dipakai.</li>
         <li><strong>Rate anti-penyalahgunaan</strong> (Fase 11): ganti password maks 5 percobaan / 15 menit (per IP &amp; per akun); kirim WA registrasi maks 3 / nomor / 24 jam; cek-status dihitung per IP (10 / 15 menit) dan lintas IP per nomor pendaftaran (5 / 15 menit, format <code>REG-YYYY-NNNN</code> saja yang dihitung, hanya saat gagal); tombol tautan bayar maks 8 / jam per pendaftar dan hanya untuk hasil pencarian yang terbukti di sesi ini.</li>
-        <li><strong>Isi pesan WA instruksi bayar otomatis mengikuti metode aktif</strong> — jika transfer/QRIS/gateway dimatikan di Pengaturan, langkahnya ikut hilang; kalimat penutupnya selalu: "Setelah pembayaran terverifikasi, akun dan password dikirim lewat WhatsApp."</li>
+        <li><strong>Isi pesan WA instruksi bayar otomatis mengikuti metode aktif</strong> — jika transfer/QRIS/gateway dimatikan di Pengaturan, langkahnya ikut hilang; selama teksnya belum disunting, kalimat penutupnya: "Setelah pembayaran terverifikasi, akun dan password dikirim lewat WhatsApp." Seluruh kalimat WA ke wali (tujuh pesan) bisa diubah di <strong>Pengaturan → Teks Pesan WhatsApp ke Calon Murid</strong> (seksi 7b) — baris yang dibiarkan sama dengan bawaan tetap memakai kalimat aplikasi.</li>
         <li><strong>Cadangan data wajib dijadwalkan</strong> sebelum go-live: <code>php tools/backup-db.php</code> &amp; <code>php tools/backup-berkas.php</code> (retensi 14 hari) — lihat skrip <code>schtasks</code>/cron di <code>docs/DEPLOY.md</code>. Tool rilis (buat-paket, backup, cek-proyek, cek-statis, retensi, uji-*) bersifat CLI-only (akses web = 404); satu-satunya tool ber-web adalah <code>set-password-web.php</code> yang hanya aktif selama penanda <code>.izinkan-set-password</code> ada (Fase 12).</li>
         <li>API key Fonnte & Midtrans dibaca dari file <code>.env</code> di root proyek (di luar tree publik); bila kosong, fallback ke kolom CMS. <strong>Midtrans opsional</strong> — tanpa key, pembayaran tetap jalan via transfer manual / QRIS. <code>APP_URL</code> di <code>.env</code> dipakai untuk tautan WhatsApp absolut (kosongkan saat localhost).</li>
         <li>Berkas pribadi (KK, akta, bukti transfer) disimpan di <code>storage/dokumen/</code> dan hanya bisa diakses lewat gate PHP yang mengecek login & kepemilikan — hanya operator/admin/bendahara (kepsek melihat hasil & pengumuman lewat halamannya sendiri).</li>

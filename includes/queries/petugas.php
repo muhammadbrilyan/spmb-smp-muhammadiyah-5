@@ -233,14 +233,15 @@ function petugas_set_aktif($id, $aktif)
 }
 
 /**
- * Nomor WA bendahara (tujuan notifikasi uang masuk) + saklar pengirimannya.
+ * Nomor WA tujuan notifikasi panitia + saklar pengirimannya.
  *
- * Kolomnya milik `pengaturan_sekolah` (sama dengan blok *Notifikasi Transaksi*
- * di kartu WhatsApp Gateway pada Pengaturan Sistem); halaman Petugas hanya
- * menyediakan jalan pintas supaya pemegang nomor bisa menggantinya tanpa
- * membuka formulir CMS yang panjang. Sejak 2026-11-03 kanal WA panitia khusus
- * transaksi — akun Fonnte gratis mendaftarkan satu nomor — jadi daftar
- * `notif_wa_operator` tidak dibaca/ditulis lagi.
+ * Kolomnya milik `pengaturan_sekolah` (sama dengan blok *Notifikasi WhatsApp
+ * Panitia* di kartu WhatsApp Gateway pada Pengaturan Sistem); halaman Petugas
+ * hanya menyediakan jalan pintas supaya pemegang nomor bisa menggantinya tanpa
+ * membuka formulir CMS yang panjang. Kolom `notif_wa_operator` tetap tidak
+ * dibaca/ditulis — sejak 2026-11-06 satu daftar nomor dipakai bersama untuk
+ * kabar uang masuk dan kabar operasional (pendaftar baru, data diajukan,
+ * berkas dikirim) karena ponsel panitia dan ponsel bendahara ternyata sama.
  */
 function petugas_notif_wa_simpan($nomor, $aktif)
 {
@@ -265,7 +266,7 @@ function petugas_notif_wa_simpan($nomor, $aktif)
 
     if ($aktif === 1 && $tersimpan === null && $fallback === '') {
         return ['ok' => false, 'pesan' => 'Pengiriman WhatsApp aktif tetapi tidak ada nomor tujuan. '
-            . 'Isi nomor bendahara ini atau Kontak WhatsApp Panitia di Pengaturan Sistem, '
+            . 'Isi daftar nomor ini atau Kontak WhatsApp Panitia di Pengaturan Sistem, '
             . 'atau matikan saklarnya.'];
     }
 

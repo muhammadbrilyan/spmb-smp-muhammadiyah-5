@@ -147,27 +147,26 @@ function fonnte_cek_token($token = null)
 
 /**
  * Susun pesan kredensial akun siswa.
+ * Kalimatnya bisa disunting operator (Pengaturan Sistem → Teks Pesan
+ * WhatsApp, kunci `kredensial_akun`); nilai di bawah yang mengisi
+ * placeholder-nya.
+ *
  * @param array $data nama, reg, username, password, tahun, spp
  */
 function wa_pesan_kredensial(array $data)
 {
-    $ta   = $data['tahun'] ?? '';
-    $spp  = isset($data['spp']) ? number_format((float) $data['spp'], 0, ',', '.') : '';
-    $teks = "Assalamu'alaikum.\n\n"
-        . "Akun SPMB/Portal Siswa telah dibuat untuk:\n"
-        . "Nama : {$data['nama']}\n"
-        . "No. REG : {$data['reg']}\n\n"
-        . "Username : {$data['username']}\n"
-        . "Password : {$data['password']}\n\n"
-        . "Silakan login di portal sekolah. Mohon simpan kredensial ini baik-baik dan segera ganti password setelah login pertama.";
-    if ($ta !== '') {
-        $teks .= "\n\nTahun Ajaran: {$ta}";
-    }
-    if ($spp !== '') {
-        $teks .= "\nInformasi biaya SPP terbaru tersedia di halaman publik sekolah.";
-    }
-    $teks .= "\n\nSalam,\nPanitia SPMB SMP Muhammadiyah 5 Kota Tangerang";
-    return $teks;
+    $sekolah = trim((string) ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? ''));
+    return wa_teks_isi('kredensial_akun', [
+        'nama'           => $data['nama'] ?? '',
+        'no_pendaftaran' => $data['reg'] ?? '',
+        'username'       => $data['username'] ?? '',
+        'password'       => $data['password'] ?? '',
+        'tahun_ajaran'   => ($data['tahun'] ?? '') !== ''
+            ? 'Tahun Ajaran: ' . $data['tahun'] : '',
+        'info_spp'       => isset($data['spp'])
+            ? 'Informasi biaya SPP terbaru tersedia di halaman publik sekolah.' : '',
+        'sekolah'        => $sekolah !== '' ? $sekolah : 'SMP Muhammadiyah 5 Kota Tangerang',
+    ]);
 }
 
 /** Password acak yang aman untuk akun siswa (8–12 karakter, ada huruf+angka). */
@@ -239,16 +238,15 @@ function wa_pesan_instruksi(array $r)
     $no = 1;
     $blok = '';
     foreach ($langkah as $l) {
-        $blok .= $no++ . '. ' . $l . "\n";
+        $blok .= ($no > 1 ? "\n" : '') . $no++ . '. ' . $l;
     }
 
-    return "Assalamu'alaikum.\n\n"
-        . "Terima kasih telah mendaftar SPMB " . ($P['nama_sekolah'] ?? 'SMP Muhammadiyah 5') . ".\n\n"
-        . "No. Pendaftaran : {$r['no']}\n"
-        . "Nama Siswa : {$r['nama']}\n"
-        . "Jalur : {$r['jalur']}\n\n"
-        . "Langkah selanjutnya:\n"
-        . $blok
-        . "\nCek status pendaftaran (cukup nomor WhatsApp orang tua):\n   {$tautanCek}\n\n"
-        . "Simpan nomor pendaftaran ini.";
+    return wa_teks_isi('instruksi_bayar', [
+        'sekolah'        => ($P['nama_sekolah'] ?? 'SMP Muhammadiyah 5'),
+        'no_pendaftaran' => $r['no'] ?? '',
+        'nama'           => $r['nama'] ?? '',
+        'jalur'          => $r['jalur'] ?? '',
+        'langkah'        => $blok,
+        'tautan_cek'     => $tautanCek,
+    ]);
 }

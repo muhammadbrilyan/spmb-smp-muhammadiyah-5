@@ -518,15 +518,12 @@ function berkas_wa_revisi($pendaftar_id)
                     'pesan' => 'Nomor WhatsApp orang tua belum diisi — pesan revisi hanya masuk ke lonceng portal siswa.'];
         }
 
-        $pesan = "Assalamu'alaikum.\n\n"
-            . "Hasil pemeriksaan berkas SPMB atas nama:\n"
-            . "Nama : {$info['nama_siswa']}\n"
-            . "No. Pendaftaran : {$info['no_pendaftaran']}\n\n"
-            . "Berkas berikut perlu DIPERBAIKI / diganti:\n"
-            . "{$daftarTeks}\n\n"
-            . "Silakan unggah ulang berkas tersebut melalui portal siswa, lalu klik "
-            . "\"Kirim untuk Verifikasi\" kembali. Berkas yang sudah lolos tidak perlu diunggah ulang.\n\n"
-            . "Terima kasih.\nPanitia SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5');
+        $pesan = wa_teks_isi('berkas_ditolak', [
+            'sekolah'        => ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? 'SMP Muhammadiyah 5'),
+            'nama'           => $info['nama_siswa'],
+            'no_pendaftaran' => $info['no_pendaftaran'],
+            'daftar'         => $daftarTeks,
+        ]);
 
         $r = wa_kirim($info['no_whatsapp'], $pesan);
         wa_log_catat($info['no_whatsapp'], 'BERKAS_REVISI', $r);

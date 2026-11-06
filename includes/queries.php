@@ -8,6 +8,7 @@
  */
 
 require_once __DIR__ . '/queries/core.php';
+require_once __DIR__ . '/queries/wa-teks.php';
 require_once __DIR__ . '/queries/pendaftar.php';
 require_once __DIR__ . '/queries/dokumen.php';
 require_once __DIR__ . '/queries/jadwal.php';

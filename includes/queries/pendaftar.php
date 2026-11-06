@@ -271,6 +271,21 @@ function registrasi_baru($nama, $wa, $jalur, $asal_sekolah, $regToken = null, $s
         }
 
         $db->query("SELECT RELEASE_LOCK(" . $db->quote($lockName) . ")")->fetchColumn();
+
+        /* Kabar panitia bahwa ada pendaftar baru yang belum membayar biaya
+         * formulir. Hanya jalur baru yang sampai sini: percobaan ulang dengan
+         * registration_token sama keluar lebih awal dengan 'reused' => true,
+         * jadi pesan ini tidak pernah lahir dua kali untuk satu orang. */
+        notif_operator(
+            'PENDAFTAR_BARU',
+            $idPend,
+            "Calon siswa baru mendaftar — biaya formulir belum dibayar.\n"
+            . "Nama : {$nama}\n"
+            . "No. Pendaftaran : {$no}\n"
+            . "Asal sekolah : {$asal}\n"
+            . "Pantau: " . url_abs('app/operator/pendaftar.php')
+        );
+
         return [
             'ok' => true, 'no' => $no, 'id' => $idPend,
             'wa' => $waNorm, 'nama' => $nama, 'jalur' => $jalur,

@@ -4,34 +4,55 @@
  *
  * Alur:
  *   1. Simpan pesan ke tabel `notifikasi` (lencana + halaman Notifikasi).
- *   2. Kirim WhatsApp via Fonnte HANYA untuk pemicu uang masuk, ke nomor
- *      bendahara — lihat `notif_nomor_bendahara()` — dan hanya bila toggle
- *      `notif_wa_aktif` aktif. Pemicu lain (berkas dikirim, data diajukan
- *      verifikasi) berhenti sebagai notifikasi in-app: akun Fonnte gratis
- *      hanya mendaftarkan satu nomor WhatsApp, jadi kanal WA dipakai untuk
- *      transaksi saja. Kolom `notif_wa_operator` masih ada di skema tetapi
- *      tidak dibaca lagi sejak 2026-11-03.
+ *   2. Kirim WhatsApp via Fonnte untuk pemicu yang terdaftar di
+ *      `notif_pemicu_wa()`, ke daftar nomor panitia
+ *      (`notif_nomor_bendahara()`), hanya bila toggle `notif_wa_aktif` aktif.
+ *      Satu nomor hanya dikirimi sekali per kejadian walau muncul dua kali
+ *      dalam daftar.
  *   3. Hasil kirim (sukses/gagal) dicatat ke `wa_log`.
  *
  * PENTING: kegagalan apa pun (DB / Fonnte / jaringan) TIDAK BOLEH
  * menggagalkan proses utama pemanggil — semua dibungkus try/catch dan
  * tidak pernah melempar exception.
  *
- * Tipe pemicu:
- *   - BUKTI_BAYAR_MASUK         → unggah bukti transfer/QRIS  → in-app + WA
+ * Tipe pemicu (in-app selalu tercatat; WA hanya yang terdaftar):
+ *   - BUKTI_BAYAR_MASUK         → unggah bukti transfer/QRIS     → in-app + WA
+ *   - PEMBAYARAN_GATEWAY_MASUK  → callback Midtrans angsuran     → in-app + WA
  *   - PEMBAYARAN_GATEWAY_LUNAS  → callback Midtrans VERIFIED/LUNAS → in-app + WA
- *   - PEMBAYARAN_GATEWAY_MASUK  → callback Midtrans angsuran terverifikasi → in-app + WA
- *   - BERKAS_DISUBMIT           → siswa submit berkas  → in-app saja
- *   - VERIFIKASI_DATA           → siswa mengajukan data  → in-app saja
- *   - (Fase lanjutan: PENOLAKAN_BAYAR, BERKAS_REVISI, JADWAL_DITETAPKAN, dll.)
+ *   - PENDAFTAR_BARU            → formulir pendaftaran publik selesai → in-app + WA
+ *   - VERIFIKASI_DATA           → data diajukan / dikirim ulang  → in-app + WA
+ *   - BERKAS_DISUBMIT           → berkas dikirim / dikirim ulang → in-app + WA
+ *   - (sisanya — mis. BERKAS_REVISI ke orang tua — in-app saja)
+ *
+ * Keputusan 2026-11-06: kabar operasional (tiga tipe terakhir) sempat dilepas
+ * dari WhatsApp karena akun Fonnte gratis hanya punya satu perangkat. Nomor
+ * panitia yang dipakai ternyata sama dengan nomor tujuan transaksi, jadi kabar
+ * itu dihidupkan lagi — dengan pembatasan per pendaftar supaya kuota tidak jebol.
  */
 
 /**
- * Nomor WA bendahara dari Pengaturan Sistem.
+ * Pemicu yang boleh berangkat ke WhatsApp panitia.
+ * @return string[]
+ */
+function notif_pemicu_wa()
+{
+    return [
+        'BUKTI_BAYAR_MASUK',
+        'PEMBAYARAN_GATEWAY_MASUK',
+        'PEMBAYARAN_GATEWAY_LUNAS',
+        'PENDAFTAR_BARU',
+        'VERIFIKASI_DATA',
+        'BERKAS_DISUBMIT',
+    ];
+}
+
+/**
+ * Daftar nomor tujuan WhatsApp panitia.
  *
- * Sumber utama: kolom `notif_wa_bendahara` (beberapa nomor dipisah koma).
- * Bila belum diisi, jatuh ke `kontak_wa_panitia` — nomor admin yang sudah
- * ada sejak dulu — supaya notifikasi bukti bayar tidak hilang diam-diam.
+ * Sumber utama: kolom `notif_wa_bendahara` (beberapa nomor dipisah koma) —
+ * namanya masih "bendahara" padahal isinya nomor yang sama dipakai untuk
+ * seluruh kabar panitia. Bila belum diisi, jatuh ke `kontak_wa_panitia`
+ * supaya notifikasi tidak hilang diam-diam.
  *
  * @return string daftar nomor mentah (boleh kosong)
  */
@@ -43,8 +64,8 @@ function notif_nomor_bendahara()
 }
 
 /**
- * Catat kejadian ke panel Notifikasi panitia; kirim WhatsApp hanya bila
- * pemicunya soal uang masuk dan pengiriman WA sedang diaktifkan.
+ * Catat kejadian ke panel Notifikasi panitia; kirim WhatsApp bila pemicunya
+ * terdaftar di `notif_pemicu_wa()` dan pengiriman WA sedang diaktifkan.
  *
  * @param string $tipe        kode tipe pemicu (lihat daftar di atas)
  * @param string $pendaftarId id pendaftar terkait (boleh null)
@@ -70,12 +91,26 @@ function notif_operator($tipe, $pendaftarId, $pesan)
         /* diamkan — notifikasi tidak boleh merusak proses utama */
     }
 
-    /* --- 2. WhatsApp Fonnte — khusus uang masuk, ke nomor bendahara --- */
+    /* --- 2. WhatsApp Fonnte — ke daftar nomor panitia --- */
     try {
-        $transaksi = in_array($tipe, ['BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS'], true);
-        if (!$transaksi || (int) ($GLOBALS['PENGATURAN']['notif_wa_aktif'] ?? 0) !== 1) {
+        if (!in_array($tipe, notif_pemicu_wa(), true)
+            || (int) ($GLOBALS['PENGATURAN']['notif_wa_aktif'] ?? 0) !== 1) {
             return;
         }
+
+        /* Kabar operasional lahir dari tombol yang bisa diklik berulang dari
+         * satu layar (ajukan data dua kali, kirim berkas ulang), jadi dibatasi
+         * per pendaftar agar kuota Fonnte — dan ponsel panitia — tidak jebol.
+         * Uang masuk tidak dibatasi: tiap transfer kejadian berbeda yang harus
+         * berbunyi. */
+        $kunciOperasional = null;
+        if (in_array($tipe, ['PENDAFTAR_BARU', 'VERIFIKASI_DATA', 'BERKAS_DISUBMIT'], true)) {
+            $kunciOperasional = $tipe . ':' . (string) $pendaftarId;
+            if (!rate_limit_cek('notif_wa_operasional', 3, 60, $kunciOperasional)) {
+                return;
+            }
+        }
+
         $sudah = [];
         foreach ((preg_split('/[,;]+/', notif_nomor_bendahara()) ?: []) as $no) {
             $no = trim((string) $no);
@@ -89,6 +124,9 @@ function notif_operator($tipe, $pendaftarId, $pesan)
             $sudah[$kunci] = true;
             $hasil = wa_kirim($no, $pesan);
             wa_log_catat($no, $tipe, $hasil);
+        }
+        if ($kunciOperasional !== null && $sudah !== []) {
+            rate_limit_catat('notif_wa_operasional', $kunciOperasional);
         }
     } catch (Throwable $e) {
         /* diamkan */

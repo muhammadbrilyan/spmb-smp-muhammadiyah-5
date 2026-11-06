@@ -317,18 +317,19 @@ $items[] = [
             : 'Terakhir ' . round($cadanganJam, 1) . ' jam lalu — lebih dari 48 jam, jalankan ulang backup.'),
 ];
 
-/* Kabar uang masuk ke bendahara — satu-satunya notifikasi panitia yang
- * dikirim lewat WhatsApp (akun Fonnte gratis mendaftarkan satu nomor). */
+/* Kabar panitia lewat WhatsApp — uang masuk + pendaftaran baru, pengajuan data,
+ * dan pengiriman berkas (dihidupkan lagi 2026-11-06, nomor panitia sama dengan
+ * nomor bendahara). */
 $waNotifNomor  = trim((string) ($P['notif_wa_bendahara'] ?? ''));
 $waNotifTujuan = $waNotifNomor !== '' ? $waNotifNomor : ($waBawaan ? '' : $waPanitia);
 $waAktifNotif  = !empty($P['notif_wa_aktif']) && $waNotifTujuan !== '';
 $items[] = [
     'grup' => 'Kanal', 'status' => $waAktifNotif ? 'ok' : 'hati',
-    'judul' => 'Notifikasi WA uang masuk (bendahara)',
+    'judul' => 'Notifikasi WA panitia',
     'ket'   => $waAktifNotif
-        ? 'Aktif — bukti bayar & pembayaran gateway dikirim ke ' . $waNotifTujuan . '.'
-        : 'Belum aktif — isi Nomor WA Bendahara (atau Kontak WhatsApp Panitia) lalu aktifkan saklar '
-            . 'Notifikasi Transaksi di kartu WhatsApp Gateway, Pengaturan Sistem. Pemicu lain tetap '
+        ? 'Aktif — uang masuk, pendaftar baru, pengajuan data & berkas dikirim ke ' . $waNotifTujuan . '.'
+        : 'Belum aktif — isi Nomor WA Panitia & Bendahara (atau Kontak WhatsApp Panitia) lalu aktifkan saklar '
+            . 'Notifikasi WhatsApp Panitia di kartu WhatsApp Gateway, Pengaturan Sistem. Pemicu lain tetap '
             . 'masuk ke menu Notifikasi tanpa dikirim ke WhatsApp (opsional).',
 ];
 

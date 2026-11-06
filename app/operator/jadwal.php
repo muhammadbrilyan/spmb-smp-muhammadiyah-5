@@ -36,17 +36,33 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         exit;
     }
 
-    if ($aksi === 'kirim_notifikasi') {
-        $idJ = trim((string) ($_POST['id'] ?? ''));
-        if (!$idJ) {
+    /* Kirim jadwal satu kegiatan: dipakai tombol "Kirim WA Jadwal" di kartu
+     * peserta dan ikon chat di daftar jadwal. Keduanya menulis pesan WA dan
+     * lonceng portal lewat pengirim yang sama. */
+    if (in_array($aksi, ['kirim_notifikasi', 'kirim_wa'], true)) {
+        $idJ = trim((string) ($_POST['jadwal_id'] ?? $_POST['id'] ?? ''));
+        if ($idJ === '') {
             flash('error', 'Jadwal tidak ditemukan.');
         } else {
             $r = jadwal_kirim_notifikasi($idJ);
-            if ($r['ok'] > 0) {
-                flash('sukses', $r['ok'] . ' notifikasi WA jadwal terkirim.'
-                    . ($r['gagal'] > 0 ? ' ' . $r['gagal'] . ' gagal — ' . ($r['detail'][0] ?? '') : ''));
+            if ($r['penerima'] === 0) {
+                flash('error', $r['detail'][0] ?? 'Tidak ada siswa terjadwal dengan nomor WA orang tua.');
             } else {
-                flash('error', $r['detail'][0] ?? 'Tidak ada penerima atau pengiriman gagal.');
+                $bagian = [];
+                if ($r['ok'] > 0) {
+                    $bagian[] = $r['ok'] . ' pesan WA terkirim';
+                }
+                if ($r['in_app'] > 0) {
+                    $bagian[] = $r['in_app'] . ' notifikasi portal dibuat';
+                }
+                if ($r['lewati'] > 0) {
+                    $bagian[] = $r['lewati'] . ' penerima sudah pernah dikabari';
+                }
+                if ($r['gagal'] > 0) {
+                    $bagian[] = $r['gagal'] . ' gagal — ' . ($r['detail'][0] ?? 'token kosong / nomor tidak valid');
+                }
+                flash($r['ok'] > 0 || $r['lewati'] > 0 || $r['in_app'] > 0 ? 'sukses' : 'error',
+                    'Jadwal kegiatan ini: ' . implode(', ', $bagian) . '.');
             }
         }
         header('Location: ' . url('app/operator/jadwal.php'));
@@ -75,7 +91,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     /* ---- Peserta ujian: satu halaman dengan jadwal, jadi kembali ke #peserta ---- */
-    if (in_array($aksi, ['atur_otomatis', 'tambah_manual', 'hapus_peserta', 'kirim_wa'], true)) {
+    if (in_array($aksi, ['atur_otomatis', 'tambah_manual', 'hapus_peserta'], true)) {
         $jadwalId = trim((string) ($_POST['jadwal_id'] ?? ''));
         if ($jadwalId === '') {
             flash('error', 'Jadwal tujuan tidak ditemukan. Muat ulang halaman lalu coba lagi.');
@@ -85,17 +101,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         } elseif ($aksi === 'tambah_manual') {
             $r = peserta_tambah_manual($jadwalId, (string) ($_POST['pendaftar_id'] ?? ''));
             flash($r['ok'] ? 'sukses' : 'error', $r['pesan']);
-        } elseif ($aksi === 'hapus_peserta') {
+        } else {
             flash(peserta_hapus((string) ($_POST['peserta_id'] ?? '')) ? 'sukses' : 'error',
                 'Peserta dihapus dari jadwal.');
-        } else {
-            $r = peserta_kirim_notifikasi_wa($jadwalId);
-            if ($r['ok'] + $r['gagal'] === 0) {
-                flash('error', 'Tidak ada penerima (butuh data orang tua dengan nomor WA).');
-            } else {
-                flash($r['gagal'] > 0 ? 'error' : 'sukses',
-                    $r['ok'] . ' pesan WA terkirim.' . ($r['gagal'] > 0 ? ' ' . $r['gagal'] . ' gagal (token kosong / nomor tidak valid).' : ''));
-            }
         }
         header('Location: ' . url('app/operator/jadwal.php') . '#peserta');
         exit;
@@ -176,17 +184,30 @@ $pesertaPerJadwal = [];
 foreach ($jadwalAktif as $j) {
     $pesertaPerJadwal[$j['id']] = peserta_daftar($j['id']);
 }
-/* Pendaftar yang boleh dijadwalkan: berkas terverifikasi, belum punya jadwal,
- * belum diarsipkan (sama seperti syarat di peserta_atur_otomatis). */
+/* Riwayat penempatan per calon (kartu aktif), dipakai untuk menandai calon
+ * yang sedang dijaring ulang ke jadwal susulan. */
+$jadwalLainCalon = [];
+foreach ($jadwalAktif as $j) {
+    foreach ($pesertaPerJadwal[$j['id']] as $ps) {
+        $jadwalLainCalon[(string) $ps['pendaftar_id']][] = $j['kode'];
+    }
+}
+/* Pendaftar yang boleh dijadwalkan: syaratnya sama seperti
+ * peserta_atur_otomatis() (lihat peserta_tahap_siap_jadwal()). Yang sudah ada
+ * di satu kartu disaring per kartu di bawah, karena seorang calon kini boleh
+ * ikut lebih dari satu kegiatan. `tanpa_jadwal` dipakai untuk statistik: calon
+ * yang belum pernah masuk kartu mana pun. */
 $siapJadwal = q_all(
-    "SELECT p.id, p.no_pendaftaran, p.nama_siswa
+    'SELECT p.id, p.no_pendaftaran, p.nama_siswa,
+            NOT EXISTS (SELECT 1 FROM peserta_ujian pu
+                         WHERE pu.pendaftar_id = p.id) AS tanpa_jadwal
        FROM pendaftar p
-      WHERE p.tahap = 'BERKAS_TERVERIFIKASI'
+      WHERE p.tahap IN (' . peserta_tahap_siap_jadwal_sql() . ')
         AND p.arsip_at IS NULL
-        AND NOT EXISTS (SELECT 1 FROM peserta_ujian pu WHERE pu.pendaftar_id = p.id)
-   ORDER BY p.no_pendaftaran"
+   ORDER BY p.no_pendaftaran'
 ) ?: [];
-$totalPeserta = (int) (q_col('SELECT COUNT(*) FROM peserta_ujian') ?? 0);
+$belumPernahTerjadwal = count(array_filter($siapJadwal, fn($s) => (int) $s['tanpa_jadwal'] === 1));
+$totalPeserta = (int) (q_col('SELECT COUNT(DISTINCT pendaftar_id) FROM peserta_ujian') ?? 0);
 
 /* Simpanan gagal ditampilkan lagi di modal — cari kode jadwalnya untuk judul. */
 $kodeGagal = '';
@@ -381,13 +402,14 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
         Setiap jadwal berstatus <strong>Terjadwal</strong> di atas punya bagian pesertanya sendiri. Pendaftar yang
         berkasnya terverifikasi dapat ditempatkan otomatis — urut nomor pendaftaran dan berhenti di kapasitas —
-        atau ditambahkan manual satu per satu.
+        atau ditambahkan manual satu per satu. Yang dikecualikan hanya peserta yang <strong>sudah ada di kartu
+        itu</strong>, jadi calon yang absen pada satu kegiatan tetap bisa dijaring ulang ke jadwal susulan.
       </p>
 
       <div class="mt-4 grid gap-3 grid-cols-3">
         <div class="rounded-xl border border-line bg-white px-3 py-2.5">
-          <p class="flex items-center gap-1.5 text-[12px] text-ink-500"><?= dot('amber') ?> Siap dijadwalkan</p>
-          <p class="mt-0.5 text-2xl font-bold leading-tight text-ink-900"><?= count($siapJadwal) ?></p>
+          <p class="flex items-center gap-1.5 text-[12px] text-ink-500"><?= dot('amber') ?> Belum punya jadwal</p>
+          <p class="mt-0.5 text-2xl font-bold leading-tight text-ink-900"><?= $belumPernahTerjadwal ?></p>
         </div>
         <div class="rounded-xl border border-line bg-white px-3 py-2.5">
           <p class="flex items-center gap-1.5 text-[12px] text-ink-500"><?= dot('green') ?> Sudah terjadwal</p>
@@ -425,6 +447,13 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             }
         }
         $ruangan = trim((string) ($j['ruangan'] ?? ''));
+        /* Kartu ini hanya menawarkan pendaftar yang belum ada di dalamnya —
+         * yang sudah terjadwal di kegiatan lain tetap bisa ditambahkan. */
+        $diKartu = array_fill_keys(array_map(fn($ps) => (string) $ps['pendaftar_id'], $peserta), true);
+        $siapKartu = array_values(array_filter(
+            $siapJadwal,
+            fn($sj) => !isset($diKartu[(string) $sj['id']])
+        ));
         ?>
         <div class="mt-5 card overflow-hidden">
           <div class="px-5 pt-5 pb-4 border-b border-line">
@@ -464,7 +493,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
             <div class="mt-4 flex flex-wrap gap-2">
               <form method="post" action="<?= url('app/operator/jadwal.php') ?>"
-                    onsubmit="return confirm('Atur peserta otomatis untuk <?= e($j['kode']) ?>? Pendaftar yang berkasnya terverifikasi akan diurutkan & dijadwalkan sampai kapasitas<?= $kap > 0 ? ' (' . $kap . ')' : ' bebas' ?>.');">
+                    onsubmit="return confirm('Atur peserta otomatis untuk <?= e($j['kode']) ?>? Pendaftar yang belum ada di jadwal ini akan diurutkan & dijadwalkan sampai kapasitas<?= $kap > 0 ? ' (' . $kap . ')' : ' bebas' ?> — termasuk yang pernah ikut kegiatan lain, misal untuk jadwal susulan.');">
                 <?= csrf_field() ?>
                 <input type="hidden" name="aksi" value="atur_otomatis">
                 <input type="hidden" name="jadwal_id" value="<?= e($j['id']) ?>">
@@ -483,18 +512,19 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               </form>
             </div>
 
-            <?php if ($siapJadwal): ?>
+            <?php if ($siapKartu): ?>
               <form method="post" action="<?= url('app/operator/jadwal.php') ?>"
                     class="mt-4 flex flex-wrap items-end gap-2 border-t border-line-soft pt-4">
                 <?= csrf_field() ?>
                 <input type="hidden" name="aksi" value="tambah_manual">
                 <input type="hidden" name="jadwal_id" value="<?= e($j['id']) ?>">
                 <div class="flex-1 min-w-[240px]">
-                  <label class="label" for="pm-<?= e($j['id']) ?>">Tambah manual — <?= count($siapJadwal) ?> pendaftar siap</label>
+                  <label class="label" for="pm-<?= e($j['id']) ?>">Tambah manual — <?= count($siapKartu) ?> pendaftar siap</label>
                   <select id="pm-<?= e($j['id']) ?>" name="pendaftar_id" class="select" required>
                     <option value="">— pilih pendaftar —</option>
-                    <?php foreach ($siapJadwal as $sj): ?>
-                      <option value="<?= e($sj['id']) ?>"><?= e($sj['no_pendaftaran']) ?> — <?= e($sj['nama_siswa']) ?></option>
+                    <?php foreach ($siapKartu as $sj): ?>
+                      <?php $ikutLain = $jadwalLainCalon[(string) $sj['id']] ?? []; ?>
+                      <option value="<?= e($sj['id']) ?>"><?= e($sj['no_pendaftaran']) ?> — <?= e($sj['nama_siswa']) ?><?= $ikutLain ? ' (sudah: ' . e(implode(', ', $ikutLain)) . ')' : '' ?></option>
                     <?php endforeach; ?>
                   </select>
                 </div>
@@ -552,9 +582,13 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
       <div class="mt-5 rounded-2xl border border-line bg-white px-5 py-4 space-y-1">
         <p class="text-[12px] text-ink-500 flex gap-2"><?= icon('chat', 'text-[16px] shrink-0') ?>
-          <span><strong>Kirim WA Jadwal</strong> mengirim jadwal kegiatan itu saja. Untuk memberi tahu
-          <strong>seluruh</strong> jadwal sekaligus dalam satu pesan, gunakan tombol
-          <strong>Umumkan Semua Jadwal</strong> di atas.</span></p>
+          <span><strong>Kirim WA Jadwal</strong> mengirim jadwal kegiatan itu saja, sekaligus menulis
+          lonceng di portal siswa. Untuk memberi tahu <strong>seluruh</strong> jadwal sekaligus dalam satu
+          pesan, gunakan tombol <strong>Umumkan Semua Jadwal</strong> di atas. Penerima yang sudah pernah
+          dikabari pada susunan yang sama dilewati, jadi klik ganda aman.</span></p>
+        <p class="text-[12px] text-ink-500 flex gap-2"><?= icon('group', 'text-[16px] shrink-0') ?>
+          <span>Atur Peserta Otomatis hanya mengecualikan peserta yang <strong>sudah ada di kartu itu</strong>,
+          sehingga calon yang absen pada satu kegiatan bisa dijaring ulang ke jadwal susulan.</span></p>
         <p class="text-[12px] text-ink-500 flex gap-2"><?= icon('badge', 'text-[16px] shrink-0') ?>
           <span>Nomor peserta &amp; kartu peserta tercetak otomatis; siswa melihatnya di
           <strong>Jadwal &amp; Kartu Ujian</strong> pada portal siswa.</span></p>

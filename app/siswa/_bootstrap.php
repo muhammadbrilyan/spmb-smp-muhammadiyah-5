@@ -103,12 +103,15 @@ if ($siswa) {
     $verifikasi = $labelVer[$siswa['status_verifikasi']] ?? [$siswa['status_verifikasi'], 'gray'];
 
     if ($kartuUjian) {
+        /* Kunci kartu peserta dipakai apa adanya — kalau query ini menyaring
+         * ulang, mode & ruangan bisa datang dari kegiatan yang berbeda dari
+         * yang tercetak di kartu. */
         $jadwalSiswa = q_all(
             'SELECT j.mode, j.tautan_video, j.status, j.lokasi, j.ruangan, j.tanggal, j.jam_mulai, j.jam_selesai
-               FROM peserta_ujian pu
-               JOIN jadwal_tes j ON j.id = pu.jadwal_id
-              WHERE pu.pendaftar_id = ? LIMIT 1',
-            [$siswa['id']]
+               FROM jadwal_tes j
+              WHERE j.id = ?
+              LIMIT 1',
+            [$kartuUjian['jadwal_id']]
         );
         $jadwalSiswa = $jadwalSiswa[0] ?? null;
     }

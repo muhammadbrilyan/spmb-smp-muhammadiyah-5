@@ -4,8 +4,9 @@
  *
  * Operator dapat: mengubah nama/jabatan/username petugas, menyetel
  * password sementara (wajib diganti saat login pertama), menambah petugas
- * baru, menonaktifkan akun, serta mengganti nomor WA bendahara tujuan
- * notifikasi uang masuk. Akun siswa TIDAK dikelola di sini
+ * baru, menonaktifkan akun, serta mengganti daftar nomor WA panitia tujuan
+ * notifikasi (uang masuk, pendaftar baru, pengajuan data & berkas). Akun siswa
+ * TIDAK dikelola di sini
  * (lihat menu Generate Akun).
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
@@ -271,18 +272,18 @@ $waBendahara = petugas_notif_wa_bhawa();
       </form>
     </section>
 
-    <!-- Nomor WA bendahara tujuan notifikasi uang masuk -->
+    <!-- Nomor WA panitia tujuan notifikasi WhatsApp -->
     <section class="mt-6 card p-5 sm:p-6">
       <div class="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h2 class="font-bold text-ink-900">Notifikasi WhatsApp Transaksi</h2>
+          <h2 class="font-bold text-ink-900">Notifikasi WhatsApp Panitia</h2>
           <p class="mt-1 text-[13px] text-ink-500">
-            Nomor bendahara yang didaftarkan di Fonnte ini menerima kabar setiap ada uang masuk —
-            bukti transfer/QRIS diunggah dan pembayaran gateway terverifikasi. Pemicu lain (berkas
-            dikirim, data diajukan verifikasi) berhenti sebagai notifikasi di dalam aplikasi, dan
-            pengingat angsuran memakai saklarnya sendiri, karena akun Fonnte gratis hanya
-            mendaftarkan satu nomor. Isinya kolom yang sama dengan kartu WhatsApp Gateway di
-            Pengaturan Sistem — boleh diganti cepat dari halaman ini.
+            Nomor ini menerima kabar setiap ada kejadian: uang masuk (bukti transfer/QRIS atau
+            pembayaran gateway), calon siswa baru mendaftar, data diajukan — termasuk kirim ulang
+            yang tadi ditolak — dan berkas dikirim. Pengingat angsuran ke orang tua memakai
+            saklarnya sendiri. Satu daftar nomor dipakai bersama, jadi tidak perlu diisi dua kali.
+            Isinya kolom yang sama dengan kartu WhatsApp Gateway di Pengaturan Sistem — boleh
+            diganti cepat dari halaman ini.
           </p>
         </div>
         <span class="badge <?= $waBendahara['aktif'] && $waBendahara['tujuan'] !== '' ? 'badge-green' : 'badge-gray' ?>">
@@ -294,7 +295,7 @@ $waBendahara = petugas_notif_wa_bhawa();
         <?= csrf_field() ?>
         <input type="hidden" name="aksi" value="wa">
         <div>
-          <label class="label" for="wa_bendahara">Nomor WA Bendahara (dipisah koma)</label>
+          <label class="label" for="wa_bendahara">Nomor WA Panitia &amp; Bendahara (dipisah koma)</label>
           <input id="wa_bendahara" name="notif_wa_bendahara" type="text" class="input font-mono"
                  placeholder="08123456789, 08987654321" value="<?= e($waBendahara['nomor']) ?>">
           <p class="hint">6-16 angka, boleh diawali <code class="font-mono">+</code>. Kosongkan untuk memakai Kontak WhatsApp Panitia dari Pengaturan Sistem<?= $waBendahara['nomor'] === '' && $waBendahara['tujuan'] !== '' ? ' — tujuan saat ini: <strong class="font-mono">' . e($waBendahara['tujuan']) . '</strong>' : '' ?>.</p>
@@ -302,7 +303,7 @@ $waBendahara = petugas_notif_wa_bhawa();
         <div>
           <label class="flex items-start gap-2.5 text-[13px] text-ink-600 cursor-pointer">
             <input type="checkbox" name="notif_wa_aktif" value="1" class="mt-0.5 w-4 h-4 accent-primary" <?= $waBendahara['aktif'] ? 'checked' : '' ?>>
-            <span>Kirim kabar uang masuk via WhatsApp (Fonnte). Matikan saklar ini bila nomor belum terdaftar di Fonnte.</span>
+            <span>Kirim notifikasi panitia via WhatsApp (Fonnte). Matikan saklar ini bila nomor belum terdaftar di Fonnte.</span>
           </label>
           <button type="submit" class="btn btn-primary shadow-drop mt-3"><?= icon('notifications') ?> Simpan Nomor</button>
         </div>

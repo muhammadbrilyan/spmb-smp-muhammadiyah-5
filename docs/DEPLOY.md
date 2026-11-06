@@ -39,6 +39,13 @@ Tanpa Composer/npm — Tailwind sudah di-build statis.
    perubahan operator hangus. Dengan akses CLI, `php tools/cek-proyek.php`
    pemeriksaan 5 membandingkan semua kolom seed terhadap database (251 kolom)
    dan menyebut nama kolom yang belum ada.
+   **Perhatian:** pemeriksaan 5 hanya membaca **kolom**, bukan indeks.
+   `20261106_peserta_ujian_multi_jadwal.sql` (satu calon boleh ikut beberapa
+   kegiatan) bisa jadi tertinggal tanpa ada halaman yang tampak error —
+   gejalanya *Atur Peserta Otomatis* selalu menghasilkan 0 peserta pada kartu
+   kedua. Pastikan file itu ikut dijalankan di hosting; cek dengan
+   `SHOW INDEX FROM peserta_ujian` — yang harus ada `uq_peserta_jadwal
+   (pendaftar_id, jadwal_id)`, bukan `uq_peserta_pendaftar`.
 
 **PENTING (Fase 11):** seed utama sengaja **tidak memuat password login yang
 bisa dipakai** — akun staf (`operator`, `bendahara`, `kepsek`) di-seed dgn
@@ -145,12 +152,15 @@ seluruh akun staf masih `!LOCKED` atau operator kehilangan akses.
    daftar berkas persyaratan, S&K (Pasal 8 Privasi — tinjau sekolah/hukum,
    draf: `docs/KEBIJAKAN-DATA.md`). Nomor WA tujuan notifikasi panitia
    (`notif_wa_bendahara`) hanya tersimpan di database — ia **tidak** ikut seed,
-   jadi isi ulang di server. Nomor ini dipakai **khusus kabar uang masuk**
-   (bukti transfer/QRIS diunggah & pembayaran gateway terverifikasi) karena akun
-   Fonnte gratis mendaftarkan satu nomor; pemicu operasional lain hanya muncul di
-   menu Notifikasi dalam aplikasi. Isinya disunting di **kartu WhatsApp Gateway →
-   blok Notifikasi Transaksi**, atau cepat lewat **Petugas & Hak Akses →
-   Notifikasi WhatsApp Transaksi** (kolom yang sama). Saklar `notif_wa_aktif`
+   jadi isi ulang di server. Satu daftar nomor ini dipakai untuk kabar uang masuk
+   (bukti transfer/QRIS diunggah & pembayaran gateway terverifikasi) **dan** kabar
+   operasional panitia (pendaftar baru, data diajukan verifikasi, berkas
+   dikirim/dikirim ulang) — akun Fonnte gratis mendaftarkan satu nomor, dan nomor
+   itu adalah nomor operator. Isinya disunting di **kartu WhatsApp Gateway →
+   blok Notifikasi WhatsApp Panitia**, atau cepat lewat **Petugas & Hak Akses →
+   Notifikasi WhatsApp Panitia** (kolom yang sama: `notif_wa_bendahara`). Kabar
+   operasional dibatasi 3 pesan/jam per pendaftar; uang masuk tidak dibatasi.
+   Saklar `notif_wa_aktif`
    **tidak** memengaruhi pengingat angsuran orang tua (`pengingat_angsuran_wa`)
    maupun kirim jadwal/pengumuman ke wali. Kolom lama `notif_wa_operator` sudah
    pensiun — tidak dibaca atau ditulis lagi, jadi tidak perlu diisi di server.
@@ -159,6 +169,15 @@ seluruh akun staf masih `!LOCKED` atau operator kehilangan akses.
    (kolom `pengaturan_sekolah.faq_list`) — seed mengosongkan kolom itu, jadi
    selama belum disentuh halaman masih menampilkan contoh bawaan dari
    `includes/dummy.php`; tulis pertanyaan versi sekolah sebelum publik.
+   Sejak 2026-11-06 **kalimat WA yang berangkat ke wali calon murid** juga
+   bisa disunting tanpa menyentuh kode: **Pengaturan Sistem → Teks Pesan
+   WhatsApp ke Calon Murid** (7 pesan, kolom JSON `pengaturan_sekolah.wa_teks`).
+   Kolom itu NULL = aplikasi memakai kalimat bawaannya, jadi tidak wajib diisi;
+   yang tersimpan hanya teks yang benar-benar berbeda dari bawaan. Placeholder
+   wajib (mis. `{tautan_hasil}` pada pesan hasil seleksi) divalidasi saat Simpan.
+   **Migrasi `database/migrations/20261106_wa_teks_cms.sql` wajib dijalankan di
+   hosting** — tanpa kolom `wa_teks`, seluruh formulir Pengaturan Sistem gagal
+   tersimpan (`1054 Unknown column`).
 3. Uji manual mengikuti `docs/UJI-MANUAL.md` (registrasi, unggah, bayar,
    verifikasi, pengumuman, cek-status, tools CLI bila ada).
 4. Bila ada akses CLI/terminal: jalankan `php tools/cek-proyek.php` dan

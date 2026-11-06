@@ -86,9 +86,10 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 |---|---|---|
 | 1 | Badge jumlah belum dibaca (di topbar, polling 60 dtk) | ✅ |
 | 2 | Tandai baca (per item & semua) | ✅ |
-| 3 | Pagination + link per tipe notifikasi | ✅ |
+| 3 | Pagination + link per tipe notifikasi | ✅ — termasuk tipe baru `PENDAFTAR_BARU` yang tombolnya membuka Data Pendaftar (2026-11-06) |
 | 4 | Toast untuk pesan galat | ⚠️ `flash('galat')` salah tipe → toast hijau (sukses) untuk pesan error |
 | 5 | **Filter / pencarian notifikasi** | 🚧 Selalu `ORDER BY created_at DESC` tanpa `WHERE` |
+| 6 | Kanal WhatsApp untuk pemicu panitia | ✅ sejak 2026-11-06 — `notif_pemicu_wa()` (`includes/notifikasi.php`) mendaftar `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`, `PEMBAYARAN_GATEWAY_LUNAS`, **`PENDAFTAR_BARU`, `VERIFIKASI_DATA`, `BERKAS_DISUBMIT`**; kiriman operasional dibatasi 3 pesan/jam per pendaftar (`rate_limit_cek('notif_wa_operasional', 3, 60, "tipe:pendaftarId")`) supaya tombol yang diklik berulang tidak menghabiskan kuota Fonnte, uang masuk tetap tidak dibatasi |
 
 ---
 
@@ -101,8 +102,8 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | 1 | Tambah jadwal tes | ✅ *dirombak* — tidak lagi form 8 kolom di atas daftar, tapi satu modal bersama |
 | 2 | Ubah jadwal lewat modal (nama, tanggal, jam, mode, ruangan, kapasitas, status) | ✅ *dirombak* — dahulu inline-edit 9 kolom dengan `min-w-[960px]`; scrollbar samping & jumlah peserta mudah terhapus dari simpan |
 | 3 | Jumlah peserta & status tersinkron dari Peserta Ujian | ✅ nilai ikut terbawa saat menyimpan (field tersembunyi), tidak ditimpa jadi 0 |
-| 4 | **Umumkan Semua Jadwal** — satu pesan WA berisi seluruh jadwal Terjadwal + satu notifikasi portal per siswa | ✅ baru — `jadwal_umumkan_semua()`; penerima = yang sudah dijadwalkan & punya WA orang tua; `ref_id` sidik jari susunan jadwal sehingga klik ganda tidak mengirim ulang |
-| 5 | Kirim notifikasi WA jadwal ke wali (per kegiatan) | ✅ *diperbaiki* — dahulu selalu 0 penerima karena hanya membaca `seleksi.jadwal_id`, padahal penjadwalan ditulis ke `peserta_ujian`; kini kedua sumber dibaca dan Lokasi memakai **Ruangan** yang diisi operator |
+| 4 | **Umumkan Semua Jadwal** — satu pesan WA berisi seluruh jadwal Terjadwal + satu notifikasi portal per siswa | ✅ *dirapikan* — `jadwal_umumkan_semua()` kini menyusun pesan lalu menyerahkan pengirimannya ke `jadwal_kirim_ke_wali()`, fungsi yang sama dipakai tombol per kegiatan; `ref_id` sidik jari susunan jadwal sehingga klik ganda tidak mengirim ulang |
+| 5 | Kirim notifikasi WA jadwal ke wali (per kegiatan) | ✅ **diperbaiki total** (2026-11-06) — dahulu selalu 0 penerima karena hanya membaca `seleksi.jadwal_id`, padahal penjadwalan ditulis ke `peserta_ujian`; kini kedua sumber dibaca untuk **satu kartu itu saja**, Lokasi memakai **Ruangan** yang diisi operator, dan tiap wali juga menerima **notifikasi lonceng portal** (`notifikasi_siswa` tipe `JADWAL_UJIAN`) — bukan WA saja |
 | 6 | Hapus jadwal (dijaga bila sudah dipakai seleksi) | ✅ |
 | 7 | Ringkasan jumlah jadwal per status (Draft / Terjadwal / Selesai) | ✅ |
 | 8 | Bagian **Peserta Ujian** menyatu di halaman yang sama | ✅ sejak 2026-11-02 — letaknya di bawah pengaturan jadwal; `app/operator/peserta-ujian.php` menjadi pengalih 302 ke `jadwal.php#peserta` dan menu sidebar "Peserta Ujian" dihapus (sidebar operator 15 → 14 item) |
@@ -111,10 +112,10 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 
 | # | Fungsi | Status |
 |---|---|---|
-| 1 | Atur Peserta Otomatis (transaksi + `FOR UPDATE`, cek kapasitas, nomor peserta unik) | ✅ **Paling rapi di seluruh aplikasi** |
-| 2 | Tambah peserta manual | ✅ satu dropdown per jadwal |
-| 3 | Hapus peserta | ✅ |
-| 4 | Kirim WA jadwal ke peserta | ✅ |
+| 1 | Atur Peserta Otomatis (transaksi + `FOR UPDATE`, cek kapasitas, nomor peserta unik) | ✅ **Paling rapi di seluruh aplikasi** — sejak 2026-11-06 yang dilewati hanya calon yang **sudah ada di kartu ini**, bukan calon yang pernah masuk kartu mana pun; jadi calon yang absen di satu kegiatan bisa dijaring ulang pada jadwal susulan tanpa menghapus barisnya lebih dulu |
+| 2 | Tambah peserta manual | ✅ satu dropdown per jadwal; penolakan "sudah terdaftar" berlaku per kartu (`pendaftar_id` + `jadwal_id`), daftar isi hanya menampilkan calon yang belum ada di kartu ini dengan catatan "(sudah: KODE)" bila ia memang ikut kegiatan lain |
+| 3 | Hapus peserta | ✅ tahap calon hanya dipundahkan ke `BERKAS_TERVERIFIKASI` bila ia tinggal tidak punya jadwal sama sekali |
+| 4 | Kirim WA jadwal ke peserta | ✅ *diperbaiki* — lihat §6 baris 5: satu kartu = satu pesan WA + satu lonceng portal, penerima kartu itu saja |
 | 5 | Semua jadwal Terjadwal tampil sekaligus (tanpa dropdown pilih jadwal) | ✅ kartu bertumpuk, berisi meta kegiatan, kapasitas & bar terpakai, sisa kuota, peringatan peserta tanpa nomor WA orang tua |
 
 > **2026-11-01 — halaman dirombak.** Dropdown "Jadwal Tes" dihapus: yang bisa
@@ -131,6 +132,37 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 > dirender di `app/operator/jadwal.php` bagian bawah (`#peserta`), satu form
 > dengan jadwalnya; tidak ada lagi pindah halaman saat mengurus peserta.
 > Halaman lama tinggal jadi pengalih, jadi tautan lama tetap hidup.
+>
+> **2026-11-06 — satu calon boleh ikut beberapa kegiatan.** Sebelumnya
+> `peserta_ujian` punya `UNIQUE (pendaftar_id)`, sehingga seorang calon hanya
+> bisa menempati satu kartu **seumur hidupnya**: calon yang absen di Tes Baca
+> & Tulis tidak bisa dimasukkan ke kartu Wawancara sebelum barisnya dihapus,
+> dan *Atur Peserta Otomatis* diam-diam menjadikannya 0 peserta. Batas itu
+> dilepas lewat `database/migrations/20261106_peserta_ujian_multi_jadwal.sql`
+> (indeks baru `uq_peserta_jadwal (pendaftar_id, jadwal_id)` dibuat lebih dulu
+> agar FK tetap punya indeks pendukung, lalu `uq_peserta_pendaftar` dihapus).
+> Sejak itu:
+> - *Atur Peserta Otomatis*, *Tambah manual*, dan daftar kandidat menyaring
+>   **per kartu**; syarat tahap terpusat di `peserta_tahap_siap_jadwal()`
+>   (`BERKAS_TERVERIFIKASI`, `JADWAL_DITETAPKAN`, `NILAI_TERINPUT`, `DIUMUMKAN`)
+>   supaya calon yang sudah punya nilai tidak dipundahkan tahapnya, dan
+>   `UPDATE tahap` diberi syarat `AND tahap = 'BERKAS_TERVERIFIKASI'`.
+> - Tile statistik "Belum dijadwalkan" menjadi **"Belum punya jadwal"** dan
+>   dihitung dari `tanpa_jadwal` (belum pernah masuk kartu mana pun), bukan dari
+>   selisih kapasitas — angka yang dahulu menyesatkan karena kandidat yang
+>   sudah lulus seleksi keluar dari daftar.
+> - Tombol per kartu *Kirim WA Jadwal* memakai pengirim yang sama dengan
+>   *Umumkan Semua Jadwal* (`jadwal_kirim_ke_wali()`), sehingga isi tabel
+>   kegiatan di pesan wali dan di kartu portal tidak pernah berbeda, dan
+>   pemakai tidak perlu lagi mengklik tombol gabungan untuk mendapat lonceng
+>   portal. Konsekuensi yang diterima: satu wali bisa punya dua lonceng jadwal
+>   (pengumuman gabungan dan per kegiatan) karena `ref_id`-nya beda; klik ganda
+>   pada kartu yang sama tetap ditahan (`lewati`).
+> - Di portal siswa, "Kartu Ujian" = kegiatan terdekat yang belum lewat
+>   (`peserta_kartu_siswa()`) dan tab **Agenda Tes** hanya daftar kegiatan milik
+>   siswa itu sendiri (`jadwal_agenda_siswa()`); bila ia belum ditempatkan di
+>   kartu mana pun, Agenda masih menampilkan seluruh jadwal sekolah sebagai
+>   pengumuman umum seperti sebelumnya.
 
 ### 8. Data & Status Tes — `app/operator/seleksi.php`
 
@@ -165,7 +197,7 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 | 2 | Jadwalkan Pengumuman | ✅ sejak 2026-11-02 — tidak lagi menunggu persetujuan |
 | 3 | Batalkan Pengumuman | ✅ |
 | 4 | WA massal + progress bar + retry (benar-benar terkirim ke Fonnte) | ⚠️ **Tanpa dedupe** → klik 2× = WA ganda; tanpa guard server "sudah diumumkan" |
-| 5 | Isi pesan WA memuat tautan hasil seleksi | ✅ sejak 2026-11-02 — `pengumuman_pesan_wa()` menyertakan `url_abs('app/siswa/hasil.php')` untuk kedua varian pesan |
+| 5 | Isi pesan WA memuat tautan hasil seleksi | ✅ sejak 2026-11-02 — `pengumuman_pesan_wa()` menyertakan `url_abs('app/siswa/hasil.php')`. Sejak 2026-11-06 teksnya **satu kalimat umum untuk semua penerima** (tanpa nama/No. REG/status) dan bisa disunting di Pengaturan Sistem → *Teks Pesan WhatsApp* kunci `hasil_seleksi` — lihat §14 baris 7b. Rincian LULUS/TIDAK LULUS + kelas tetap hanya di lonceng portal siswa |
 | 6 | Nama petugas di sidebar/topbar | ✅ sejak 2026-11-02 — halaman ini sempat memakai `$USER_LOGIN` bawaan `includes/dummy.php` (nama demo) karena lupa mengambil akun yang sedang login |
 
 > **Gerbang persetujuan pernah ada (31 Okt 2026) dan dilepas 2 Nov 2026.**
@@ -218,7 +250,7 @@ penuh) belum dihitung ulang pada tabel ringkasan di atas.
 
 ### 14. Pengaturan Sistem (CMS) — `app/operator/pengaturan.php`
 
-Satu `<form>` berisi **section 1–11** (termasuk sub-section 3b FAQ dan 6b Jalur) — section 10 & 11 hanya kartu tautan; semua isian **tersimpan & terpakai**:
+Satu `<form>` berisi **section 1–11** (termasuk sub-section 3b FAQ, 6b Jalur dan 7b Teks Pesan WhatsApp) — section 10 & 11 hanya kartu tautan; semua isian **tersimpan & terpakai**:
 
 | # | Section | Status |
 |---|---|---|
@@ -229,10 +261,11 @@ Satu `<form>` berisi **section 1–11** (termasuk sub-section 3b FAQ dan 6b Jalu
 | 4 | **Rincian Biaya SPMB**: Biaya Formulir, SPP, **daftar item biaya masuk yang bisa disusun bebas**, **Biaya Masuk** (+ nama labelnya) dan **Teks Promo** | ✅ sejak 2026-11-01, daftar item sejak 2026-11-02. Operator menambah/menghapus item "nama + nominal" (maks 15) — tersimpan sebagai JSON di `pengaturan_sekolah.rincian_biaya` dan **totalnya otomatis menjadi Biaya Masuk** (`estimasi_uang_masuk`), jadi `angsuran_skema()` di `queries/pembayaran.php` tetap satu-satunya sumber angka. Kartu "Tagihan Setelah Lulus" menampilkan `Biaya Masuk − Biaya Formulir = Sisa` yang dibagi 2 angsuran sama besar (`angsuran_*_nominal` tidak dibaca lagi); nilai berubah langsung saat operator mengetik. Daftar dikosongkan = Biaya Masuk diketik manual. Rincian ikut tampil di kartu biaya halaman publik dan di panel **Rincian Biaya & Sisa Pembayaran** portal siswa. `teks_beasiswa` (label barunya **Teks Promo**) kosong = kartu promo tidak tampil di halaman publik; kolom DB-nya tidak diganti |
 | 5 | Rekening Bank | ✅ dipakai di footer & halaman bayar |
 | 6 | Gelombang Pendaftaran | ✅ |
-| 7 | Kredensial WhatsApp Fonnte + blok **Notifikasi Transaksi** | ✅ Token diuji otomatis ke Fonnte (`/device`, tanpa kirim WA) saat form disimpan + badge sumber token (`.env`/DB) — lihat catatan di bawah. Sejak 2026-11-05 blok di bagian bawah kartu ini memegang saklar `notif_wa_aktif` dan **Nomor WA Bendahara** (dipisah koma, validasi `+?[0-9]{6,16}` per nomor) — satu-satunya kanal WA panitia, khusus kabar uang masuk; kosong = fallback ke Kontak WhatsApp Panitia bagian 1 |
+| 7 | Kredensial WhatsApp Fonnte + blok **Notifikasi WhatsApp Panitia** | ✅ Token diuji otomatis ke Fonnte (`/device`, tanpa kirim WA) saat form disimpan + badge sumber token (`.env`/DB) — lihat catatan di bawah. Blok di bagian bawah kartu ini memegang saklar `notif_wa_aktif` dan **Nomor WA Panitia & Bendahara (dipisah koma**, validasi `+?[0-9]{6,16}` per nomor) — tujuan daftar notifikasi `notif_operator()`: kabar uang masuk **dan** kabar operasional panitia (pendaftar baru, data diajukan, berkas dikirim/dikirim ulang; lihat §5 butir 6), kosong = fallback ke Kontak WhatsApp Panitia bagian 1. Judul blok ini dulu "Notifikasi Transaksi" — nama diganti 2026-11-06 karena tujuannya bukan lagi bendahara saja |
+| 7b | **Teks Pesan WhatsApp ke Calon Murid** (baru 2026-11-06) | ✅ Tujuh pesan keluar ke wali siswa tidak lagi tertulis di dalam kode: satu textarea per pesan, disimpan sebagai JSON `{kunci: teks}` di kolom `pengaturan_sekolah.wa_teks` (migrasi `20261106_wa_teks_cms.sql`). Katalog + teks bawaan ada di `includes/queries/wa-teks.php` → `wa_teks_katalog()`; semua builder pesan memanggil `wa_teks_isi(kunci, placeholder)`. **Kosong = teks bawaan kode** (upgrade berikutnya tetap membawa kalimat baru), teks yang sama dengan bawaan tidak ikut disimpan, badge menandai kunci yang sudah diubah, dan maksimal 1200 karakter. Validasi menolak placeholder wajib dihapus (`{tautan_hasil}`, `{langkah}`, `{jadwal_list}`, `{username}`+`{password}`, `{rincian}`, `{daftar}`) dan placeholder typo (`{namaa}`) yang akan terkirim mentah. Placeholder yang nilainya kosong (mis. tahun ajaran / blok rekening nonaktif) membuat **barisnya ikut hilang**, bukan meninggalkan baris kosong |
 | 8 | Midtrans | ✅ |
 | 9 | Metode Bayar + S&K | ✅ |
-| 10 | Kartu **Daftar Berkas Persyaratan** (tautan saja) | ✅ Sejak 2026-11-05 section "Notifikasi Operator" dihapus — pengaturannya pindah ke blok *Notifikasi Transaksi* di kartu WhatsApp Gateway (baris 7). Berkas persyaratan dikelola di `app/operator/jenis-dokumen.php` (bagian 13) |
+| 10 | Kartu **Daftar Berkas Persyaratan** (tautan saja) | ✅ Sejak 2026-11-05 section "Notifikasi Operator" dihapus — pengaturannya pindah ke blok *Notifikasi WhatsApp Panitia* di kartu WhatsApp Gateway (baris 7). Berkas persyaratan dikelola di `app/operator/jenis-dokumen.php` (bagian 13) |
 | — | Field "tulis-saja" (`profil_singkat`, `deskripsi_sekolah`, `tagline`, `deskripsi_gelombang`) | ⚠️ Tersimpan tapi **tak pernah dibaca** |
 | — | **Unggah favicon** | 🚧 `favicon_url` dipakai `head.php` tapi tidak ada input-nya |
 | 11 | Kartu **Petugas & Hak Akses** (tautan saja) | ✅ Nama/username/password petugas tidak ikut form ini — dikelola di halaman `petugas.php` (tabel `users`) |
@@ -244,9 +277,11 @@ Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
   menyebutkan secara eksplisit bahwa token yang tersimpan di halaman ini **diabaikan** bila isinya
   berbeda — sebelumnya kotak ini hijau sehingga terbaca "aman" (2026-11-06: notifikasi bukti bayar
   gagal tanpa suara, tanpa satu layar pun yang menunjukkan kegagalannya).
-- Baris **Kirim terakhir gagal/terkirim** di bawah Nomor WA Bendahara membaca percobaan
-  `BUKTI_BAYAR_MASUK` / `PEMBAYARAN_GATEWAY_*` terakhir dari `wa_log` (tujuan, tipe, waktu, dan
-  alasan dari Fonnte) — kegagalan kirim tidak lagi hanya terlihat di database.
+- Baris **Kirim terakhir gagal/terkirim** di bawah Nomor WA Panitia & Bendahara membaca percobaan
+  terakhir dari `wa_log` untuk **keenam** pemicu `notif_pemicu_wa()` — `BUKTI_BAYAR_MASUK` /
+  `PEMBAYARAN_GATEWAY_*` dan `PENDAFTAR_BARU` / `VERIFIKASI_DATA` / `BERKAS_DISUBMIT`
+  (tujuan, tipe, waktu, dan alasan dari Fonnte) — kegagalan kirim tidak lagi hanya terlihat di
+  database.
 - Setiap submit formulir melakukan uji token ke `https://api.fonnte.com/device` — respons
   success/error flash berisi device, nama, kuota, dan tanggal kedaluwarsa (atau alasan penolakan).
   Endpoint ini **tidak** mengirim pesan WhatsApp. Status perangkat bisa berkedip: `/device`
@@ -255,6 +290,22 @@ Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
 - Input rahasia (token Fonnte, Server/Client Key Midtrans) tidak lagi dicetak ke atribut `value=`
   dan **kosong = jangan ubah**; penghapusan harus eksplisit lewat checkbox *Hapus token*.
   Sebelumnya submit mana pun dengan field tersebut kosong menghapus token yang tersimpan.
+
+Catatan Section 7b (Teks Pesan WhatsApp) — sejak 2026-11-06:
+- Peta pesan → kunci katalog: instruksi bayar registrasi `instruksi_bayar` (`wa_pesan_instruksi()`),
+  akun & password portal `kredensial_akun` (`wa_pesan_kredensial()`), pengumuman jadwal tes
+  `jadwal_tes` (`jadwal_pesan_pengumuman()` — **salinan yang sama** dipakai lonceng portal siswa),
+  hasil seleksi `hasil_seleksi` (`pengumuman_pesan_wa()`), pengingat jatuh tempo `pengingat_biaya`
+  (`angsuran_pesan_wa()`), bukti bayar ditolak `bukti_ditolak`, berkas perlu diperbaiki
+  `berkas_ditolak` (`dokumen_tolak()` — juga jadi isi lonceng portal).
+- Editor selalu menampilkan teks yang **sedang berjalan** (override bila ada, selain itu bawaan),
+  jadi operator tidak pernah menatap kotak kosong; cara "kembali ke kalimat terbaru aplikasi"
+  adalah mengosongkan kotak lalu Simpan.
+- Placeholder diisi oleh pemanggil, bukan oleh form: menambah tag baru di luar katalog ditolak saat
+  menyimpan, dan tag dikenal yang tidak diisi pemanggil dikosongkan bersama barisnya
+  (`wa_teks_rapikan()`) — tidak ada kurung kurawal yang ikut terkirim ke wali siswa.
+- Hasil LULUS / TIDAK LULUS sengaja tidak ditulis di WhatsApp (satu teks umum untuk semua
+  penerima); rinciannya hanya di lonceng portal siswa setelah login.
 
 ### 15. Retensi Data — `app/operator/retensi.php`
 
@@ -294,7 +345,9 @@ Menu grup **Pengaturan Sistem** (kunci `petugas`). Akun staf disimpan di tabel
 `users`; hanya role `operator`/`admin` yang boleh membuka. Sejak 2026-11-03 halaman
 ini juga menulis dua kolom `pengaturan_sekolah` — sejak 2026-11-05 yang ditulis
 `notif_wa_bendahara` + `notif_wa_aktif` (bukan `notif_wa_operator` lagi) lewat panel
-Notifikasi WhatsApp Transaksi — satu-satunya pengecualian.
+Notifikasi WhatsApp Panitia — satu-satunya pengecualian. Panel ini menulis daftar
+tujuan yang sama dengan blok di kartu WhatsApp Gateway, dan sejak 2026-11-06 isinya
+memang dipakai bersama: nomor panitia sekaligus nomor bendahara.
 
 | # | Fungsi | Status |
 |---|---|---|
@@ -305,7 +358,7 @@ Notifikasi WhatsApp Transaksi — satu-satunya pengecualian.
 | 5 | Tambah petugas baru (nama, jabatan, role, username, password sementara) | ✅ — beberapa akun per role diperbolehkan |
 | 6 | Nonaktifkan / aktifkan akun (soft, data tetap ada) | ✅ — ditolak bila akun tersebut operator aktif terakhir |
 | 7 | Pengaman akun sendiri | ✅ — hanya nama & jabatan yang bisa diubah; username/password/nonaktif akun sendiri dikunci (UI disembunyikan + divalidasi ulang di server) |
-| 8 | Panel **Notifikasi WhatsApp Transaksi** (2026-11-03, dialihkan ke bendahara 2026-11-05) | ✅ — mengganti **Nomor WA Bendahara** (boleh beberapa, dipisah koma) dan saklar `notif_wa_aktif` tanpa membuka formulir Pengaturan Sistem. Format nomor divalidasi di server dengan aturan yang sama seperti CMS (`+?[0-9]{6,16}` per nomor). Nomor dikosongkan boleh — selama Kontak WhatsApp Panitia terisi, dan pesan flash menyebut nomor tujuan hasil fallback; keduanya kosong dan saklar aktif baru ditolak. Kolom yang ditulis sama persis dengan blok *Notifikasi Transaksi* di kartu WhatsApp Gateway — keduanya tetap bisa dipakai, yang terakhir menyimpan menang. Hint di layar menampilkan tujuan efektif saat ini |
+| 8 | Panel **Notifikasi WhatsApp Panitia** (2026-11-03, dialihkan ke bendahara 2026-11-05, dinamai ulang 2026-11-06) | ✅ — mengganti **Nomor WA Panitia & Bendahara** (boleh beberapa, dipisah koma) dan saklar `notif_wa_aktif` tanpa membuka formulir Pengaturan Sistem. Judul panel dan label field mengikuti perluasan rute: daftar ini sekarang menerima kabar uang masuk **dan** kabar operasional (pendaftar baru, data diajukan, berkas dikirim) sehingga bukan lagi murni "transaksi" / "bendahara". Format nomor divalidasi di server dengan aturan yang sama seperti CMS (`+?[0-9]{6,16}` per nomor). Nomor dikosongkan boleh — selama Kontak WhatsApp Panitia terisi, dan pesan flash menyebut nomor tujuan hasil fallback; keduanya kosong dan saklar aktif baru ditolak. Kolom yang ditulis sama persis dengan blok *Notifikasi WhatsApp Panitia* di kartu WhatsApp Gateway — keduanya tetap bisa dipakai, yang terakhir menyimpan menang. Hint di layar menampilkan tujuan efektif saat ini |
 
 Lapisan query: `includes/queries/petugas.php` (`petugas_semua`, `petugas_buat`,
 `petugas_ubah_identitas`, `petugas_set_password`, `petugas_set_aktif`,
@@ -389,6 +442,9 @@ Untuk kondisi awal di mana **belum ada** akun staf yang bisa login (semua
 ---
 
 | 50 | **Siswa baru pertama login langsung disambut "pembayaran ditolak" dari uji sebelumnya** (2026-11-06) | Bukan bug pengiriman: akun siswa dibuat bendahara **setelah** rentetan keputusan pembayaran terjadi, sementara `notifikasi_siswa` menyimpan peristiwa itu tanpa peduli akun sudah dipakai atau belum. Sekarang ada garis awal: kolom baru `users.notif_mulai_at` (NULL → ditulis `NOW()` pada kunjungan pertama, sekali saja, `database/migrations/20261106_notifikasi_baseline.sql`) dan helper `notif_siswa_batas($pendaftar_id)` (`includes/queries/notifikasi-siswa.php`, hasil di-`static cache` per request). `notif_siswa_daftar()` **dan** `notif_siswa_belum_dibaca()` menyaring `created_at >= batas` sehingga halaman Informasi, badge sidebar/topbar, dan `app/api/notif-count.php` konsisten: peristiwa sebelum login pertama tidak muncul sama sekali dan badge 0. Barisnya **tidak** dihapus maupun ditandai dibaca — riwayat audit tetap utuh dan keputusan bendahara yang lama masih terlihat di papan operator. Penulisan batas dilakukan di `app/siswa/_bootstrap.php` sebelum `angsuran_kirim_pengingat()` supaya pengingat yang lahir pada kunjungan pertama itu sendiri tidak ikut tersembunyi. Yang sengaja TIDAK disaring: kartu "Informasi Pendaftaran"/kabar di dashboard (dihitung dari status data saat ini, bukan peristiwa) dan Pengumuman Panitia. Konsekuensi yang diterima: riwayat lama tidak bisa lagi dilihat siswa di portal — itu memang permintaan. Uji: `docs/UJI-MANUAL.md` W19–W23 |
+| 51 | **Pendaftar baru & pengajuan data/berkas tidak terdengar sama sekali oleh panitia** (2026-11-06) | Sejak 2026-11-05 WA panitia dipangkas jadi kanal transaksi saja (baris 44) karena akun Fonnte gratis mendaftarkan satu nomor — padahal nomor itu **adalah** nomor operator yang sama, jadi alasan pemangkasan tidak berlaku di sini. Sekarang `notif_operator()` kembali mengirim WA untuk kabar operasional lewat daftar baru `notif_pemicu_wa()`: `PENDAFTAR_BARU`, `VERIFIKASI_DATA`, `BERKAS_DISUBMIT` bergabung dengan tiga pemicu uang masuk, semuanya ke `notif_nomor_bendahara()`. `registrasi_baru()` (`includes/queries/pendaftar.php`) memanggil `notif_operator('PENDAFTAR_BARU', …)` **setelah** `RELEASE_LOCK` dan hanya di jalur baris benar-benar baru — cabang `reused` dan cabang "nomor WA + nama sudah terdaftar" keluar lebih dulu, jadi retry/double-submit tidak menghasilkan kabar ganda. Isi pesan: nama, No. Pendaftaran, asal sekolah, dan tautan `app/operator/pendaftar.php`; tipe barunya ikut dapat tombol "Buka" di papan Notifikasi. Tiga pemicu operasional dibatasi **3 pesan/jam per pendaftar** (`rate_limit_cek`/`rate_limit_catat` dengan kunci `tipe:pendaftarId` — kolom `rate_limit.ip_address` dipakai sebagai penyimpan kunci ber-`prefix "k:"`), uang masuk sengaja **tidak** dibatasi karena tiap transfer adalah kejadian berbeda; papan `notifikasi` in-app tetap mencatat **semua** kejadian walau kiriman WA-nya ditahan. Saklar `notif_wa_aktif` tetap satu-satunya gerbang. Penamaan ikut disesuaikan karena tujuannya bukan lagi bendahara saja: blok Pengaturan Sistem **Notifikasi Transaksi → Notifikasi WhatsApp Panitia**, field **Nomor WA Panitia & Bendahara (dipisah koma)**, label saklar "Kirim notifikasi panitia via WhatsApp", judul panel di Petugas & Hak Akses, item Kesiapan Rilis, dan kartu panduan F3. `pendaftar_manual()` (pendaftar yang dibuat operator) sengaja tidak mengirim WA — panitia sedang berada di layar itu. Uji: `docs/UJI-MANUAL.md` W24–W28 |
+| 52 | **Calon tidak bisa dijadwalkan pada kegiatan kedua, dan tombol WA per kartu tidak menulis lonceng portal** (2026-11-06) | Dua hal yang ternyata satu akar. **Skema**: `peserta_ujian` mengunci `UNIQUE (pendaftar_id)` sehingga satu calon cuma boleh memegang satu kartu *seumur hidup* — *Atur Peserta Otomatis* di kartu kegiatan kedua selalu menghasilkan 0 peserta padahal sisa kapasitas masih ada, dan operator harus menghapus baris kandidatnya lebih dulu. `database/migrations/20261106_peserta_ujian_multi_jadwal.sql` (idempoten lewat `information_schema` + `PREPARE`) membuat `uq_peserta_jadwal (pendaftar_id, jadwal_id)` **lebih dulu** — kalau tidak, FK pada `pendaftar_id` kehilangan indeks pendukung — lalu melepas `uq_peserta_pendaftar`; seed `database/db_spmb_mualimku.sql` ikut disesuaikan. **Logika**: pengecekan "belum terjadwal" di `peserta_atur_otomatis()`, `peserta_tambah_manual()` dan daftar kandidat kini berlaku **per kartu**; syarat tahap dipusatkan ke `peserta_tahap_siap_jadwal()` (empat tahap — versi sempit dulu membuat tombol "Tambah manual" hilang sama sekali di data yang sudah diumumkan), `UPDATE tahap` diberi syarat `AND tahap = 'BERKAS_TERVERIFIKASI'` supaya jadwal susulan tidak memundurkan calon bernilai, dan `peserta_hapus()` hanya memundahkan tahap bila calon itu tinggal tanpa jadwal mana pun. Penanda "(sudah: …)" di dropdown dibangun dari kartu **Terjadwal** saja — kartu Draft/Selesai memang tidak dikelola dari halaman ini. Tile "Belum dijadwalkan" (dulu selisih kapasitas sehingga menyesatkan) menjadi **"Belum punya jadwal"**. **Notifikasi**: `jadwal_kirim_notifikasi()` per kartu membaca pesertanya dari `peserta_ujian` tetapi penerimanya dari `seleksi.jadwal_id` — sumber berbeda, sering 0 penerima — dan hanya mengirim WA. Sekarang keduanya dari kartu yang sama lewat `jadwal_penerima_kartu()`, dan pengirimannya diserahkan ke `jadwal_kirim_ke_wali()` fungsi baru yang **juga** dipakai `jadwal_umumkan_semua()`; tombol per kartu ikut menulis `notifikasi_siswa` (tipe `JADWAL_UJIAN`, `ref_id` sidik jari kegiatan) + `wa_log`, dan melewati penerima yang sudah `TERKIRIM`. Konsekuensi yang diterima: wali bisa memegang dua lonceng jadwal (pengumuman gabungan dan per kegiatan) karena sidik jarinya memang peristiwa berbeda. Portal siswa menyesuaikan: `peserta_kartu_siswa()` memilih kegiatan **terdekat yang belum lewat** (`(j.tanggal < CURDATE()), ABS(DATEDIFF(j.tanggal, CURDATE()))`) dan Agenda dibangun dari `jadwal_agenda_siswa()` — hanya kegiatan milik siswa itu, jatuh ke `jadwal_terjadwal()` bila ia belum ditempatkan di kartu mana pun. Uji: `docs/UJI-MANUAL.md` O12–O17 & P2/P2b/P5 (harness CLI 46 assert + render portal, token Fonnte dipalsukan); `cek-statis` 17 LULUS, `cek-proyek` 8 PASS/SIAP. **Migrasi ini harus dijalankan di hosting** sebelum operator menempatkan calon pada kartu kedua |
+| 53 | **Kalimat WA ke wali siswa hanya bisa diubah dengan menyunting kode** (2026-11-06) | Tujuh pesan keluar (instruksi bayar, akun & password, jadwal tes, hasil seleksi, pengingat biaya, bukti bayar ditolak, berkas ditolak) tadinya dirangkai dengan string PHP di `includes/fonnte.php`, `queries/jadwal.php`, `queries/pengumuman.php`, `queries/pembayaran.php` dan `queries/dokumen.php`. Kini semuanya lewat katalog template `wa_teks_katalog()` di berkas baru `includes/queries/wa-teks.php` + `wa_teks_isi($kunci, $vars)`, dan operator bisa menggantinya per pesan di **Pengaturan Sistem → Teks Pesan WhatsApp ke Calon Murid** (section 7b; kolom JSON baru `pengaturan_sekolah.wa_teks`, migrasi `20261106_wa_teks_cms.sql`, seed ikut dilengkapi). Aturan simpan: kosong / sama dengan bawaan = **tidak menulis apa pun**, sehingga kalimat bawaan aplikasi masih ikut ter-upgrade; yang tersimpan hanya suntingan sungguhan. Validasi `wa_teks_galat()` menolak teks > 1200 karakter, placeholder wajib yang hilang, dan placeholder tak dikenal (typo `{namaa}` dulu akan terkirim mentah ke orang tua). `wa_teks_rapikan()` membuang baris yang seluruh isinya placeholder kosong (tahun ajaran belum diisi, metode transfer nonaktif) dan merapatkan `\n\n\n`. Sekalian menjawab permintaan spesifik: pesan **hasil seleksi** jadi satu kalimat umum — "Assalamualaikum. / Alhamdulillah, Pengumuman Kelulusan seleksi SPMB {sekolah} sudah RILIS. / … tautan hasil … / … cek-status … / Panitia SPMB" — tanpa nama, No. REG, dan status LULUS/TIDAK LULUS; rincian itu tetap hanya muncul di lonceng portal siswa (`notifikasi_siswa` tipe `HASIL_SELEKSI` tetap personal). Lonceng jadwal & berkas memakai template yang sama dengan WA-nya sehingga keduanya tidak bisa lagi berbeda kalimat. Uji: harness CLI `uji-wa-cms.php` (render GET 71 assert; POST valid menyimpan override dan **seluruh kolom lain tidak bergeser** — bukti urutan parameter UPDATE besar itu aman; POST tidak valid tidak menulis apa pun; baris `pengaturan_sekolah` selalu dipulihkan lewat cadangan + `register_shutdown_function`), `uji-wa-teks.php` 27 assert; `cek-statis` 17 LULUS, `cek-proyek` 8 PASS (262 kolom) / SIAP. **Migrasi `wa_teks` wajib dijalankan di hosting** — tanpa kolom itu, seluruh formulir Pengaturan Sistem gagal tersimpan (`1054 Unknown column`) |
 
 ## Sisa Pekerjaan
 

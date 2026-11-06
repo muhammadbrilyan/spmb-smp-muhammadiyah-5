@@ -92,69 +92,39 @@ function jadwal_tambah($nama, $tgl, $jamMulai, $jamSelesai, $mode, $peserta, $st
     return $ok ? $id : null;
 }
 
-/** Simpan/ubah nilai seleksi satu pendaftar (upsert) + sinkron status_seleksi. */
-
+/**
+ * Kirim jadwal SATU kegiatan ke orang tua peserta: satu pesan WA plus satu
+ * lonceng portal siswa. Sejak 2026-11-06 jalur ini memakai pengirim yang sama
+ * dengan "Umumkan Semua Jadwal", sehingga klik ganda pada susunan yang sama
+ * tidak mengirim ulang dan tiap kegiatan punya penanda notifikasinya sendiri.
+ *
+ * @return array{ok:int,gagal:int,lewati:int,in_app:int,penerima:int,detail:array<int,string>}
+ */
 function jadwal_kirim_notifikasi($jadwal_id)
 {
+    $kosong = ['ok' => 0, 'gagal' => 0, 'lewati' => 0, 'in_app' => 0, 'penerima' => 0, 'detail' => []];
+
     $j = q_all(
-        'SELECT kode, nama_kegiatan, tanggal, jam_mulai, jam_selesai, mode, lokasi, ruangan, peserta_dijadwalkan
+        'SELECT id, kode, nama_kegiatan, tanggal, jam_mulai, jam_selesai, mode, lokasi, ruangan
            FROM jadwal_tes WHERE id = ? LIMIT 1',
         [$jadwal_id]
     );
     if (!$j) {
-        return ['ok' => 0, 'gagal' => 0, 'detail' => ['Jadwal tidak ditemukan.']];
+        $kosong['detail'][] = 'Jadwal tidak ditemukan.';
+        return $kosong;
     }
     $j = $j[0];
 
-    /* Peserta tercatat di dua tempat: peserta_ujian (halaman Peserta Ujian) dan
-     * seleksi.jadwal_id (Input Nilai). Pakai keduanya supaya tidak ada siswa
-     * yang terlewat hanya karena dijadwalkan lewat jalur lain. */
-    $siswa = q_all(
-        "SELECT p.nama_siswa, o.no_whatsapp, o.nama_orang_tua
-           FROM pendaftar p
-           JOIN orang_tua o ON o.pendaftar_id = p.id
-          WHERE p.arsip_at IS NULL
-            AND o.no_whatsapp IS NOT NULL AND o.no_whatsapp <> ''
-            AND (
-                  EXISTS (SELECT 1 FROM peserta_ujian pu
-                           WHERE pu.pendaftar_id = p.id AND pu.jadwal_id = ?)
-               OR EXISTS (SELECT 1 FROM seleksi s
-                           WHERE s.pendaftar_id = p.id AND s.jadwal_id = ?)
-                )
-       ORDER BY p.no_pendaftaran",
-        [$jadwal_id, $jadwal_id]
-    ) ?: [];
-    if (!$siswa) {
-        return ['ok' => 0, 'gagal' => 0, 'detail' => ['Tidak ada siswa terjadwal dengan nomor WA orang tua.']];
+    $penerima = jadwal_penerima_kartu($jadwal_id);
+    $kosong['penerima'] = count($penerima);
+    if (!$penerima) {
+        $kosong['detail'][] = 'Tidak ada siswa terjadwal dengan nomor WA orang tua.';
+        return $kosong;
     }
 
-    /* Operator mengisi "Ruangan" di halaman Kelola Jadwal; kolom "lokasi" hanya
-     * dipakai data lama, jadi jadikan ruangan yang tampil lebih dulu. */
-    $lokasi = jadwal_lokasi_teks($j);
-    $metode = ['OFFLINE' => 'Offline di sekolah', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video call'][$j['mode'] ?? 'OFFLINE'] ?? $j['mode'];
-    $tglIndo = date('d/m/Y', strtotime($j['tanggal']));
-
-    $ok = 0; $gagal = 0; $detail = [];
-    foreach ($siswa as $s) {
-        $pesan = "Assalamu'alaikum.\n\n"
-            . "Pengumuman jadwal tes SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? '') . ":\n\n"
-            . "Siswa : {$s['nama_siswa']}\n"
-            . "Kegiatan : {$j['kode']} - {$j['nama_kegiatan']}\n"
-            . "Tanggal : {$tglIndo}\n"
-            . "Jam : " . substr($j['jam_mulai'], 0, 5) . " - " . substr($j['jam_selesai'], 0, 5) . " WIB\n"
-            . "Metode : {$metode}\n"
-            . "Lokasi : {$lokasi}\n\n"
-            . "Mohon hadir 15 menit lebih awal dan membawa alat tulis serta kartu pendaftaran.\n\n"
-            . "Salam,\nPanitia SPMB";
-        $r = wa_kirim($s['no_whatsapp'], $pesan);
-        if ($r['ok']) {
-            $ok++;
-        } else {
-            $gagal++;
-            $detail[] = "{$s['nama_siswa']}: {$r['pesan']}";
-        }
-    }
-    return ['ok' => $ok, 'gagal' => $gagal, 'detail' => $detail];
+    $r = jadwal_kirim_ke_wali([$j], $penerima, 'Jadwal ' . $j['nama_kegiatan'] . ' (' . $j['kode'] . ')');
+    $r['penerima'] = count($penerima);
+    return $r;
 }
 
 /* ==================================================================
@@ -172,6 +142,31 @@ function jadwal_terjadwal()
            FROM jadwal_tes
           WHERE status = 'TERJADWAL'
        ORDER BY tanggal, jam_mulai"
+    );
+    return $baris ?: [];
+}
+
+/**
+ * Kegiatan yang harus dikerjakan SATU calon siswa: hanya jadwal berstatus
+ * Terjadwal tempat ia benar-benar ditempatkan. Dua sumber penjadwalan dipakai
+ * (peserta_ujian dan seleksi.jadwal_id) supaya calon yang dijadwalkan lewat
+ * Input Nilai juga muncul. Kolomnya sama persis dengan jadwal_terjadwal()
+ * agar tabel Agenda di portal siswa dan pesan WA memakai bentuk data yang sama.
+ */
+function jadwal_agenda_siswa($pendaftar_id)
+{
+    $baris = q_all(
+        "SELECT j.id, j.kode, j.nama_kegiatan, j.tanggal, j.jam_mulai, j.jam_selesai, j.mode, j.lokasi, j.ruangan
+           FROM jadwal_tes j
+          WHERE j.status = 'TERJADWAL'
+            AND (
+                  EXISTS (SELECT 1 FROM peserta_ujian pu
+                           WHERE pu.jadwal_id = j.id AND pu.pendaftar_id = ?)
+               OR EXISTS (SELECT 1 FROM seleksi s
+                           WHERE s.jadwal_id = j.id AND s.pendaftar_id = ?)
+                )
+       ORDER BY j.tanggal, j.jam_mulai, j.kode",
+        [(string) $pendaftar_id, (string) $pendaftar_id]
     );
     return $baris ?: [];
 }
@@ -206,33 +201,32 @@ function jadwal_lokasi_teks($jadwal)
 
 /**
  * Susun satu pesan berisi seluruh jadwal. Dipakai untuk WA dan salinan
- * notifikasi in-app supaya isinya tidak pernah dua versi.
+ * notifikasi in-app supaya isinya tidak pernah dua versi. Kalimatnya bisa
+ * disunting operator (kunci `jadwal_tes`); bagian ini hanya menyiapkan isi
+ * placeholder-nya.
  */
 function jadwal_pesan_pengumuman($nama_siswa, $no_pendaftaran, array $jadwal)
 {
     $sekolah = trim((string) ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? ''));
     $metode  = ['OFFLINE' => 'Offline di sekolah', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video call'];
 
-    $teks = "Assalamu'alaikum.\n\n";
-    $teks .= 'Jadwal tes seleksi SPMB' . ($sekolah !== '' ? ' ' . $sekolah : '') . ":\n\n";
-    $teks .= 'Ananda: ' . trim((string) $nama_siswa) . ' (' . trim((string) $no_pendaftaran) . ")\n\n";
-
-    $n = 0;
+    $baris = [];
+    $n     = 0;
     foreach ($jadwal as $j) {
         $n++;
-        $teks .= $n . '. ' . $j['nama_kegiatan'] . ' (' . $j['kode'] . ")\n";
-        $teks .= '   ' . bulan($j['tanggal']) . ' · ' . substr($j['jam_mulai'], 0, 5)
-            . '-' . substr($j['jam_selesai'], 0, 5) . " WIB\n";
-        $teks .= '   ' . ($metode[$j['mode']] ?? $j['mode']) . ' · ' . jadwal_lokasi_teks($j) . "\n\n";
+        $baris[] = $n . '. ' . $j['nama_kegiatan'] . ' (' . $j['kode'] . ")\n"
+            . '   ' . bulan($j['tanggal']) . ' · ' . substr($j['jam_mulai'], 0, 5)
+            . '-' . substr($j['jam_selesai'], 0, 5) . " WIB\n"
+            . '   ' . ($metode[$j['mode']] ?? $j['mode']) . ' · ' . jadwal_lokasi_teks($j);
     }
 
-    if ($n > 1) {
-        $teks .= 'Total ' . $n . " jadwal yang harus diikuti.\n\n";
-    }
-    $teks .= "Mohon hadir 15 menit lebih awal dan membawa kartu peserta (cetak di portal siswa), "
-        . "kartu pendaftaran, serta alat tulis.\n\nSalam,\nPanitia SPMB";
-
-    return $teks;
+    return wa_teks_isi('jadwal_tes', [
+        'sekolah'        => $sekolah,
+        'nama'           => trim((string) $nama_siswa),
+        'no_pendaftaran' => trim((string) $no_pendaftaran),
+        'jadwal_list'    => implode("\n\n", $baris),
+        'total'          => $n > 1 ? 'Total ' . $n . ' jadwal yang harus diikuti.' : '',
+    ]);
 }
 
 /**
@@ -268,6 +262,84 @@ function jadwal_penerima_pengumuman()
 }
 
 /**
+ * Penerima WA untuk SATU kegiatan: peserta yang tercatat di kartu itu lewat
+ * Peserta Ujian (peserta_ujian) maupun Input Nilai (seleksi.jadwal_id), punya
+ * nomor WA orang tua, dan belum diarsipkan.
+ *
+ * @return array<int,array{pendaftar_id:string,nama_siswa:string,no_pendaftaran:string,no_whatsapp:string}>
+ */
+function jadwal_penerima_kartu($jadwal_id)
+{
+    $baris = q_all(
+        "SELECT p.id AS pendaftar_id, p.nama_siswa, p.no_pendaftaran, o.no_whatsapp
+           FROM pendaftar p
+           JOIN orang_tua o ON o.pendaftar_id = p.id
+          WHERE p.arsip_at IS NULL
+            AND o.no_whatsapp IS NOT NULL AND o.no_whatsapp <> ''
+            AND (
+                  EXISTS (SELECT 1 FROM peserta_ujian pu
+                           WHERE pu.pendaftar_id = p.id AND pu.jadwal_id = ?)
+               OR EXISTS (SELECT 1 FROM seleksi s
+                           WHERE s.pendaftar_id = p.id AND s.jadwal_id = ?)
+                )
+       ORDER BY p.no_pendaftaran",
+        [$jadwal_id, $jadwal_id]
+    );
+    return $baris ?: [];
+}
+
+/**
+ * Pengirim bersama untuk tombol per-kegiatan dan pengumuman gabungan.
+ *
+ * Untuk tiap wali: tulis (atau pakai ulang) satu baris `notifikasi_siswa`
+ * ber-ref sidik jari susunan jadwal, lalu kirim WA bila baris itu belum pernah
+ * TERKIRIM. Karena notifikasi portal dibuat lebih dulu, gagal WA tidak
+ * menghilangkan kabar di portal — dan klik ganda pada susunan yang sama tidak
+ * mengirim ulang.
+ *
+ * @param array<int,array> $jadwal   satu atau lebih baris jadwal_tes
+ * @param array<int,array> $penerima hasil jadwal_penerima_kartu/pengumuman
+ * @return array{ok:int,gagal:int,lewati:int,in_app:int,detail:array<int,string>}
+ */
+function jadwal_kirim_ke_wali(array $jadwal, array $penerima, $judul)
+{
+    $hasil  = ['ok' => 0, 'gagal' => 0, 'lewati' => 0, 'in_app' => 0, 'detail' => []];
+    $ref    = jadwal_pengumuman_ref($jadwal);
+    $tautan = url('app/siswa/ppdb.php?tab=jadwal');
+
+    foreach ($penerima as $p) {
+        $pesan = jadwal_pesan_pengumuman($p['nama_siswa'], $p['no_pendaftaran'], $jadwal);
+        $lama  = notif_siswa_cari_ref($p['pendaftar_id'], $ref);
+
+        if (!$lama) {
+            if (!notif_siswa_kirim($p['pendaftar_id'], 'JADWAL_UJIAN', $judul, $pesan, $tautan, $ref)) {
+                $hasil['detail'][] = $p['nama_siswa'] . ': notifikasi portal gagal dibuat.';
+                continue;
+            }
+            $hasil['in_app']++;
+            $lama = notif_siswa_cari_ref($p['pendaftar_id'], $ref);
+        }
+
+        if (($lama['wa_status'] ?? null) === 'TERKIRIM') {
+            $hasil['lewati']++;
+            continue;
+        }
+
+        $kirim = wa_kirim($p['no_whatsapp'], $pesan);
+        wa_log_catat($p['no_whatsapp'], 'JADWAL_UJIAN', $kirim);
+        notif_siswa_status_wa($p['pendaftar_id'], $ref, !empty($kirim['ok']) ? 'TERKIRIM' : 'GAGAL');
+        if (!empty($kirim['ok'])) {
+            $hasil['ok']++;
+        } else {
+            $hasil['gagal']++;
+            $hasil['detail'][] = $p['nama_siswa'] . ': ' . ($kirim['pesan'] ?? 'pengiriman gagal.');
+        }
+    }
+
+    return $hasil;
+}
+
+/**
  * Siarkan SATU pengumuman berisi semua jadwal Terjadwal.
  *
  * Pencegah ganda: ref_id = sidik jari susunan jadwal, jadi klik ganda pada
@@ -294,38 +366,6 @@ function jadwal_umumkan_semua()
         return $hasil;
     }
 
-    $ref    = jadwal_pengumuman_ref($jadwal);
-    $judul  = 'Jadwal Tes SPMB (' . count($jadwal) . ' kegiatan)';
-    $tautan = url('app/siswa/ppdb.php?tab=jadwal');
-
-    foreach ($penerima as $p) {
-        $pesan = jadwal_pesan_pengumuman($p['nama_siswa'], $p['no_pendaftaran'], $jadwal);
-        $lama  = notif_siswa_cari_ref($p['pendaftar_id'], $ref);
-
-        if (!$lama) {
-            if (!notif_siswa_kirim($p['pendaftar_id'], 'JADWAL_UJIAN', $judul, $pesan, $tautan, $ref)) {
-                $hasil['detail'][] = $p['nama_siswa'] . ': notifikasi gagal dibuat.';
-                continue;
-            }
-            $hasil['in_app']++;
-            $lama = notif_siswa_cari_ref($p['pendaftar_id'], $ref);
-        }
-
-        if (($lama['wa_status'] ?? null) === 'TERKIRIM') {
-            $hasil['lewati']++;
-            continue;
-        }
-
-        $kirim = wa_kirim($p['no_whatsapp'], $pesan);
-        wa_log_catat($p['no_whatsapp'], 'JADWAL_UJIAN', $kirim);
-        notif_siswa_status_wa($p['pendaftar_id'], $ref, !empty($kirim['ok']) ? 'TERKIRIM' : 'GAGAL');
-        if (!empty($kirim['ok'])) {
-            $hasil['ok']++;
-        } else {
-            $hasil['gagal']++;
-            $hasil['detail'][] = $p['nama_siswa'] . ': ' . ($kirim['pesan'] ?? 'pengiriman gagal.');
-        }
-    }
-
-    return $hasil;
+    $r = jadwal_kirim_ke_wali($jadwal, $penerima, 'Jadwal Tes SPMB (' . count($jadwal) . ' kegiatan)');
+    return array_merge($hasil, $r);
 }

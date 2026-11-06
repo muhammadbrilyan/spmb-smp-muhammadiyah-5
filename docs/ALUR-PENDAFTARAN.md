@@ -56,13 +56,18 @@ flowchart TD
 - `wa_log` (tujuan, tipe, status, respons)
 - `pengaturan_sekolah.notif_wa_bendahara`, `notif_wa_aktif`, `notif_email` (titik sambungan)
 - `app/api/notif-count.php` (polling sidebar 60 dtk)
-- Rute tujuan `notif_operator()` (sejak 2026-11-05): WhatsApp **hanya** untuk tipe
-  uang masuk — `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`,
-  `PEMBAYARAN_GATEWAY_LUNAS` — ke `notif_wa_bendahara`, fallback `kontak_wa_panitia`
-  bila nomor bendahara kosong; dinormalisasi `wa_normalize()` lalu dideduplikasi.
-  Tipe lain (`BERKAS_DISUBMIT`, `VERIFIKASI_DATA`) berhenti sebagai notifikasi
-  in-app. Kolom `notif_wa_operator` sudah pensiun (tidak dibaca/ditulis lagi)
-  supaya satu ponsel tidak menerima pesan dua kali
+- Rute tujuan `notif_operator()` (daftar pemicu di `notif_pemicu_wa()`):
+  **uang masuk** — `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`,
+  `PEMBAYARAN_GATEWAY_LUNAS` — dan **kabar operasional panitia** sejak 2026-11-06 —
+  `PENDAFTAR_BARU` (dipanggil `registrasi_baru()` di jalur baris baru),
+  `VERIFIKASI_DATA`, `BERKAS_DISUBMIT` — semuanya ke `notif_nomor_bendahara()`,
+  fallback `kontak_wa_panitia` bila kosong; dinormalisasi `wa_normalize()` lalu
+  dideduplikasi. Kabar operasional dibatasi **3 pesan/jam per pendaftar**
+  (`rate_limit_cek('notif_wa_operasional', 3, 60, tipe:idPendaftar)`) karena tombolnya
+  bisa diklik berulang, sedangkan uang masuk tidak dibatasi; baris `notifikasi`
+  tetap tercatat untuk setiap kejadian. Kolom `notif_wa_operator` tetap pensiun
+  (satu daftar tujuan dipakai bersama panitia & bendahara — akun Fonnte gratis
+  hanya mendaftarkan satu nomor, dan nomor itu nomor operator)
 - Migrasi: `database/migrations/20261101_notif_wa_bendahara.sql`
 - Lonceng **siswa** (`notifikasi_siswa`, per penerima) punya garis awal
   `users.notif_mulai_at`: peristiwa panitia yang tercatat sebelum akun pernah
@@ -86,10 +91,27 @@ flowchart TD
 
 ### Fase 6 — Jadwal Ujian & Peserta
 - `jadwal_tes.ruangan` VARCHAR(100), `kapasitas` INT (0 = tanpa batas)
-- `peserta_ujian` (pendaftar_id UNIQUE, jadwal_id, nomor_peserta UNIQUE, ruangan)
-- `peserta_atur_otomatis()` (transaksi DB, urut no_pendaftaran, penuhi kapasitas)
-- `peserta_kartu_siswa()` — Kartu Peserta + CSS print di portal siswa
-- Blok detail pada kartu peserta kini berupa **tabel Agenda Tes** (`jadwal_terjadwal()` — fungsi yang sama dipakai tombol "Umumkan Semua Jadwal"): seluruh jadwal Terjadwal dalam kolom Tanggal · Kegiatan · Waktu · Lokasi/Ruangan, ikut tercetak oleh `cetakKartu()`
+- `peserta_ujian` (pendaftar_id + jadwal_id **UNIQUE bersama** — satu calon boleh
+  ikut beberapa kegiatan, nomor_peserta UNIQUE, ruangan). Indeks `uq_peserta_pendaftar`
+  (satu kartu seumur hidup) dilepas oleh `database/migrations/20261106_peserta_ujian_multi_jadwal.sql`.
+- `peserta_atur_otomatis()` (transaksi DB, urut no_pendaftaran, penuhi kapasitas) —
+  yang dilewati hanya calon yang **sudah ada di kartu ini**, jadi calon yang absen di
+  satu kegiatan bisa dijaring ulang pada jadwal susulan. Syarat tahap terpusat di
+  `peserta_tahap_siap_jadwal()`; `tahap` hanya naik dari `BERKAS_TERVERIFIKASI`
+  (`AND tahap = 'BERKAS_TERVERIFIKASI'`) agar calon bernilai tidak dipundahkan.
+- `jadwal_kirim_ke_wali()` — **satu pengirim** untuk tombol *Kirim WA Jadwal* per kartu
+  dan *Umumkan Semua Jadwal*: satu pesan WA + satu `notifikasi_siswa` (tipe
+  `JADWAL_UJIAN`, `ref_id` = sidik jari kegiatan) per wali, `wa_log` tercatat, dan
+  penerima yang `wa_status = TERKIRIM` untuk sidik jari itu dilewati.
+- `peserta_kartu_siswa()` — Kartu Peserta + CSS print di portal siswa; pilihannya
+  **kegiatan terdekat yang belum lewat** (bila semua sudah lewat, yang paling akhir),
+  bukan lagi satu-satunya baris yang ada
+- Blok detail pada kartu peserta kini berupa **tabel Agenda Tes**
+  (`jadwal_agenda_siswa()` — sumber yang sama dengan tombol "Kirim WA Jadwal" per
+  kartu): hanya kegiatan yang memang ditugaskan ke siswa itu, kolom Tanggal ·
+  Kegiatan · Waktu · Lokasi/Ruangan, ikut tercetak oleh `cetakKartu()`. Bila siswa
+  belum ditempatkan di kartu mana pun, Agenda jatuh ke `jadwal_terjadwal()`
+  (seluruh jadwal sekolah) sebagai pengumuman umum, lalu ke kartu ujian saja.
 - Halaman: `app/operator/jadwal.php` — sejak 2026-11-02 jadwal dan peserta berada
   di satu halaman/menu **Jadwal Ujian**; bagian peserta ada di bawah daftar jadwal
   (`#peserta`). `app/operator/peserta-ujian.php` hanya pengalih 302
@@ -201,7 +223,7 @@ Bendahara: Setujui (`VERIFIED+BAYAR_TERVERIFIKASI`), Tolak (wajib alasan, kembal
 `jenis_dokumen` CRUD. Siswa unggah → validasi format/size/MIME. Submit hanya bila wajib lengkap → `BERKAS_DISUBMIT` + kunci + notif. Verifikasi per berkas → semua lolos `BERKAS_TERVERIFIKASI`, ada ditolak `BERKAS_REVISI` + WA + hanya berkas ditolak dibuka.
 
 ### Fase 6 — Jadwal Ujian OFFLINE
-`jadwal_tes` + ruangan/kapasitas/jam. `peserta_ujian` (nomor_peserta unik). "Atur Peserta Otomatis" urut no_pendaftaran penuhi kapasitas (transaksi DB). `tahap=JADWAL_DITETAPKAN` + WA. Kartu Peserta (CSS print).
+`jadwal_tes` + ruangan/kapasitas/jam. `peserta_ujian` (nomor_peserta unik; `pendaftar_id` boleh muncul di beberapa `jadwal_id` sejak 2026-11-06). "Atur Peserta Otomatis" urut no_pendaftaran penuhi kapasitas (transaksi DB), menyaring per kartu. `tahap=JADWAL_DITETAPKAN` + WA. Kartu Peserta (CSS print).
 
 ### Fase 7 — Seleksi
 Hanya tampilkan `JADWAL_DITETAPKAN`/`NILAI_TERINPUT`. Struktur nilai TIDAK berubah. Setelah nilai → `NILAI_TERINPUT`. Nilai hanya diisi manual lewat tabel (impor CSV dihapus 2026-11-05); Nilai Akhir & keputusan dihitung otomatis dari `ambang_kelulusan`. Judul kolom nilai mengikuti nama kegiatan jadwal tes (`seleksi_label_kolom()`, disingkat otomatis) sejak 2026-11-05; barisnya urut abjad nama dan ada pencarian no. pendaftaran/nama di sisi klien. Hasil LULUS/TIDAK_LULUS tetap operator. Peringatan lulus tanpa kelas.
@@ -324,6 +346,8 @@ Lihat `.env.example`. Variabel: `DB_*`, `FONNTE_TOKEN`, `MIDTRANS_SERVER_KEY`, `
 | — | `database/migrations/20261102_sosmed_sekolah.sql` (kolom `sosmed_instagram`/`sosmed_tiktok`/`sosmed_youtube`/`website_sekolah` — input link di Pengaturan Sistem + ikon footer publik) |
 | — | `database/migrations/20261103_faq_cms.sql` (kolom `faq_list` JSON — pertanyaan section Pusat Bantuan di halaman depan kini disunting dari Pengaturan Sistem, bukan dari `includes/dummy.php`) |
 | — | `database/migrations/20261106_notifikasi_baseline.sql` (kolom `users.notif_mulai_at` — garis awal lonceng portal siswa; peristiwa sebelum masuk pertama tidak ditampilkan, lihat `docs/UJI-MANUAL.md` W19–W23) |
+| — | `database/migrations/20261106_peserta_ujian_multi_jadwal.sql` (indeks `uq_peserta_jadwal (pendaftar_id, jadwal_id)` menggantikan `uq_peserta_pendaftar` — satu calon boleh ikut beberapa kegiatan; **wajib dijalankan di hosting** sebelum menempatkan calon pada kartu kedua, lihat `docs/UJI-MANUAL.md` O12) |
+| — | `database/migrations/20261106_wa_teks_cms.sql` (kolom `pengaturan_sekolah.wa_teks` JSON — tujuh kalimat WA ke wali siswa bisa disunting dari Pengaturan Sistem; **wajib dijalankan di hosting** bersama kode baru, kalau tidak seluruh formulir Pengaturan Sistem ditolak MySQL (`1054 Unknown column 'wa_teks'`), lihat `docs/UJI-MANUAL.md` W29–W34) |
 
 Seed lengkap: `database/db_spmb_mualimku.sql` (gabungan semua fase).
 Dokumentasi uji: `docs/UJI-MANUAL.md`.

@@ -4,6 +4,23 @@
  * Di-include dari includes/queries.php.
  */
 
+/**
+ * Tahap yang BOLEH dijadwalkan pada suatu kegiatan: berkas sudah terverifikasi
+ * dan prosesnya belum selesai. Sejak penjadwalan berlaku per kegiatan (bukan
+ * seumur hidup), calon yang sudah punya jadwal/nilai di satu kegiatan tetap
+ * harus bisa dijaring ke kegiatan berikutnya dan ke jadwal susulan.
+ */
+function peserta_tahap_siap_jadwal()
+{
+    return ['BERKAS_TERVERIFIKASI', 'JADWAL_DITETAPKAN', 'NILAI_TERINPUT', 'DIUMUMKAN'];
+}
+
+/** Versi SQL: daftar tahap siap dijadwalkan, siap ditempel di WHERE. */
+function peserta_tahap_siap_jadwal_sql()
+{
+    return "'" . implode("', '", peserta_tahap_siap_jadwal()) . "'";
+}
+
 /** Daftar peserta satu jadwal (untuk tabel operator). */
 function peserta_daftar($jadwal_id)
 {
@@ -40,9 +57,15 @@ function peserta_nomor_berikutnya($db, $jadwal_id, $kode)
 }
 
 /**
- * Atur peserta otomatis: seluruh pendaftar BERKAS_TERVERIFIKASI yang belum
- * punya jadwal, diurutkan no_pendaftaran, diisikan ke jadwal hingga
- * memenuhi kapasitas. Transaksi DB — aman dari pemesongan.
+ * Atur peserta otomatis: seluruh pendaftar yang sudah lulus verifikasi berkas
+ * (tahap sesuai peserta_tahap_siap_jadwal()) dan BELUM ada di jadwal ini,
+ * diurutkan no_pendaftaran, diisikan hingga kapasitas penuh. Transaksi DB —
+ * aman dari pemesongan.
+ *
+ * Sejak 2026-11-06 pengecekan "belum terjadwal" berlaku PER KARTU, bukan
+ * seumur hidup: satu calon siswa mengikuti beberapa kegiatan (tes baca tulis,
+ * wawancara, kesehatan), dan yang absen di satu kegiatan harus bisa dijaring
+ * ulang pada jadwal susulan tanpa menghapus barisnya lebih dulu.
  *
  * @return array{ok:bool,jumlah:int,sisa:int,kode:string,pesan:string}
  */
@@ -72,25 +95,30 @@ function peserta_atur_otomatis($jadwal_id)
             return ['ok' => false, 'jumlah' => 0, 'sisa' => 0, 'kode' => $jadwal['kode'], 'pesan' => 'Kapasitas jadwal sudah penuh (' . $kapasitas . ' peserta).'];
         }
 
-        /* Kandidat: BERKAS_TERVERIFIKASI tanpa peserta_ujian. */
+        /* Kandidat: berkas terverifikasi dan belum ada di jadwal INI. */
         $k = $db->query(
             "SELECT p.id, p.no_pendaftaran
                FROM pendaftar p
-              WHERE p.tahap = 'BERKAS_TERVERIFIKASI'
+              WHERE p.tahap IN (" . peserta_tahap_siap_jadwal_sql() . ")
                 AND p.arsip_at IS NULL
-                AND NOT EXISTS (SELECT 1 FROM peserta_ujian pu WHERE pu.pendaftar_id = p.id)
+                AND NOT EXISTS (SELECT 1 FROM peserta_ujian pu
+                                 WHERE pu.pendaftar_id = p.id AND pu.jadwal_id = "
+                                . $db->quote($jadwal_id) . ")
            ORDER BY p.no_pendaftaran
               LIMIT " . ($sisaKapas === PHP_INT_MAX ? '100000' : (int) $sisaKapas)
         )->fetchAll();
         if (!$k) {
             $db->rollBack();
             return ['ok' => true, 'jumlah' => 0, 'sisa' => 0, 'kode' => $jadwal['kode'],
-                'pesan' => 'Tidak ada pendaftar siap jadwal (butuh tahap BERKAS_TERVERIFIKASI & belum terjadwal).'];
+                'pesan' => 'Tidak ada pendaftar yang bisa dijadwalkan pada ' . $jadwal['kode']
+                    . ' (butuh berkas terverifikasi dan belum ada di jadwal ini).'];
         }
 
         $ruangan = $jadwal['ruangan'] !== null && $jadwal['ruangan'] !== '' ? $jadwal['ruangan'] : null;
         $ins     = $db->prepare('INSERT INTO peserta_ujian (id, pendaftar_id, jadwal_id, nomor_peserta, ruangan) VALUES (?,?,?,?,?)');
-        $upd     = $db->prepare('UPDATE pendaftar SET tahap = "JADWAL_DITETAPKAN" WHERE id = ?');
+        /* Tahap hanya dinaikkan dari berkas terverifikasi — calon yang sedang
+         * dijadwalkan ke kegiatan kedua tidak boleh dipundahkan stages-nya. */
+        $upd     = $db->prepare('UPDATE pendaftar SET tahap = "JADWAL_DITETAPKAN" WHERE id = ? AND tahap = "BERKAS_TERVERIFIKASI"');
         $n = (int) $db->query(
             'SELECT COALESCE(MAX(CAST(SUBSTRING_INDEX(nomor_peserta, "-", -1) AS UNSIGNED)), 0)
                FROM peserta_ujian WHERE jadwal_id = ' . $db->quote($jadwal_id)
@@ -118,7 +146,9 @@ function peserta_atur_otomatis($jadwal_id)
 }
 
 /**
- * Tambah peserta manual (hanya pendaftar BERKAS_TERVERIFIKASI & belum terjadwal).
+ * Tambah peserta manual pada satu jadwal. Aturan yang sama seperti
+ * peserta_atur_otomatis(): boleh menjaring calon yang sudah terjadwal di
+ * kegiatan lain (susulan), yang ditolak hanya bila ia sudah ada di jadwal ini.
  */
 function peserta_tambah_manual($jadwal_id, $pendaftar_id)
 {
@@ -142,15 +172,15 @@ function peserta_tambah_manual($jadwal_id, $pendaftar_id)
             $db->rollBack();
             return ['ok' => false, 'pesan' => 'Pendaftar tidak ditemukan.'];
         }
-        if ($pendaftar['tahap'] !== 'BERKAS_TERVERIFIKASI') {
+        if (!in_array((string) $pendaftar['tahap'], peserta_tahap_siap_jadwal(), true)) {
             $db->rollBack();
-            return ['ok' => false, 'pesan' => 'Hanya pendaftar BERKAS_TERVERIFIKASI yang dapat dijadwalkan.'];
+            return ['ok' => false, 'pesan' => 'Hanya pendaftar yang berkasnya sudah terverifikasi yang dapat dijadwalkan.'];
         }
-        $sudah = $db->prepare('SELECT id FROM peserta_ujian WHERE pendaftar_id = ?');
-        $sudah->execute([(string) $pendaftar_id]);
+        $sudah = $db->prepare('SELECT id FROM peserta_ujian WHERE pendaftar_id = ? AND jadwal_id = ?');
+        $sudah->execute([(string) $pendaftar_id, (string) $jadwal_id]);
         if ($sudah->fetch()) {
             $db->rollBack();
-            return ['ok' => false, 'pesan' => 'Pendaftar sudah terjadwal pada jadwal lain.'];
+            return ['ok' => false, 'pesan' => 'Pendaftar sudah terdaftar pada jadwal ini.'];
         }
         $kapasitas = (int) $jadwal['kapasitas'];
         $terpakai  = (int) $db->query('SELECT COUNT(*) FROM peserta_ujian WHERE jadwal_id = ' . $db->quote($jadwal_id))->fetchColumn();
@@ -175,7 +205,11 @@ function peserta_tambah_manual($jadwal_id, $pendaftar_id)
     }
 }
 
-/** Hapus peserta — kembalikan pendaftar ke BERKAS_TERVERIFIKASI. */
+/**
+ * Hapus peserta dari satu kartu. Pendaftarnya kembali ke BERKAS_TERVERIFIKASI
+ * hanya bila tidak ada penempatan lain yang tersisa — selama masih ikut
+ * kegiatan lain, tahapnya tetap JADWAL_DITETAPKAN.
+ */
 function peserta_hapus($peserta_id)
 {
     $db = db();
@@ -192,7 +226,10 @@ function peserta_hapus($peserta_id)
             return false;
         }
         $db->prepare('DELETE FROM peserta_ujian WHERE id = ?')->execute([$peserta_id]);
-        $db->prepare('UPDATE pendaftar SET tahap = "BERKAS_TERVERIFIKASI" WHERE id = ? AND tahap = "JADWAL_DITETAPKAN"')
+        $db->prepare('UPDATE pendaftar SET tahap = "BERKAS_TERVERIFIKASI"
+                       WHERE id = ? AND tahap = "JADWAL_DITETAPKAN"
+                         AND NOT EXISTS (SELECT 1 FROM peserta_ujian pu
+                                         WHERE pu.pendaftar_id = pendaftar.id)')
             ->execute([$row['pendaftar_id']]);
         $db->prepare('UPDATE jadwal_tes SET peserta_dijadwalkan = (SELECT COUNT(*) FROM peserta_ujian WHERE jadwal_id = ?) WHERE id = ?')
             ->execute([$row['jadwal_id'], $row['jadwal_id']]);
@@ -206,66 +243,23 @@ function peserta_hapus($peserta_id)
     }
 }
 
-/** Data kartu peserta untuk portal siswa (null bila belum terjadwal). */
+/**
+ * Data kartu peserta untuk portal siswa (null bila belum terjadwal).
+ * Satu calon bisa terdaftar di beberapa kegiatan, jadi kartu menunjukkan yang
+ * paling mendesak: kegiatan TERDEKAT yang belum lewat; kalau semuanya sudah
+ * lewat, yang paling baru.
+ */
 function peserta_kartu_siswa($pendaftar_id)
 {
     $baris = q_all(
-        'SELECT pu.nomor_peserta, pu.ruangan,
+        'SELECT pu.nomor_peserta, pu.ruangan, pu.jadwal_id,
                 j.kode, j.nama_kegiatan, j.tanggal, j.jam_mulai, j.jam_selesai, j.mode, j.lokasi
            FROM peserta_ujian pu
            JOIN jadwal_tes j ON j.id = pu.jadwal_id
-          WHERE pu.pendaftar_id = ?',
+          WHERE pu.pendaftar_id = ?
+       ORDER BY (j.tanggal < CURDATE()), ABS(DATEDIFF(j.tanggal, CURDATE())), j.jam_mulai, j.kode
+          LIMIT 1',
         [(string) $pendaftar_id]
     );
     return $baris[0] ?? null;
-}
-
-/**
- * Kirim WA jadwal ke orang tua tiap peserta (best-effort, catat wa_log).
- * @return array{ok:int,gagal:int}
- */
-function peserta_kirim_notifikasi_wa($jadwal_id)
-{
-    $j = q_all('SELECT id, kode, nama_kegiatan, tanggal, jam_mulai, jam_selesai, mode, lokasi, ruangan FROM jadwal_tes WHERE id = ?', [(string) $jadwal_id]);
-    if (!$j) {
-        return ['ok' => 0, 'gagal' => 0];
-    }
-    $j = $j[0];
-    $peserta = q_all(
-        "SELECT p.nama_siswa, p.no_pendaftaran, o.no_whatsapp, pu.nomor_peserta
-           FROM peserta_ujian pu
-           JOIN pendaftar p ON p.id = pu.pendaftar_id
-      LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
-          WHERE pu.jadwal_id = ? AND o.no_whatsapp IS NOT NULL",
-        [(string) $jadwal_id]
-    ) ?: [];
-    if (!$peserta) {
-        return ['ok' => 0, 'gagal' => 0];
-    }
-    $tglIndo = date('d/m/Y', strtotime($j['tanggal']));
-    $metode  = ['OFFLINE' => 'Offline di sekolah', 'DARING' => 'Daring', 'VIDEO_CALL' => 'Video call'][$j['mode']] ?? $j['mode'];
-    $lokasi  = $j['ruangan'] ?: ($j['lokasi'] ?: 'Sekolah');
-    $ok = 0; $gagal = 0;
-    foreach ($peserta as $s) {
-        $pesan = "Assalamu'alaikum.\n\n"
-            . "Jadwal ujian SPMB " . ($GLOBALS['PENGATURAN']['nama_sekolah'] ?? '') . ":\n\n"
-            . "Siswa : {$s['nama_siswa']}\n"
-            . "No. Pendaftaran : {$s['no_pendaftaran']}\n"
-            . "Nomor Peserta : " . ($s['nomor_peserta'] ?: '-') . "\n"
-            . "Kegiatan : {$j['kode']} - {$j['nama_kegiatan']}\n"
-            . "Tanggal : {$tglIndo}\n"
-            . "Jam : " . substr($j['jam_mulai'], 0, 5) . " - " . substr($j['jam_selesai'], 0, 5) . " WIB\n"
-            . "Metode : {$metode}\n"
-            . "Lokasi : {$lokasi}\n\n"
-            . "Mohon hadir 15 menit lebih awal & membawa kartu peserta (bisa dicetak di portal siswa).\n\n"
-            . "Salam,\nPanitia SPMB";
-        $r = wa_kirim($s['no_whatsapp'], $pesan);
-        wa_log_catat($s['no_whatsapp'], 'JADWAL_UJIAN', $r);
-        if (!empty($r['ok'])) {
-            $ok++;
-        } else {
-            $gagal++;
-        }
-    }
-    return ['ok' => $ok, 'gagal' => $gagal];
 }
