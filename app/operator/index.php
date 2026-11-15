@@ -225,10 +225,9 @@ require __DIR__ . '/../../includes/partials/topbar.php';
      * Sebelumnya badge "Terhubung (42ms)", kartu "1.250 / 5.000" dan
      * "99.2% Sukses" seluruhnya hardcode sehingga menyesatkan.
      * Sumber: tabel wa_log (dicatat wa_log_catat()). */
-    /* [PERBAIKAN 2] $waAktif semula membaca kolom DB saja, padahal wa_kirim()
-     * membaca .env (FONNTE_TOKEN) lebih dulu. Akibatnya token yang diisi di .env
-     * membuat badge tetap "Belum dikonfigurasi" walau gateway sebenarnya jalan.
-     * Kini memakai fonnte_token() — sumber yang sama dengan wa_kirim(). */
+    /* Memakai fonnte_token() — sumber yang sama dengan wa_kirim(): kolom CMS
+     * lebih utama, .env (FONNTE_TOKEN) cadangan. Token yang hanya diisi di
+     * .env tetap terbaca aktif. */
     $waAktif   = fonnte_token() !== null;
     $waBulan   = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')") ?? 0);
     $waSukses  = (int) (q_col("SELECT COUNT(*) FROM wa_log WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01') AND status = 'TERKIRIM'") ?? 0);

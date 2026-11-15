@@ -19,6 +19,8 @@
  *   - BUKTI_BAYAR_MASUK         → unggah bukti transfer/QRIS     → in-app + WA
  *   - PEMBAYARAN_GATEWAY_MASUK  → callback Midtrans angsuran     → in-app + WA
  *   - PEMBAYARAN_GATEWAY_LUNAS  → callback Midtrans VERIFIED/LUNAS → in-app + WA
+ *   - PEMBAYARAN_DIVERIFIKASI   → bendahara menyetujui bukti bayar → in-app + WA
+ *   - PEMBAYARAN_DITOLAK        → bendahara menolak bukti bayar    → in-app + WA
  *   - PENDAFTAR_BARU            → formulir pendaftaran publik selesai → in-app + WA
  *   - VERIFIKASI_DATA           → data diajukan / dikirim ulang  → in-app + WA
  *   - BERKAS_DISUBMIT           → berkas dikirim / dikirim ulang → in-app + WA
@@ -40,6 +42,8 @@ function notif_pemicu_wa()
         'BUKTI_BAYAR_MASUK',
         'PEMBAYARAN_GATEWAY_MASUK',
         'PEMBAYARAN_GATEWAY_LUNAS',
+        'PEMBAYARAN_DIVERIFIKASI',
+        'PEMBAYARAN_DITOLAK',
         'PENDAFTAR_BARU',
         'VERIFIKASI_DATA',
         'BERKAS_DISUBMIT',

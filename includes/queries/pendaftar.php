@@ -382,6 +382,16 @@ function pendaftar_manual(array $d)
         return ['ok' => false, 'pesan' => 'Gagal menyimpan pendaftar.'];
     }
 
+    notif_operator(
+        'PENDAFTAR_BARU',
+        $idPend,
+        "Pendaftar baru dicatat manual oleh panitia.\n"
+        . "Nama : {$d['nama']}\n"
+        . "No. Pendaftaran : {$no}\n"
+        . "Asal sekolah : {$d['asal']}\n"
+        . 'Pantau: ' . url_abs('app/operator/pendaftar.php')
+    );
+
     return ['ok' => true, 'no' => $no, 'id' => $idPend];
 }
 

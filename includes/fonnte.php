@@ -2,15 +2,18 @@
 /**
  * KLIENT WHATSAPP GATEWAY — Fonnte.
  *
- * Token API diambil dari .env (FONNTE_TOKEN), fallback CMS (pengaturan_sekolah.fonnte_token).
+ * Token API diambil dari CMS (pengaturan_sekolah.fonnte_token); .env
+ * (FONNTE_TOKEN) hanya cadangan bila kolom CMS kosong — token yang diganti
+ * operator lewat Pengaturan langsung berlaku tanpa menyunting file server.
  * Semua fungsi aman dipanggil saat token kosong / jaringan mati:
  * mengembalikan ['ok' => false, 'pesan' => '<alasan>'] tanpa exception.
  */
 
-/** Token Fonnte dari .env (FONNTE_TOKEN) atau CMS. null bila belum diatur. */
+/** Token Fonnte efektif: kolom CMS lebih utama, .env cadangan. null bila belum diatur. */
 function fonnte_token()
 {
-    $t = trim((string) (env_val('FONNTE_TOKEN', $GLOBALS['PENGATURAN']['fonnte_token'] ?? '')));
+    $db = trim((string) ($GLOBALS['PENGATURAN']['fonnte_token'] ?? ''));
+    $t  = $db !== '' ? $db : trim((string) env_val('FONNTE_TOKEN', ''));
     return $t !== '' ? $t : null;
 }
 

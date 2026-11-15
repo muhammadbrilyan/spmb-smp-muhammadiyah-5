@@ -58,9 +58,11 @@ flowchart TD
 - `app/api/notif-count.php` (polling sidebar 60 dtk)
 - Rute tujuan `notif_operator()` (daftar pemicu di `notif_pemicu_wa()`):
   **uang masuk** — `BUKTI_BAYAR_MASUK`, `PEMBAYARAN_GATEWAY_MASUK`,
-  `PEMBAYARAN_GATEWAY_LUNAS` — dan **kabar operasional panitia** sejak 2026-11-06 —
-  `PENDAFTAR_BARU` (dipanggil `registrasi_baru()` di jalur baris baru),
-  `VERIFIKASI_DATA`, `BERKAS_DISUBMIT` — semuanya ke `notif_nomor_bendahara()`,
+  `PEMBAYARAN_GATEWAY_LUNAS`, `PEMBAYARAN_DIVERIFIKASI`, `PEMBAYARAN_DITOLAK` — dan
+  **kabar operasional panitia** sejak 2026-11-06 —
+  `PENDAFTAR_BARU` (dipanggil `registrasi_baru()` di jalur baris baru dan
+  `pendaftar_manual()` untuk catatan operator), `VERIFIKASI_DATA`, `BERKAS_DISUBMIT`
+  — semuanya ke `notif_nomor_bendahara()`,
   fallback `kontak_wa_panitia` bila kosong; dinormalisasi `wa_normalize()` lalu
   dideduplikasi. Kabar operasional dibatasi **3 pesan/jam per pendaftar**
   (`rate_limit_cek('notif_wa_operasional', 3, 60, tipe:idPendaftar)`) karena tombolnya

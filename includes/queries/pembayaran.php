@@ -1412,6 +1412,26 @@ function verifikasi_bayar_setujui($pembayaranId, $verifierId = null)
             /* abaikan */
         }
 
+        /* Kabar panitia: uang masuk sudah dikonfirmasi bendahara. */
+        try {
+            $jenisWa = $baris['jenis_pembayaran'] === 'UANG_MASUK'
+                ? label_biaya_pendaftaran() . (!empty($baris['angsuran_ke']) ? ' angsuran ' . (int) $baris['angsuran_ke'] : '')
+                : 'Biaya formulir';
+            notif_operator(
+                'PEMBAYARAN_DIVERIFIKASI',
+                $baris['pendaftar_id'],
+                "Pembayaran diverifikasi.\n"
+                . "Nama : {$baris['nama_siswa']}\n"
+                . "No. Pendaftaran : {$baris['no_pendaftaran']}\n"
+                . "Jenis : {$jenisWa}\n"
+                . 'Nominal : ' . rupiah($baris['nominal']) . "\n"
+                . 'Status : ' . ($statusBaru === 'LUNAS' ? 'LUNAS' : 'terverifikasi') . "\n"
+                . 'Periksa: ' . url_abs('app/bendahara/pembayaran.php')
+            );
+        } catch (Throwable $e) {
+            /* abaikan */
+        }
+
         return [
             'ok' => true, 'sudah' => false,
             'pendaftar_id' => $baris['pendaftar_id'],
@@ -1511,6 +1531,26 @@ function verifikasi_bayar_tolak($pembayaranId, $alasan, $verifierId = null)
                 . " belum dapat disetujui.\nAlasan: {$alasan}\n"
                 . 'Silakan unggah ulang bukti pembayaran yang benar melalui menu Keuangan.',
             url('app/siswa/keuangan.php')
+        );
+    } catch (Throwable $e) {
+        /* abaikan */
+    }
+
+    /* Kabar panitia: bukti bayar ditolak (orang tua tetap dikabari di bawah). */
+    try {
+        $jenisWa = $baris['jenis_pembayaran'] === 'UANG_MASUK'
+            ? label_biaya_pendaftaran() . (!empty($baris['angsuran_ke']) ? ' angsuran ' . (int) $baris['angsuran_ke'] : '')
+            : 'Biaya formulir';
+        notif_operator(
+            'PEMBAYARAN_DITOLAK',
+            $baris['pendaftar_id'],
+            "Bukti pembayaran ditolak.\n"
+            . "Nama : {$baris['nama_siswa']}\n"
+            . "No. Pendaftaran : {$baris['no_pendaftaran']}\n"
+            . "Jenis : {$jenisWa}\n"
+            . 'Nominal : ' . rupiah($baris['nominal']) . "\n"
+            . "Alasan : {$alasan}\n"
+            . 'Periksa: ' . url_abs('app/bendahara/pembayaran.php')
         );
     } catch (Throwable $e) {
         /* abaikan */

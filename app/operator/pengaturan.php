@@ -882,14 +882,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
              * apakah token yang baru disimpan benar — kegagalan baru terlihat
              * berjam kemudian saat kirim kredensial siswa gagal. */
             unset($_SESSION['fonnte_dev']); /* Kesiapan Rilis memeriksa ulang perangkat */
-            $tokenBaru   = trim((string) ($_POST['fonnte_token'] ?? '')) !== '';
-            $tokenDariEnv = env_val('FONNTE_TOKEN', '') !== '';
+            $tokenBaru    = trim((string) ($_POST['fonnte_token'] ?? '')) !== '';
+            $tokenDariEnv = trim((string) $f['fonnte_token']) === '' && env_val('FONNTE_TOKEN', '') !== '';
             $cekWa = ($f['fonnte_token'] !== '' || $tokenDariEnv)
                 ? fonnte_cek_token($tokenBaru ? $f['fonnte_token'] : null)
                 : ['ok' => false, 'pesan' => 'token masih kosong — kirim WA kredensial/notifikasi tidak akan jalan.'];
             $sumberWa = $tokenBaru
-                ? ('token yang baru disimpan' . ($tokenDariEnv ? ' (catatan: .env tetap lebih utama saat kirim)' : ''))
-                : ($tokenDariEnv ? 'token dari .env' : 'token tersimpan');
+                ? 'token yang baru disimpan'
+                : ($tokenDariEnv ? 'token dari .env (kolom CMS kosong)' : 'token tersimpan');
             if ($cekWa['ok']) {
                 flash('sukses', 'Pengaturan tersimpan — ' . $sumberWa . ' teruji: ' . $cekWa['pesan'] . '.');
             } else {
@@ -1559,11 +1559,14 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <h2 class="font-bold text-ink-900">WhatsApp Gateway (Fonnte)</h2>
           <?php
-          /* [PERBAIKAN] Badge semula hanya membaca kolom DB, sehingga token
-           * yang diisi di .env (FONNTE_TOKEN) tetap dianggap "Belum diatur"
-           * padahal wa_kirim() sudah memakainya. */
-          $fonnteAktif = fonnte_token() !== null;
-          $dariEnv     = env_val('FONNTE_TOKEN', '') !== '';
+          /* Token efektif: kolom CMS lebih utama, .env hanya cadangan — token
+           * yang baru disimpan operator langsung dipakai (permintaan 2026-11-15
+           * setelah penolakan bukti bayar gagal karena .env menyimpan token lama). */
+          $tokDb       = trim((string) $f['fonnte_token']);
+          $tokEnv      = trim((string) env_val('FONNTE_TOKEN', ''));
+          $tokEfektif  = $tokDb !== '' ? $tokDb : $tokEnv;
+          $fonnteAktif = $tokEfektif !== '';
+          $dariEnv     = $tokDb === '' && $tokEnv !== '';
           ?>
           <?php if ($fonnteAktif): ?>
             <span class="badge badge-green"><?= dot('green') ?> <?= $dariEnv ? 'Token aktif (dari .env)' : 'Token tersimpan' ?></span>
@@ -1573,28 +1576,26 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
         <p class="hint mt-2">Token API Fonnte dipakai untuk mengirim kredensial akun siswa. Dapatkan token di dasbor Fonnte, menu Settings, lalu Token. Setiap kali formulir ini disimpan, token diperiksa ke Fonnte lewat endpoint <code>/device</code> (tidak ada pesan WA yang dikirim).</p>
         <?php
-        /* Sidik jari token (.env lalu DB) supaya operator tahu token mana yang
-         * sebenarnya dipakai — 4 karakter terakhir aman untuk ditampilkan. */
-        $tokEfektif = fonnte_token();
-        $tokEnv     = trim((string) env_val('FONNTE_TOKEN', ''));
-        $tokDb      = trim((string) $f['fonnte_token']);
-        $sidik      = static function ($t) {
+        /* Sidik jari token supaya operator tahu token mana yang dipakai —
+         * 4 karakter terakhir aman untuk ditampilkan. */
+        $sidik = static function ($t) {
             $t = trim((string) $t);
             return $t === '' ? 'kosong' : '••••' . substr($t, -4) . ' (' . strlen($t) . ' karakter)';
         };
-        /* Bentrok sumber token: .env selalu menang atas kolom DB. Dulu kotak ini
-         * hijau sehingga terbaca "aman", padahal operator yang mengisi token di
-         * halaman ini tidak pernah sadar nilainya diabaikan (2026-11-06: notifikasi
-         * bukti bayar GAGAL karena .env memakai perangkat yang disconnect). */
+        /* Dua sumber terisi dengan nilai berbeda: kolom di atas yang menang,
+         * .env diabaikan. Dulu urutannya terbalik sehingga token baru yang
+         * disimpan di sini tidak berpengaruh (2026-11-15: WA penolakan bukti
+         * bayar gagal "unknown token" karena .env menyimpan token lama). */
         $bentrokToken = $tokEnv !== '' && $tokDb !== '' && $tokEnv !== $tokDb;
         ?>
-        <?php if ($dariEnv): ?>
+        <?php if ($dariEnv || $bentrokToken): ?>
           <div class="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-800">
-            <strong>Token dari <code>.env</code> yang dipakai</strong> — <?= e($sidik($tokEnv)) ?>.
             <?php if ($bentrokToken): ?>
-              <span class="block mt-1">Token yang tersimpan di halaman ini (<?= e($sidik($tokDb)) ?>) <strong>diabaikan</strong> saat pengiriman — kosongkan <code>FONNTE_TOKEN</code> pada file <code>.env</code> bila ingin memakai nilai di bawah.</span>
+              <strong>Token dari halaman ini yang dipakai</strong> — <?= e($sidik($tokDb)) ?>.
+              <span class="block mt-1">Nilai <code>FONNTE_TOKEN</code> di <code>.env</code> <strong>diabaikan</strong> — sidik jari <?= e($sidik($tokEnv)) ?>. Kosongkan kolom token di halaman ini bila ingin kembali memakai nilai dari <code>.env</code>.</span>
             <?php else: ?>
-              <span class="block mt-1">Nilai yang diketik di bawah hanya dipakai bila <code>FONNTE_TOKEN</code> di <code>.env</code> dikosongkan.</span>
+              <strong>Token dari <code>.env</code> yang dipakai</strong> — <?= e($sidik($tokEnv)) ?> (kolom di halaman ini masih kosong).
+              <span class="block mt-1">Setelah token disimpan di sini, nilai dari .env otomatis tidak dipakai lagi.</span>
             <?php endif; ?>
           </div>
         <?php endif; ?>
@@ -1623,6 +1624,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             $rWa = q_all(
                 "SELECT tujuan, tipe, status, respons, created_at FROM wa_log
                   WHERE tipe IN ('BUKTI_BAYAR_MASUK', 'PEMBAYARAN_GATEWAY_MASUK', 'PEMBAYARAN_GATEWAY_LUNAS',
+                                 'PEMBAYARAN_DIVERIFIKASI', 'PEMBAYARAN_DITOLAK',
                                  'PENDAFTAR_BARU', 'VERIFIKASI_DATA', 'BERKAS_DISUBMIT')
                   ORDER BY id DESC LIMIT 1"
             );
@@ -1641,11 +1643,13 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               <span class="text-sm font-semibold text-ink-900">Kirim notifikasi panitia via WhatsApp</span>
               <span class="block text-[13px] text-ink-500">
                 Yang berbunyi: bukti transfer/QRIS masuk, pembayaran gateway terverifikasi/lunas,
-                ada calon siswa baru mendaftar, data diajukan (termasuk kirim ulang yang tadi ditolak),
-                dan berkas dikirim. Pemicu lain tetap masuk ke menu
+                pembayaran disetujui <em>atau</em> ditolak bendahara, ada calon siswa baru mendaftar
+                (termasuk pendaftar yang dicatat manual operator), data diajukan (termasuk kirim ulang
+                yang tadi ditolak), dan berkas dikirim. Pemicu lain tetap masuk ke menu
                 <a href="<?= url('app/operator/notifikasi.php') ?>" class="text-primary underline">Notifikasi</a>
-                tanpa dikirim ke WhatsApp. Kabar operasional dibatasi 3 pesan/jam per pendaftar supaya
-                kuota Fonnte tidak jebol oleh klik berulang.
+                tanpa dikirim ke WhatsApp. Kabar pendaftar baru / data / berkas dibatasi 3 pesan/jam
+                per pendaftar supaya kuota Fonnte tidak jebol oleh klik berulang; kabar uang masuk
+                tidak dibatasi.
               </span>
             </span>
           </label>

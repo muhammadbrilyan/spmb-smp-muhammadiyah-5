@@ -164,7 +164,8 @@ Jalur nomor pendaftaran sengaja **tetap** wajib 4 digit.
 |---|---------|-----------|
 | I1 | Pengaturan Sistem → simpan formulir **tanpa mengetik token** | Token lama **tidak terhapus**; flash berbunyi "token … teruji: Token aktif — Device …, kuota …, kedaluwarsa …" |
 | I2 | Tempel token **salah** → simpan | Nilai tersimpan, flash **error**: "Token ditolak Fonnte (token invalid)" — bukan sukses hening |
-| I3 | `FONNTE_TOKEN` terisi di `.env` | Kotak hijau "Mode .env aktif" + sidik jari `••••xxxx (n karakter)`; badge "Token aktif (dari .env)" |
+| I3 | `FONNTE_TOKEN` terisi di `.env`, kolom token CMS **kosong** | Kotak kuning "Token dari `.env` yang dipakai" + sidik jari `••••xxxx (n karakter)`; badge "Token aktif (dari .env)" |
+| I3b | `.env` dan kolom token CMS terisi **berbeda** | Kiriman memakai token **CMS**; kotak kuning menyebut token halaman ini yang dipakai dan nilai `.env` **diabaikan** |
 | I4 | Centang **Hapus token dari database** → simpan (dengan `.env` kosong) | `pengaturan_sekolah.fonnte_token` = NULL; badge jadi "Belum diatur"; kirim WA menolak "Token Fonnte belum diatur" |
 | I5 | Intip `view-source` halaman pengaturan | Input `fonnte_token` / `midtrans_server_key` / `midtrans_client_key` **tanpa atribut `value`** (rahasia tidak tercetak ke HTML) |
 | I6 | Kirim kredensial akun siswa (`app/operator/akun.php`) | Terkirim; `wa_log.respons` tidak lagi berisi `invalid/empty body value` (penyebab lama: `typing=off`) |
@@ -230,7 +231,7 @@ Jalur nomor pendaftaran sengaja **tetap** wajib 4 digit.
 | M13 | Calon pendaftar unggah bukti transfer/QRIS di `app/spmb/bayar.php?t=…` (atau siswa unggah di `app/siswa/keuangan.php`) saat `notif_wa_aktif=1` | Nomor di **Nomor WA Panitia & Bendahara** (`notif_wa_bendahara`, kartu WhatsApp Gateway pada Pengaturan Sistem atau panel Petugas) menerima WA berisi nama, No. Pendaftaran, metode, nominal, dan tautan `app/bendahara/pembayaran.php`; tercatat di `wa_log` bertipe `BUKTI_BAYAR_MASUK` |
 | M14 | **Nomor WA Panitia & Bendahara** kosong | Semua kabar panitia jatuh ke **Kontak WhatsApp Panitia SPMB** (`kontak_wa_panitia`) — tidak ada pemicu yang hilang diam-diam |
 | M15 | Nomor yang sama ditulis dua kali dalam daftar (mis. `0811…, 0811…`) | Hanya satu pesan terkirim — tujuan dinormalisasi (`wa_normalize`) lalu dideduplikasi, tidak ada pesan dobel ke ponsel yang sama |
-| M16 | Pemicu operasional (`VERIFIKASI_DATA`, `BERKAS_DISUBMIT`) dan pendaftar baru mendaftar, dengan saklar aktif dan nomor panitia terisi | **Sejak 2026-11-06 keempat tipe itu ikut berangkat ke WA panitia** (`notif_pemicu_wa()`): `PENDAFTAR_BARU`, `VERIFIKASI_DATA`, `BERKAS_DISUBMIT` + tiga tipe uang masuk. Kabar operasional dibatasi 3 pesan/jam per pendaftar (lihat W26), uang masuk tidak dibatasi. Semua kejadian tetap masuk menu Notifikasi panitia (in-app) dan percobaan WA tercatat di `wa_log` |
+| M16 | Pemicu operasional (`VERIFIKASI_DATA`, `BERKAS_DISUBMIT`) dan pendaftar baru mendaftar, dengan saklar aktif dan nomor panitia terisi | **Sejak 2026-11-06 tipe operasional ikut berangkat ke WA panitia** (`notif_pemicu_wa()`): `PENDAFTAR_BARU`, `VERIFIKASI_DATA`, `BERKAS_DISUBMIT` + tiga tipe uang masuk; sejak 2026-11-15 ditambah `PEMBAYARAN_DIVERIFIKASI` / `PEMBAYARAN_DITOLAK` (keputusan bendahara) dan `pendaftar_manual()` juga memicu `PENDAFTAR_BARU`. Kabar operasional dibatasi 3 pesan/jam per pendaftar (lihat W26), uang masuk tidak dibatasi. Semua kejadian tetap masuk menu Notifikasi panitia (in-app) dan percobaan WA tercatat di `wa_log` |
 | M17 | `notif_wa_aktif=0` | Tidak ada WA panitia sama sekali (in-app notifikasi tetap tersimpan). Saklar ini **bukan** induk menyeluruh: pengingat angsuran ke orang tua dikendalikan `pengingat_angsuran_wa`, dan kirim jadwal/pengumuman ke wali memakai jalurnya sendiri — keduanya tetap jalan dengan saklar mati |
 | M18 | CMS: toggle aktif, **Nomor WA Operator** dan **Nomor WA Panitia & Bendahara** kosong, Kontak WhatsApp Panitia terisi → Simpan | Tersimpan (dahulu gagal dengan "daftar nomor tujuan masih kosong"); ditolak hanya bila ketiga nomor kosong. Format tiap daftar nomor divalidasi terpisah, pesalan galat menyebut "operator" atau "bendahara" |
 | M19 | Menerbitkan skema lama ke hosting | Wajib `mysql -u root < database/migrations/20261101_notif_wa_bendahara.sql` lebih dulu; tanpanya seluruh simpan Pengaturan Sistem batal (`1054 Unknown column 'notif_wa_bendahara'`) — terlihat sebagai GAGAL pada pemeriksaan 5 `tools/cek-proyek.php` |
@@ -546,7 +547,7 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_hasil_dibuka
 ### W-f. WhatsApp panitia untuk kabar operasional (2026-11-06)
 
 > ⚠️ Uji ini **mengirim WhatsApp sungguhan** ke nomor panitia dan memakai kuota Fonnte
-> (±1000 pesan, kedaluwarsa 6 Desember 2026). Cukup jalankan W24–W27 sekali tiap perubahan.
+> (±1000 pesan, kedaluwarsa 6 Desember 2026). Cukup jalankan W24–W28b sekali tiap perubahan.
 
 | # | Langkah | Diharapkan |
 |---|---------|-----------|
@@ -555,6 +556,9 @@ Sebelum uji: jalankan `mysql -u root < database/migrations/20261102_hasil_dibuka
 | W26 | Operator membuka **Data Pendaftar → Ruang Verifikasi → tab Data Siswa** lalu menekan **Ajukan/Verifikasi** pada pendaftar yang sama berkali-kali (≥4× dalam satu jam) | Ponsel panitia berbunyi maksimal **3 kali**; kejadian ke-4 dan seterusnya tetap tercatat lengkap di papan Notifikasi (`notifikasi` = semua klik, `wa_log` = 3 baris). Cek: `SELECT * FROM rate_limit WHERE aksi='notif_wa_operasional';` |
 | W27 | Bendahara menerima bukti bayar (unggah/verifikasi) pada hari yang sama | Kabar uang masuk **tidak ikut terpotong** batas 3/jam — setiap transfer tetap mengirim satu WA, karena `BUKTI_BAYAR_MASUK` tidak memakai kunci operasional |
 | W28 | Matikan saklar **Kirim notifikasi panitia via WhatsApp** lalu ulangi W24 | Tidak ada WA keluar sama sekali (`wa_log` tidak bertambah), tetapi baris `notifikasi` di papan panitia tetap terbentuk |
+| W28a | Bendahara menekan **Verifikasi** pada bukti bayar (formulir maupun angsuran/SPP) | Ponsel panitia menerima "Pembayaran diverifikasi" berisi nama, No. Pendaftaran, jenis, nominal, status; `wa_log` bertambah tipe `PEMBAYARAN_DIVERIFIKASI`; papan Notifikasi menampilkan baris yang sama |
+| W28b | Bendahara menolak bukti bayar dengan alasan | Ponsel panitia menerima "Bukti pembayaran ditolak" + alasan; orang tua tetap menerima WA penolakan + tautan unggah ulang; `wa_log` memuat `PEMBAYARAN_DITOLAK` (panitia) dan `PENOLAKAN_BAYAR` (orang tua) |
+| W28c | Operator mencatat pendaftar lewat formulir **Tambah Pendaftar** | Ponsel panitia menerima "Pendaftar baru dicatat manual oleh panitia"; `wa_log` tipe `PENDAFTAR_BARU` |
 
 ### W-g. Teks pesan WhatsApp bisa disunting operator (2026-11-06)
 

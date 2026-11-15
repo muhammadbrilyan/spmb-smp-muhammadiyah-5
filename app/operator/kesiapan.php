@@ -218,11 +218,9 @@ $items[] = [
         : 'Nonaktif (boleh) — pendaftar memakai transfer manual/QRIS.',
 ];
 
-/* [PERBAIKAN] Semula hanya membaca kolom DB ($P['fonnte_token']), padahal
- * urutan baca aplikasi adalah .env (FONNTE_TOKEN) lalu fallback DB. Akibatnya
- * token yang hanya diisi di .env dianggap "belum diisi" padahal gateway
- * sebenarnya jalan. Kini memakai fonnte_token() — sumber yang sama dengan
- * wa_kirim(). */
+/* Memakai fonnte_token() — sumber yang sama dengan wa_kirim(): kolom CMS
+ * lebih utama, .env (FONNTE_TOKEN) cadangan. Dengan begitu token yang hanya
+ * diisi di .env tetap dianggap aktif. */
 $fonnteAda = fonnte_token() !== null;
 $items[] = [
     'grup' => 'Kanal', 'status' => $fonnteAda ? 'ok' : 'hati',

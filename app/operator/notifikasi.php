@@ -58,6 +58,8 @@ function notif_sasaran($tipe)
         case 'BUKTI_BAYAR_MASUK':
         case 'PEMBAYARAN_GATEWAY_LUNAS':
         case 'PEMBAYARAN_GATEWAY_MASUK':
+        case 'PEMBAYARAN_DIVERIFIKASI':
+        case 'PEMBAYARAN_DITOLAK':
         case 'PENOLAKAN_BAYAR':
             return ['tautan' => url('app/bendahara/pembayaran.php'), 'peran' => ['bendahara'], 'punya' => 'Bendahara'];
         case 'BERKAS_DISUBMIT':
