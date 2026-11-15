@@ -269,7 +269,7 @@ Satu halaman untuk menyiapkan musim SPMB berikutnya tanpa menyentuh kode/CLI.
 
 ### 14. Pengaturan Sistem (CMS) — `app/operator/pengaturan.php`
 
-Satu `<form>` berisi **section 1–11** (termasuk sub-section 3b FAQ, 6b Jalur dan 7b Teks Pesan WhatsApp) — section 10 & 11 hanya kartu tautan; semua isian **tersimpan & terpakai**:
+Satu `<form>` berisi **section 1–9** (termasuk sub-section 3b FAQ, 6b Jalur dan 7b Teks Pesan WhatsApp); semua isian **tersimpan & terpakai**. Daftar berkas dan akun petugas tidak lagi berupa kartu tautan di sini — keduanya dikelola dari sidebar **Jenis Dokumen** dan **Petugas & Hak Akses**:
 
 | # | Section | Status |
 |---|---|---|
@@ -284,10 +284,8 @@ Satu `<form>` berisi **section 1–11** (termasuk sub-section 3b FAQ, 6b Jalur d
 | 7b | **Teks Pesan WhatsApp ke Calon Murid** (baru 2026-11-06) | ✅ Tujuh pesan keluar ke wali siswa tidak lagi tertulis di dalam kode: satu textarea per pesan, disimpan sebagai JSON `{kunci: teks}` di kolom `pengaturan_sekolah.wa_teks` (migrasi `20261106_wa_teks_cms.sql`). Katalog + teks bawaan ada di `includes/queries/wa-teks.php` → `wa_teks_katalog()`; semua builder pesan memanggil `wa_teks_isi(kunci, placeholder)`. **Kosong = teks bawaan kode** (upgrade berikutnya tetap membawa kalimat baru), teks yang sama dengan bawaan tidak ikut disimpan, badge menandai kunci yang sudah diubah, dan maksimal 1200 karakter. Validasi menolak placeholder wajib dihapus (`{tautan_hasil}`, `{langkah}`, `{jadwal_list}`, `{username}`+`{password}`, `{rincian}`, `{daftar}`) dan placeholder typo (`{namaa}`) yang akan terkirim mentah. Placeholder yang nilainya kosong (mis. tahun ajaran / blok rekening nonaktif) membuat **barisnya ikut hilang**, bukan meninggalkan baris kosong |
 | 8 | Midtrans | ✅ |
 | 9 | Metode Bayar + S&K | ✅ |
-| 10 | Kartu **Daftar Berkas Persyaratan** (tautan saja) | ✅ Sejak 2026-11-05 section "Notifikasi Operator" dihapus — pengaturannya pindah ke blok *Notifikasi WhatsApp Panitia* di kartu WhatsApp Gateway (baris 7). Berkas persyaratan dikelola di `app/operator/jenis-dokumen.php` (bagian 13) |
 | — | Field "tulis-saja" (`profil_singkat`, `deskripsi_sekolah`, `tagline`, `deskripsi_gelombang`) | ⚠️ Tersimpan tapi **tak pernah dibaca** |
 | — | **Unggah favicon** | 🚧 `favicon_url` dipakai `head.php` tapi tidak ada input-nya |
-| 11 | Kartu **Petugas & Hak Akses** (tautan saja) | ✅ Nama/username/password petugas tidak ikut form ini — dikelola di halaman `petugas.php` (tabel `users`) |
 
 Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
 - Prioritas baca token: **`.env` (FONNTE_TOKEN) → DB**. Karena itu nilai yang diketik di CMS

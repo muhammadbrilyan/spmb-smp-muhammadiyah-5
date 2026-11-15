@@ -199,7 +199,7 @@ $panduan = [
             'Seksi 7b <strong>Teks Pesan WhatsApp ke Calon Murid</strong>: kalimat tujuh pesan keluar (instruksi bayar, akun &amp; password, jadwal tes, hasil seleksi, pengingat biaya, bukti bayar ditolak, berkas ditolak) bisa diubah di sini — tidak perlu menyunting kode. Biarkan kotak kosong (atau isi persis kalimat bawaannya) untuk tetap memakai kalimat aplikasi; <code>{placeholder}</code> yang bertanda <em>(wajib)</em> harus ada, dan teks maksimal 1.200 karakter. Perubahan hanya berlaku untuk pesan yang dikirim sesudah tombol Simpan.',
             'Tanpa token, fitur generate akun & notifikasi jadwal tetap jalan tapi WA tidak terkirim — kredensial ditampilkan manual di halaman hasil.',
             'Seksi 8 <strong>Payment Gateway (Midtrans)</strong>: opsional — tanpa API key, sistem tetap jalan penuh dengan transfer bank manual / QRIS.',
-            'Seksi 9: metode bayar — transfer &amp; QRIS selalu tersedia, gateway online hanya bila dikonfigurasi; plus teks S&amp;K. Seksi 10: Daftar Berkas. Seksi 11: Petugas &amp; Hak Akses (di sana nomor WA bendahara juga bisa diganti cepat).',
+            'Seksi 9: metode bayar — transfer &amp; QRIS selalu tersedia, gateway online hanya bila dikonfigurasi; plus teks S&amp;K. Daftar berkas persyaratan dikelola dari sidebar <strong>Pengaturan Sistem → Jenis Dokumen</strong>, sedangkan akun petugas dari <strong>Pengaturan Sistem → Petugas &amp; Hak Akses</strong> (di sana nomor WA bendahara juga bisa diganti cepat).',
         ],
     ],
     [

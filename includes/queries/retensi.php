@@ -187,15 +187,18 @@ function retensi_riwayat($limit = 20)
     ) ?: [];
 }
 
-/** Jumlah pendaftar berkasnya sudah bersih (file_url NULL semua). */
+/** Jumlah pendaftar berkasnya sudah bersih (tidak ada file dokumen maupun bukti transfer). */
 function retensi_sudah_bersih()
 {
     return (int) (q_col(
-        'SELECT COUNT(*) FROM pendaftar p
+        "SELECT COUNT(*) FROM pendaftar p
           WHERE NOT EXISTS (
             SELECT 1 FROM dokumen d
              WHERE d.pendaftar_id = p.id
-               AND d.file_url IS NOT NULL AND d.file_url <> \'\''
-        . ')'
+               AND d.file_url IS NOT NULL AND d.file_url <> '')
+            AND NOT EXISTS (
+            SELECT 1 FROM pembayaran b
+             WHERE b.pendaftar_id = p.id
+               AND b.bukti_transfer_url IS NOT NULL AND b.bukti_transfer_url <> '')"
     ) ?? 0);
 }

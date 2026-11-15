@@ -31,10 +31,10 @@
          * di Pengaturan Sistem → Identitas & Kontak → Media Sosial.
          * Kolom kosong = ikon tidak dirender, bukan tombol mati ke "#". */
         $sosmedFooter = [
-            'Instagram'            => ['url' => trim((string) ($PENGATURAN['sosmed_instagram'] ?? '')), 'ikon' => 'photo_camera'],
-            'TikTok'               => ['url' => trim((string) ($PENGATURAN['sosmed_tiktok'] ?? '')),    'ikon' => 'music_note'],
-            'YouTube'              => ['url' => trim((string) ($PENGATURAN['sosmed_youtube'] ?? '')),   'ikon' => 'smart_display'],
-            'Website Profil Sekolah' => ['url' => trim((string) ($PENGATURAN['website_sekolah'] ?? '')), 'ikon' => 'language'],
+            'Instagram'            => ['url' => trim((string) ($PENGATURAN['sosmed_instagram'] ?? '')), 'logo' => 'instagram'],
+            'TikTok'               => ['url' => trim((string) ($PENGATURAN['sosmed_tiktok'] ?? '')),    'logo' => 'tiktok'],
+            'YouTube'              => ['url' => trim((string) ($PENGATURAN['sosmed_youtube'] ?? '')),   'logo' => 'youtube'],
+            'Website Profil Sekolah' => ['url' => trim((string) ($PENGATURAN['website_sekolah'] ?? '')), 'logo' => null, 'ikon' => 'language'],
         ];
         $sosmedTerisi = array_filter($sosmedFooter, static function ($s) { return $s['url'] !== ''; });
         ?>
@@ -43,7 +43,7 @@
             <?php foreach ($sosmedTerisi as $namaJaringan => $s): ?>
               <a href="<?= e($s['url']) ?>" target="_blank" rel="noopener me" title="<?= e($namaJaringan) ?>"
                  aria-label="<?= e($namaJaringan) ?> <?= e($PENGATURAN['nama_sekolah']) ?>"
-                 class="icon-box border border-line text-ink-500 hover:text-primary hover:border-primary"><?= icon($s['ikon']) ?></a>
+                 class="icon-box border border-line text-ink-500 hover:text-primary hover:border-primary"><?= $s['logo'] !== null ? logo_merek($s['logo']) : icon($s['ikon'], 'text-[18px]') ?></a>
             <?php endforeach; ?>
           </div>
         <?php endif; ?>

@@ -1023,8 +1023,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <a href="#sec-teks-wa">Teks WA</a>
         <a href="#sec-midtrans">Midtrans</a>
         <a href="#sec-bayar-snk">Bayar &amp; S&amp;K</a>
-        <a href="#sec-berkas">Berkas</a>
-        <a href="#sec-petugas">Petugas</a>
       </div>
     </nav>
 
@@ -1892,40 +1890,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             — setiap perubahan teks otomatis menaikkan versi; pendaftar lama tetap terikat versi yang mereka setujui saat mendaftar.</p>
           <p class="hint mt-1">Pasal Privasi &amp; Retensi Data (Pasal 8) wajib ditinjau sekolah/bagian hukum sebelum disetujui
             (draf lengkap: <a class="text-primary underline" href="docs/KEBIJAKAN-DATA.md" target="_blank" rel="noopener">docs/KEBIJAKAN-DATA.md</a>).</p>
-        </div>
-      </section>
-
-      <!-- 10. Daftar Berkas (Fase 5) -->
-      <section id="sec-berkas" class="pengaturan-seksi card p-5 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="font-bold text-ink-900">Daftar Berkas Persyaratan</h2>
-          <span class="badge badge-gray">Fase 5</span>
-        </div>
-        <p class="mt-1 text-[13px] text-ink-500">
-          Jenis berkas yang diminta dari calon siswa di portal (nama, wajib/opsional, format, maks ukuran).
-          Daftar final menyusul — data awal adalah salinan jenis yang sebelumnya tertanam di kode.
-        </p>
-        <div class="mt-4">
-          <a href="<?= url('app/operator/jenis-dokumen.php') ?>" class="btn btn-outline">
-            <?= icon('edit') ?> Kelola Daftar Berkas
-          </a>
-        </div>
-      </section>
-
-      <!-- 11. Petugas & Hak Akses -->
-      <section id="sec-petugas" class="pengaturan-seksi card p-5 sm:p-6">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="font-bold text-ink-900">Petugas &amp; Hak Akses</h2>
-          <span class="badge badge-gray">tabel users</span>
-        </div>
-        <p class="mt-1 text-[13px] text-ink-500">
-          Nama, jabatan, username, dan password akun operator/bendahara tersimpan di akun masing-masing,
-          bukan pada formulir ini — simpan pengaturan lebih dulu, lalu kelola petugas di halaman khusus.
-        </p>
-        <div class="mt-4">
-          <a href="<?= url('app/operator/petugas.php') ?>" class="btn btn-outline">
-            <?= icon('admin_panel_settings') ?> Kelola Petugas
-          </a>
         </div>
       </section>
 
