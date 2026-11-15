@@ -1,6 +1,6 @@
 <?php
 /**
- * LAPISAN QUERY — Akun petugas (operator, bendahara, kepsek).
+ * LAPISAN QUERY — Akun petugas (operator, bendahara).
  *
  * Hanya menyentuh baris users dengan role <> 'siswa'; akun siswa dibuat lewat
  * alur generate akun pendaftar di includes/queries/akun.php.
@@ -15,7 +15,7 @@ function petugas_role_katalog()
 {
     $meta = $GLOBALS['META_ROLE'] ?? [];
     $out  = [];
-    foreach (['operator', 'bendahara', 'kepsek'] as $r) {
+    foreach (['operator', 'bendahara'] as $r) {
         $out[$r] = $meta[$r]['label'] ?? ucfirst($r);
     }
     return $out;
@@ -29,7 +29,7 @@ function petugas_semua()
                 (password_hash = '!LOCKED') AS terkunci
            FROM users
           WHERE role <> 'siswa'
-          ORDER BY FIELD(role, 'operator', 'bendahara', 'kepsek'), username"
+          ORDER BY FIELD(role, 'operator', 'bendahara'), username"
     ) ?: [];
 }
 

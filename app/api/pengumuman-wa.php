@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../includes/config.php';
 
 header('Content-Type: application/json');
 
-if (!is_logged_in() || !in_array(user_role(), ['operator', 'admin'], true)) {
+if (!is_logged_in() || !in_array(user_role(), ['operator'], true)) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'pesan' => 'Akses ditolak.']);
     exit;

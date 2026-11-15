@@ -25,7 +25,7 @@ if ($role === 'siswa') {
     exit;
 }
 
-if (!in_array($role, ['operator', 'admin', 'bendahara', 'kepsek'], true)) {
+if (!in_array($role, ['operator', 'bendahara'], true)) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'jumlah' => 0]);
     exit;

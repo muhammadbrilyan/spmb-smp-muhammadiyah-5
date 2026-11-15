@@ -17,7 +17,7 @@
  * @param string      $judul        judul singkat
  * @param string      $pesan        isi pesan (boleh multi-baris)
  * @param string|null $tautan       URL tujuan (relatif via url())
- * @param string|null $ref_id       id sumber (mis. pengumuman_umum.id) untuk pembersihan
+ * @param string|null $ref_id       id sumber terkait (opsional) untuk pembersihan
  * @return bool
  */
 function notif_siswa_kirim($pendaftar_id, $tipe, $judul, $pesan, $tautan = null, $ref_id = null)
@@ -216,16 +216,6 @@ function notif_siswa_tandai_dibaca($pendaftar_id, $id = null)
     );
 }
 
-/** Tandai dibaca semua notifikasi satu tipe (mis. isi pengumuman sudah tampil di halaman). */
-function notif_siswa_tandai_dibaca_tipe($pendaftar_id, $tipe)
-{
-    return (bool) q_exec(
-        'UPDATE notifikasi_siswa SET dibaca_at = NOW()
-          WHERE pendaftar_id = ? AND tipe = ? AND dibaca_at IS NULL',
-        [(string) $pendaftar_id, (string) $tipe]
-    );
-}
-
 /** Label + tone lencana per tipe notifikasi siswa. */
 function notif_siswa_label($tipe)
 {
@@ -239,7 +229,6 @@ function notif_siswa_label($tipe)
         'KOREKSI_DATA'          => ['Koreksi Data', 'blue', 'edit_note'],
         'HASIL_SELEKSI'         => ['Hasil Seleksi', 'blue', 'emoji_events'],
         'JADWAL_UJIAN'          => ['Jadwal Tes', 'blue', 'event'],
-        'PENGUMUMAN_UMUM'       => ['Pengumuman Panitia', 'blue', 'campaign'],
         'ANGSURAN_JATUH_TEMPO'  => ['Jatuh Tempo Angsuran', 'amber', 'event_busy'],
     ];
     return $peta[$tipe] ?? [(string) $tipe, 'gray', 'notifications'];

@@ -5,7 +5,7 @@
  * adalah salinan jenis yang selama ini hard-coded.
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_cek($_POST['_csrf'] ?? '')) {

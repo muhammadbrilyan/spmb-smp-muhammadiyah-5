@@ -1,5 +1,8 @@
-# Fase 13 — semua alat di tools/ CLI-only (403), kecuali set-password-web.php
-# yang memang untuk browser (dan punya pengaman sendiri: penanda + kode instalasi).
-<FilesMatch "^(?!set-password-web\.php$)">
+# Fase 13 — semua alat di tools/ CLI-only (403), kecuali berkas yang memang
+# dibuat untuk browser dan punya pengaman sendiri (penanda di storage/ + kode
+# instalasi + CSRF + rate limit):
+#   set-password-web.php  -> menyetel password akun staf terkunci
+#   migrasi-web.php       -> menjalankan berkas migrasi di database aplikasi
+<FilesMatch "^(?!(?:set-password-web|migrasi-web)\.php$)">
   Require all denied
 </FilesMatch>

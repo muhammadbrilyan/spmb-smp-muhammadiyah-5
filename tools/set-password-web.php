@@ -9,8 +9,8 @@
  *      sebelum daftar akun terlihat — pengunjung anonim TIDAK bisa melihat
  *      daftar akun terkunci apalagi menyetel password tanpa kode ini.
  *   3. CSRF token per sesi; otorisasi kode disimpan di sesi privat.
- *   4. Rate limit 10 percobaan/jam per IP (2 per akun) — DIHITUNG SETIAP
- *      percobaan (kode maupun password, sukses maupun gagal).
+ *   4. Rate limit 10 percobaan/jam per IP — DIHITUNG SETIAP percobaan
+ *      (kode maupun password, sukses maupun gagal).
  *   5. HANYA akun berpassword_hash '!LOCKED' yang bisa dipilih.
  *   6. Setelah sukses: penanda DIHAPUS dan berkas ini menghapus DIRINYA
  *      SENDIRI (bila izin mengizinkan — kalau tidak, halaman meminta
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $akun = q_all(
                         "SELECT username, role, nama_lengkap FROM users
                           WHERE password_hash = '!LOCKED'
-                            AND role IN ('operator','admin','bendahara','kepsek')
+                            AND role IN ('operator','bendahara')
                           ORDER BY role, username"
                     ) ?: [];
                 } catch (Throwable $e) {
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             @unlink($penanda);
                             $sisa = (int) (q_col(
                                 "SELECT COUNT(*) FROM users WHERE password_hash = '!LOCKED'
-                                   AND role IN ('operator','admin','bendahara','kepsek')"
+                                   AND role IN ('operator','bendahara')"
                             ) ?? 0);
                             if ($sisa > 0) {
                                 /* Masih ada akun terkunci — tulis penanda BARU
@@ -143,7 +143,7 @@ if ($authorized && !$sukses && !$akun) {
         $akun = q_all(
             "SELECT username, role, nama_lengkap FROM users
               WHERE password_hash = '!LOCKED'
-                AND role IN ('operator','admin','bendahara','kepsek')
+                AND role IN ('operator','bendahara')
               ORDER BY role, username"
         ) ?: [];
     } catch (Throwable $e) {
@@ -208,8 +208,9 @@ $csrf = csrf_token();
                minlength="8" placeholder="ketik isi file penanda" autofocus>
         <button type="submit">Verifikasi kode</button>
       </form>
-      <p class="warn">Maks 5 percobaan per jam per IP. Selama file penanda &amp; alat ini ada
-      di server, jangan publikasikan domain sebelum keduanya dihapus.</p>
+      <p class="warn">Maks 10 percobaan per jam per IP. Hapus file penanda
+      <code>storage/.izinkan-set-password</code> sebelum domain dipublikasikan —
+      tanpa penanda, alat ini 404.</p>
     <?php else: ?>
       <p class="hint">Kode terverifikasi. Pilih akun <strong>terkunci</strong> yang akan
       diatur — setelah berhasil, penanda &amp; berkas alat ini terhapus otomatis.</p>

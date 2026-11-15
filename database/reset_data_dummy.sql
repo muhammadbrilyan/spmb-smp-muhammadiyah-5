@@ -8,7 +8,7 @@
 --                 dan log retensi.
 --
 -- YANG DIPERTAHANKAN:
---   * akun operator, bendahara, kepsek (tabel users, role staf)
+--   * akun operator, bendahara (tabel users, role staf)
 --   * pengaturan_sekolah (profil, rekening, S&K, tanggal PPDB, dsb.)
 --   * jenis_dokumen (daftar berkas persyaratan)
 --   * kelas / rombel (struktur & kuota)  -> lihat bagian OPSIONAL di bawah
@@ -30,7 +30,7 @@ USE db_spmb_mualimku;
 
 -- Hitungan SEBELUM (untuk dibandingkan dengan SESUDAH di akhir).
 SELECT 'SEBELUM' AS tahap,
-       (SELECT COUNT(*) FROM users WHERE role IN ('operator','bendahara','kepsek')) AS akun_staf,
+       (SELECT COUNT(*) FROM users WHERE role IN ('operator','bendahara')) AS akun_staf,
        (SELECT COUNT(*) FROM users WHERE role = 'siswa')  AS akun_siswa,
        (SELECT COUNT(*) FROM pendaftar)       AS pendaftar,
        (SELECT COUNT(*) FROM dokumen)         AS dokumen,
@@ -51,7 +51,7 @@ DELETE FROM pendaftar;
 
 DELETE FROM jadwal_tes;
 
--- Akun siswa saja. Akun operator/bendahara/kepsek TIDAK disentuh.
+-- Akun siswa saja. Akun operator/bendahara TIDAK disentuh.
 DELETE FROM users WHERE role = 'siswa';
 
 -- Log & riwayat operasional (bukan data master).
@@ -83,7 +83,7 @@ ALTER TABLE retensi_log    AUTO_INCREMENT = 1;
 
 -- Hitungan SESUDAH.
 SELECT 'SESUDAH' AS tahap,
-       (SELECT COUNT(*) FROM users WHERE role IN ('operator','bendahara','kepsek')) AS akun_staf,
+       (SELECT COUNT(*) FROM users WHERE role IN ('operator','bendahara')) AS akun_staf,
        (SELECT COUNT(*) FROM users WHERE role = 'siswa')  AS akun_siswa,
        (SELECT COUNT(*) FROM pendaftar)       AS pendaftar,
        (SELECT COUNT(*) FROM dokumen)         AS dokumen,

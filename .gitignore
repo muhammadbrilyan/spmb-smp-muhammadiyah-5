@@ -21,6 +21,10 @@ storage/backup/*
 storage/*.sql
 storage/*.sql.gz
 
+# Penanda alat instalasi sekali-pakai (set-password-web.php, migrasi-web.php) —
+# isinya kode acak yang membuka alat itu; dibuat lewat File Manager di server
+storage/.izinkan-*
+
 # Cadangan mysqldump manual sebelum migrasi DB — data sensitif, tidak untuk repo
 database/backup/*
 !database/backup/.gitkeep

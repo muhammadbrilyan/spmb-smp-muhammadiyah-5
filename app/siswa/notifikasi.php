@@ -1,15 +1,15 @@
 <?php
 /**
- * INFORMASI — portal siswa (Tahap 2). Dahulu bernama "Notifikasi & Pengumuman".
+ * INFORMASI — portal siswa (Tahap 2).
  *
- * SATU halaman untuk semua pemberitahuan siswa: pengumuman panitia yang
- * sudah terbit, lalu notifikasi per penerima (tabel notifikasi_siswa) —
- * hasil verifikasi berkas & data, keputusan pembayaran, hasil seleksi.
- * Dulu pengumuman punya menu & halaman sendiri; kini digabung agar siswa
- * tidak bingung memilih antara "Notifikasi" dan "Pengumuman".
+ * SATU halaman untuk semua pemberitahuan siswa: notifikasi per penerima
+ * (tabel notifikasi_siswa) — hasil verifikasi berkas & data, keputusan
+ * pembayaran, hasil seleksi. Dulu pengumuman punya menu & halaman sendiri;
+ * kini digabung agar siswa tidak bingung memilih antara "Notifikasi" dan
+ * "Pengumuman". Pengumuman bebas panitia (pengumuman_umum) dihapus 2026-11-13.
  */
 $title = 'Informasi';
-$desc  = 'Pemberitahuan status pendaftaran, pembayaran, berkas, seleksi, dan pengumuman panitia.';
+$desc  = 'Pemberitahuan status pendaftaran, pembayaran, berkas, dan seleksi.';
 require __DIR__ . '/_bootstrap.php';
 
 $keHalaman = url('app/siswa/notifikasi.php');
@@ -61,23 +61,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
 $flash = flash();
 
-/* Pengumuman panitia yang sudah terbit (isi lengkap, terbaru & penting dulu).
- * Notifikasi turunannya tidak ditampilkan lagi di feed agar tidak dobel —
- * barisnya ditandai dibaca karena isinya sudah tampil di bagian atas. */
-$pengumumanTerbit = pengumuman_umum_terbit(20);
-
-$daftar = [];
-if ($siswa) {
-    if ($pengumumanTerbit) {
-        notif_siswa_tandai_dibaca_tipe($siswa['id'], 'PENGUMUMAN_UMUM');
-    }
-    foreach (notif_siswa_daftar($siswa['id'], 200) as $n) {
-        if ($n['tipe'] === 'PENGUMUMAN_UMUM') {
-            continue;
-        }
-        $daftar[] = $n;
-    }
-}
+$daftar = $siswa ? notif_siswa_daftar($siswa['id'], 200) : [];
 $jumlah = $siswa ? notif_siswa_belum_dibaca($siswa['id']) : 0;
 
 /* Informasi pendaftaran yang bukan notifikasi (status saat ini, bukan peristiwa). */
@@ -143,7 +127,7 @@ if ($kartuUjian) {
     ];
 }
 
-$ticker = trim((string) ($PENGATURAN['ticker_header'] ?? ''));
+$ticker = trim((string) ($PENGATURAN['ticker'] ?? ''));
 if ($ticker !== '') {
     $info[] = [
         'ikon'    => 'info',
@@ -188,7 +172,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
         <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Informasi</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          Semua pemberitahuan resmi untuk Anda dalam satu tempat: pengumuman panitia, verifikasi data &amp; berkas,
+          Semua pemberitahuan resmi untuk Anda dalam satu tempat: verifikasi data &amp; berkas,
           keputusan pembayaran, dan hasil seleksi.
         </p>
       </div>
@@ -222,42 +206,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           </div>
         <?php endif; ?>
 
-        <!-- Pengumuman panitia (terbit) -->
-        <?php if ($pengumumanTerbit): ?>
-          <section>
-            <div class="flex items-center justify-between gap-3">
-              <h2 class="font-bold text-ink-900">Pengumuman Panitia</h2>
-              <span class="badge badge-gray"><?= count($pengumumanTerbit) ?></span>
-            </div>
-            <div class="mt-3 space-y-3">
-              <?php foreach ($pengumumanTerbit as $p):
-                $tone = !empty($p['penting']) ? $toneRingkas['amber'] : $toneRingkas['blue']; ?>
-                <article class="card p-5 sm:p-6" id="pgn-<?= e($p['id']) ?>">
-                  <div class="flex items-start gap-4">
-                    <span class="icon-box shrink-0" style="background:<?= e($tone[0]) ?>;color:<?= e($tone[1]) ?>">
-                      <?= icon('campaign', 'text-[21px]') ?>
-                    </span>
-                    <div class="min-w-0 flex-1">
-                      <div class="flex items-start justify-between gap-3 flex-wrap">
-                        <h3 class="font-bold text-ink-900"><?= e($p['judul']) ?></h3>
-                        <div class="flex items-center gap-2">
-                          <?php if (!empty($p['penting'])): ?>
-                            <span class="badge badge-amber">Penting</span>
-                          <?php endif; ?>
-                          <?php if (!empty($p['terbit_at'])): ?>
-                            <span class="text-[11px] text-ink-400 whitespace-nowrap"><?= e(bulan($p['terbit_at'])) ?></span>
-                          <?php endif; ?>
-                        </div>
-                      </div>
-                      <p class="mt-1.5 text-[13px] text-ink-600 whitespace-pre-line"><?= e($p['isi']) ?></p>
-                    </div>
-                  </div>
-                </article>
-              <?php endforeach; ?>
-            </div>
-          </section>
-        <?php endif; ?>
-
         <!-- Notifikasi peristiwa -->
         <section>
           <div class="flex items-center justify-between gap-3">
@@ -266,15 +214,11 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           </div>
 
           <div class="mt-3 space-y-3">
-            <?php if ($siswa && !$daftar && !$pengumumanTerbit): ?>
+            <?php if ($siswa && !$daftar): ?>
               <div class="card p-8 text-center">
                 <span class="icon-box bg-canvas text-ink-400 mx-auto"><?= icon('notifications_off', 'text-[26px]') ?></span>
                 <h3 class="mt-3 font-bold text-ink-900">Belum ada notifikasi</h3>
                 <p class="mt-1 text-sm text-ink-500">Pemberitahuan akan muncul di sini setiap kali ada pembaruan status pendaftaran Anda.</p>
-              </div>
-            <?php elseif ($siswa && !$daftar): ?>
-              <div class="card p-6 text-center">
-                <p class="text-sm text-ink-500">Belum ada notifikasi baru. Pengumuman panitia tampil di bagian atas halaman ini.</p>
               </div>
             <?php endif; ?>
 

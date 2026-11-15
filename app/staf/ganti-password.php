@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'bendahara', 'kepsek', 'admin']);
+require_role(['operator', 'bendahara']);
 require_once __DIR__ . '/../../includes/queries/core.php';
 
 $galat = [];

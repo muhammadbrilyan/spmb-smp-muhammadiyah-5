@@ -1,6 +1,6 @@
 <?php
 /**
- * Fase 11 Bagian C — Halaman Kesiapan Rilis & Operasional (operator/admin).
+ * Fase 11 Bagian C — Halaman Kesiapan Rilis & Operasional (operator).
  *
  * Checklist kesiapan: konfigurasi, keamanan akun, kanal pembayaran/WA,
  * skema database, izin & cadangan — plus kartu antrean operasional.
@@ -11,7 +11,7 @@
  */
 require_once __DIR__ . '/../../includes/config.php';
 
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -32,7 +32,7 @@ $appUrl = (string) (env_val('APP_URL') ?: '');
 $P      = $GLOBALS['PENGATURAN'];
 
 $stafKunci = (int) (q_col(
-    "SELECT COUNT(*) FROM users WHERE role IN ('operator','admin','bendahara','kepsek')
+    "SELECT COUNT(*) FROM users WHERE role IN ('operator','bendahara')
         AND password_hash = '!LOCKED'"
 ) ?? 0);
 $hashLemah = (int) (q_col(
@@ -61,8 +61,8 @@ try {
             $migrasiKurang[] = $tbl . '.' . $col;
         }
     }
-    /* Tabel modul Tahap 2 (notifikasi siswa & pengumuman umum). */
-    foreach (['notifikasi_siswa', 'pengumuman_umum'] as $tbl) {
+    /* Tabel modul Tahap 2 (notifikasi siswa). */
+    foreach (['notifikasi_siswa'] as $tbl) {
         $ada = (int) (q_col(
             'SELECT COUNT(*) FROM information_schema.tables
               WHERE table_schema = DATABASE() AND table_name = ?',
@@ -157,7 +157,7 @@ $items[] = [
     'grup' => 'Keamanan', 'status' => $stafKunci === 0 ? 'ok' : 'hati',
     'judul' => 'Akun staf sudah memiliki password',
     'ket'   => $stafKunci === 0
-        ? 'Seluruh akun operator/bendahara/kepsek sudah di-set.'
+        ? 'Seluruh akun operator/bendahara sudah di-set.'
         : $stafKunci . ' akun staf masih terkunci (!LOCKED) — setel password lewat <a href="' . e(url('app/operator/petugas.php'))
             . '" class="text-primary hover:underline">Petugas &amp; Hak Akses</a>. Bila tidak ada satu pun akun yang bisa login, '
             . 'jalankan php tools/set-password.php &lt;username&gt;.',
@@ -175,7 +175,7 @@ $items[] = [
     'grup' => 'Keamanan', 'status' => $migrasiOk ? 'ok' : 'gagal',
     'judul' => 'Skema & migrasi terbaru',
     'ket'   => $migrasiOk
-        ? 'Kolom/tabel penanda migrasi terbaru (pay_token_hash, teks_beasiswa, notifikasi_siswa, pengumuman_umum) ada — migrasi terjalankan.'
+        ? 'Kolom/tabel penanda migrasi terbaru (pay_token_hash, teks_beasiswa, notifikasi_siswa) ada — migrasi terjalankan.'
         : 'Belum ditemukan: ' . e(implode(', ', $migrasiKurang))
             . ' — jalankan berurutan file di database/migrations/.',
 ];
@@ -241,7 +241,10 @@ if (isset($_GET['segarkan-wa'])) {
     unset($_SESSION['fonnte_dev']); /* paksa periksa ulang setelah ganti nomor admin */
 }
 $devCache = $_SESSION['fonnte_dev'] ?? null;
-if (!is_array($devCache) || (time() - (int) ($devCache['ts'] ?? 0)) > 600) {
+/* Hasil gagal (mis. perangkat sedang disconnect) hanya di-cache 1 menit supaya
+ * begitu operator scan QR ulang, status hijau muncul tanpa menunggu 10 menit. */
+$devTtl = (is_array($devCache) && !empty($devCache['ok'])) ? 600 : 60;
+if (!is_array($devCache) || (time() - (int) ($devCache['ts'] ?? 0)) > $devTtl) {
     $cekDev = fonnte_cek_token();
     $devCache = [
         'ts'    => time(),
@@ -252,9 +255,21 @@ if (!is_array($devCache) || (time() - (int) ($devCache['ts'] ?? 0)) > 600) {
     $_SESSION['fonnte_dev'] = $devCache;
 }
 $devWa    = $devCache['dev'];
-/* Bandingkan dalam format yang sama: panitia bisa disimpan 08xx, Fonnte selalu 628xx. */
-$devBersih   = wa_normalize($devWa);
+/* Bandingkan dalam format yang sama: nomor bisa disimpan 08xx, Fonnte selalu 628xx.
+ * Acuan utama = daftar Nomor WA Panitia & Bendahara (admin SPMB). Kontak publik
+ * tetap diterima sebagai pembanding kedua agar konfigurasi lama tidak dianggap salah. */
+$devBersih     = wa_normalize($devWa);
 $panitiaBersih = wa_normalize($waPanitia);
+$adminBersih   = [];
+foreach (preg_split('/[\s,;]+/', (string) ($P['notif_wa_bendahara'] ?? '')) as $nomorAdmin) {
+    $n = wa_normalize($nomorAdmin);
+    if ($n !== '') {
+        $adminBersih[$n] = true;
+    }
+}
+$cocokAdmin  = $devBersih !== '' && isset($adminBersih[$devBersih]);
+$cocokPublik = $panitiaBersih !== '' && $devBersih === $panitiaBersih;
+
 if (!$fonnteAda) {
     $sinkStatus = 'hati';
     $sinkKet    = 'Belum bisa diperiksa — token Fonnte belum diisi.';
@@ -267,20 +282,27 @@ if (!$fonnteAda) {
      * Tanpa cabang ini pemeriksaan ditandai OK padahal semua WA gagal. */
     $sinkStatus = 'hati';
     $sinkKet    = 'Perangkat Fonnte <strong>' . e($devWa) . '</strong> sedang tidak ter-connect — WA tidak akan terkirim sampai scan QR ulang di dasbor Fonnte. Catatan: ' . e($devCache['pesan']);
-} elseif ($panitiaBersih === '') {
-    $sinkStatus = 'hati';
-    $sinkKet    = 'Kontak WA panitia belum diisi — tidak ada nomor pembanding untuk memastikan pengirim dan tujuan balasan sama.';
-} elseif ($devBersih !== $panitiaBersih) {
-    $sinkStatus = 'hati';
-    $sinkKet    = 'Nomor pengirim Fonnte <strong>' . e($devWa) . '</strong> berbeda dari Kontak WA panitia <strong>' . e($P['kontak_wa_panitia'])
-        . '</strong> — calon siswa yang membalas pesan WA sampai ke nomor pengirim, bukan nomor yang tampil di halaman publik. Samakan salah satunya (Pengaturan Sistem → Identitas / WhatsApp Gateway).';
-} else {
+} elseif ($cocokAdmin || $cocokPublik) {
     $sinkStatus = 'ok';
-    $sinkKet    = 'Nomor pengirim = nomor panitia: <strong>' . e($devWa) . '</strong> · ' . e($devCache['pesan']);
+    $sinkKet    = 'Nomor pengirim = ' . ($cocokAdmin ? 'nomor admin SPMB (Nomor WA Panitia & Bendahara)' : 'Kontak WA panitia')
+        . ': <strong>' . e($devWa) . '</strong>'
+        . ($cocokAdmin && $panitiaBersih !== '' && $panitiaBersih !== $devBersih
+            ? ' · Kontak publik: ' . e($P['kontak_wa_panitia']) : '')
+        . ' · ' . e($devCache['pesan']);
+} elseif (empty($adminBersih) && $panitiaBersih === '') {
+    $sinkStatus = 'hati';
+    $sinkKet    = 'Belum ada nomor pembanding — isi Nomor WA Panitia & Bendahara (atau Kontak WhatsApp Panitia) di Pengaturan Sistem.';
+} else {
+    $sinkStatus = 'hati';
+    $daftarAdmin = $adminBersih ? implode(', ', array_keys($adminBersih)) : '—';
+    $sinkKet     = 'Nomor pengirim Fonnte <strong>' . e($devWa) . '</strong> tidak ada di daftar nomor admin SPMB '
+        . '<strong>' . e($daftarAdmin) . '</strong>'
+        . ($panitiaBersih !== '' ? ' maupun Kontak WA panitia <strong>' . e($P['kontak_wa_panitia']) . '</strong>' : '')
+        . ' — tambahkan nomor perangkat ke Nomor WA Panitia & Bendahara, atau hubungkan nomor admin yang sudah terdaftar ke Fonnte.';
 }
 $items[] = [
     'grup' => 'Kanal', 'status' => $sinkStatus,
-    'judul' => 'Nomor pengirim WA = nomor panitia',
+    'judul' => 'Nomor pengirim WA = nomor panitia/admin',
     'ket'   => $sinkKet,
 ];
 
@@ -358,16 +380,21 @@ $items[] = [
             : 'Retensi nonaktif dan belum ada pendaftar >12 bulan menyimpan berkas — belum mendesak.'),
 ];
 
-/* Alat darurat set-password (Fase 13 butir 1) — harus sudah lenyap sebelum publikasi. */
-$penandaSpw = storage_path('.izinkan-set-password');
-$toolSpw    = dirname(__DIR__, 2) . '/tools/set-password-web.php';
-$spwSisa    = (is_file($penandaSpw) ? 1 : 0) + (is_file($toolSpw) ? 1 : 0);
+/* Alat web sekali-pakai (Fase 13 butir 1) — yang menentukan paparan adalah
+ * PENANDA, bukan keberadaan berkas alat. Tanpa storage/.izinkan-* keduanya
+ * 404, sehingga berkasnya boleh tetap ada di server/paket rilis (diperlukan
+ * untuk instalasi ulang). */
+$aktifSekali = array_keys(array_filter([
+    'storage/.izinkan-set-password' => storage_path('.izinkan-set-password'),
+    'storage/.izinkan-migrasi'      => storage_path('.izinkan-migrasi'),
+], 'is_file'));
 $items[] = [
-    'grup' => 'Sistem', 'status' => $spwSisa > 0 ? 'gagal' : 'ok',
-    'judul' => 'Alat set-password web dihapus',
-    'ket'   => $spwSisa > 0
-        ? 'Masih ada ' . $spwSisa . ' dari 2 berkas aktif (penanda storage/.izinkan-set-password & tools/set-password-web.php) — siapa pun yang menemukan URL-nya bisa memakainya selama kode instalasi belum diganti. HAPUS keduanya via File Manager sebelum domain dipublikasikan.'
-        : 'Penanda & alat web sudah tidak ada (hanya alat CLI set-password.php yang tetap ada).',
+    'grup' => 'Sistem', 'status' => $aktifSekali ? 'gagal' : 'ok',
+    'judul' => 'Penanda alat web sekali-pakai dibersihkan',
+    'ket'   => $aktifSekali
+        ? 'Masih ada ' . count($aktifSekali) . ' penanda aktif (' . e(implode(', ', $aktifSekali))
+            . ') — selama penanda ada, siapa pun yang menemukan URL alat dan tahu kode di dalamnya bisa memakainya. HAPUS berkas penanda itu via File Manager sebelum domain dipublikasikan (berkas tools/set-password-web.php &amp; tools/migrasi-web.php boleh tetap ada: tanpa penanda keduanya 404).'
+        : 'Tidak ada penanda storage/.izinkan-* — tools/set-password-web.php dan tools/migrasi-web.php 404. Berkas keduanya boleh tetap ada untuk instalasi ulang; alat aktif lagi hanya bila Anda membuat penanda baru.',
 ];
 
 /* Skor. */

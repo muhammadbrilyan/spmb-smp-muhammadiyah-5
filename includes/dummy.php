@@ -14,6 +14,7 @@ $PENGATURAN = [
     'logo_url'              => asset('assets/img/uploads/logo-sekolah.png'),
     'warna_utama'           => '#0056b3',
     'biaya_formulir'        => 200000,
+    'biaya_spp'             => 350000,
     'nama_bank'             => 'Bank Syariah Indonesia (BSI)',
     'no_rekening'           => '714-239-5501',
     'atas_nama_rekening'    => 'SMP Muhammadiyah 5 Tangerang',
@@ -122,7 +123,6 @@ $META_ROLE = [
     'siswa'     => ['label' => 'Siswa',     'nama' => 'Aisyah Nur Salsabila',         'jabatan' => 'Calon Siswa SPMB'],
     'operator'  => ['label' => 'Operator',  'nama' => 'Ust. M. Rizky Pratama, S.Pd.', 'jabatan' => 'Operator SPMB & SIMS'],
     'bendahara' => ['label' => 'Bendahara', 'nama' => 'Hj. Siti Rohmah, S.E.',        'jabatan' => 'Bendahara Sekolah'],
-    'kepsek'    => ['label' => 'Kepsek',    'nama' => 'Drs. H. Ahmad Sudrajat, M.Pd','jabatan' => 'Kepala Sekolah'],
 ];
 
 /* [Fase 10] role_dari_username() dihapus — hanya dipakai parser
@@ -135,7 +135,7 @@ $META_ROLE = [
  * tidak bisa dilakukan sama sekali. */
 $AKUN_DEMO = [];
 
-foreach (['operator', 'bendahara', 'kepsek'] as $role) {
+foreach (['operator', 'bendahara'] as $role) {
     $AKUN_DEMO[] = [
         'role'     => $role,
         'label'    => $META_ROLE[$role]['label'],
@@ -166,4 +166,4 @@ foreach ($AKUN_DEMO as $akun) {
         $AKUN_PER_ROLE[$akun['role']] = $akun;
     }
 }
-$URUTAN_ROLE = ['siswa', 'operator', 'bendahara', 'kepsek'];
+$URUTAN_ROLE = ['siswa', 'operator', 'bendahara'];

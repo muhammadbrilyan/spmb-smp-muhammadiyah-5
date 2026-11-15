@@ -30,13 +30,17 @@ Tanpa Composer/npm — Tailwind sudah di-build statis.
 2. Pilih `database/db_spmb_mualimku.sql` (±100 KB — jauh di bawah batas
    unggah hosting) → **Go**.
 3. Verifikasi: tabel `pengaturan_sekolah`, `pendaftar`, `users`, dst. muncul.
-4. Migrasi tambahan per fase (idempoten, aman dijalankan ulang): buka tiap
-   file di `database/migrations/` secara berurutan (nama file = urut waktu)
-   di phpMyAdmin → tab SQL → Run. **Ganti dulu baris `USE db_spmb_mualimku;`
-   di kepala file dengan nama database hosting** (`USERNAME_spmb`) atau hapus
-   baris itu dan pastikan database-nya sedang dipilih di panel kiri — kalau
-   tidak, MySQL menjawab `Unknown database` dan migrasi tidak berjalan sama
-   sekali.
+4. Migrasi tambahan per fase (idempoten, aman dijalankan ulang) — **dua cara**:
+   - **Cara disukai (browser, tanpa SSH):** jalankan
+     `tools/migrasi-web.php` seperti di bagian **1.6a** di bawah. Nama database
+     diambil dari `.env` aplikasi, jadi tidak ada baris `USE` yang perlu disunting.
+   - **Cara manual:** buka tiap file di `database/migrations/` secara berurutan
+     (nama file = urut waktu) di phpMyAdmin → tab SQL → Run. **Ganti dulu baris
+     `USE db_spmb_mualimku;` di kepala file dengan nama database hosting**
+     (`USERNAME_spmb`) atau hapus
+     baris itu dan pastikan database-nya sedang dipilih di panel kiri — kalau
+     tidak, MySQL menjawab `Unknown database` dan migrasi tidak berjalan sama
+     sekali.
 5. **Jalankan langkah 4 setiap kali menarik kode baru.** Kolom yang tertinggal
    membuat halaman gagal menyimpan secara menyeluruh, bukan sebagian — satu
    `UPDATE` 49 kolom dibatalkan MySQL (`1054 Unknown column`) sehingga seluruh
@@ -52,7 +56,7 @@ Tanpa Composer/npm — Tailwind sudah di-build statis.
    (pendaftar_id, jadwal_id)`, bukan `uq_peserta_pendaftar`.
 
 **PENTING (Fase 11):** seed utama sengaja **tidak memuat password login yang
-bisa dipakai** — akun staf (`operator`, `bendahara`, `kepsek`) di-seed dgn
+bisa dipakai** — akun staf (`operator`, `bendahara`) di-seed dgn
 hash `'!LOCKED'` dan harus diatur sendiri (langkah 1.6).
 
 ### 1.3 Upload aplikasi (File Manager)
@@ -115,15 +119,16 @@ Seed mengunci semua akun staf. Lewat browser:
    minimal 8 karakter** (mis. hasil password generator). Tanpa kode ini
    alat tidak menampilkan apa pun (Fase 13 — cegah pengambilalihan akun).
 2. Buka `https://domain-anda/tools/set-password-web.php` → ketik **kode
-   instalasi** tadi → pilih akun (`operator`, `bendahara`, `kepsek`) →
+   instalasi** tadi → pilih akun (`operator`, `bendahara`) →
    isi password baru (min 10 karakter, konfirmasi 2×) → Simpan.
 3. Ulangi untuk tiap akun staf. Setelah tiap sukses, penanda lama terhapus
    dan (bila masih ada akun terkunci) penanda **baru** berisi kode acak baru
    ditampilkan sekali di layar — catat untuk langkah berikutnya.
 4. Setelah akun terkunci terakhir, penanda terhapus dan alat **menghapus
-   dirinya sendiri**. Bila penghapusan diri gagal (izin file), segera hapus
-   `tools/set-password-web.php` via File Manager — halaman Kesiapan akan
-   menandai GAGAL selama penanda atau alat ini masih ada.
+   dirinya sendiri**. Bila penghapusan diri gagal (izin file), berkas alat
+   boleh ditinggal — tanpa `storage/.izinkan-set-password` ia 404. Halaman
+   Kesiapan hanya menandai GAGAL selama **penanda** `storage/.izinkan-*`
+   masih ada (hapus via File Manager), bukan karena keberadaan berkas alat.
 5. Login tiap staf — sistem memaksa **ganti password** saat login pertama.
 
 Alternatif bila ada akses SSH/terminal cPanel:
@@ -135,6 +140,53 @@ berikutnya cukup lewat menu **Pengaturan Sistem → Petugas & Hak Akses**
 nonaktifkan akun) — penanda `.izinkan-set-password` dan alat web tidak
 dibutuhkan lagi. Alat itu tetap jalur pemulihan untuk keadaan genting:
 seluruh akun staf masih `!LOCKED` atau operator kehilangan akses.
+
+### 1.6a Jalankan migrasi database — TANPA SSH (`tools/migrasi-web.php`)
+
+Alat sekali-pakai dengan penjagaan yang sama seperti alat set password
+(§1.6): penanda di `storage/` + kode acak + CSRF + batas percobaan. Fungsinya
+menjalankan berkas di `database/migrations/` memakai **koneksi aplikasi**,
+sehingga baris `USE db_spmb_mualimku;` tidak perlu diedit dan tidak ada
+kemungkinan migrasi diam-diam berjalan di skema yang salah.
+
+1. Unduh kode baru (Git / Upload) lebih dulu — alat ini hanya menjalankan
+   berkas migrasi yang ikut ada di folder `database/migrations/`.
+2. File Manager → buat berkas `.izinkan-migrasi` di dalam folder `storage/`
+   (nama persis, tanpa ekstensi) berisi **kode acak minimal 8 karakter**.
+   Bila §1.5 sudah dijalankan, `storage/` yang benar ada **di luar root web**
+   (`/home/USERNAME/spmb-data/storage`) — penanda di root proyek tidak akan
+   terlihat oleh alat.
+3. Buka `https://domain-anda/tools/migrasi-web.php` → ketik kode instalasi →
+   halaman menampilkan tabel **apa yang diperiksa** (kolom/index per berkas)
+   dan statusnya: `sudah terpasang` / `belum terpasang`.
+4. Tekan **Jalankan migrasi tertunda**. Berkas yang sudah terpasang dilewati
+   apa adanya; berkas yang belum dijalankan pernyataan `information_schema` +
+   `PREPARE`-nya satu per satu, lalu hasilnya **diperiksa ulang** sebelum
+   dianggap sukses.
+5. Bila muncul pesan **"Akun database ini tidak punya hak ALTER/CREATE"** —
+   itu normal: isi blok *Akun database lain (opsional)* dengan user/password
+   **pemilik database** (yang dibuat di §1.1) lalu tekan lagi. Kredensial itu
+   hanya dipakai di dalam request tersebut: tidak disimpan di sesi, tidak
+   ditulis ke berkas, dan tidak dicetak balik ke layar.
+6. Setelah semua target terverifikasi, penanda `.izinkan-migrasi` **terhapus
+   sendiri** dan alat kembali menghasilkan 404. Berkas alatnya sendiri dibiarkan
+   ada (aman tanpa penanda) supaya batch berikutnya cukup mengulang langkah 2.
+   Penanda di-`.gitignore` (`storage/.izinkan-*`) dan dikecualikan dari
+   `tools/buat-paket.php`, jadi tidak mungkin ikut terkirim ke server; bila
+   masih tersisa saat rilis, menu **Kesiapan Rilis** menandainya GAGAL.
+7. Berkas alat ini **tidak boleh** ikut ter-commit berisi target baru tanpa
+   pemeriksaan: tiap entri `$TARGET` wajib membawa SQL `information_schema`
+   sendiri, karena itulah yang membuat penekanan tombol dua kali tidak berbahaya.
+
+Batch yang sedang berlaku di `$TARGET`:
+`20261106_wa_teks_cms.sql` (kolom `pengaturan_sekolah.wa_teks`) dan
+`20261106_peserta_ujian_multi_jadwal.sql` (`uq_peserta_jadwal` dipasang,
+`uq_peserta_pendaftar` dilepas). Verifikasi manual tetap sama seperti di §1.2:
+
+```sql
+SHOW COLUMNS FROM pengaturan_sekolah LIKE 'wa_teks';
+SHOW INDEX FROM peserta_ujian WHERE Key_name IN ('uq_peserta_jadwal','uq_peserta_pendaftar');
+```
 
 ### 1.7 PHP & HTTPS
 
@@ -260,6 +312,71 @@ php tools/backup-berkas.php    :: zip dokumen pendaftar
   tanpa argumen `--jalankan` tool hanya simulasi (dry-run).
 - Draf kebijakan utk tinjauan sekolah/hukum: `docs/KEBIJAKAN-DATA.md`.
 
+### 3c. Pergantian tahun ajaran (Pusat Persiapan)
+
+Tabel `pendaftar` **tidak** menyimpan kolom tahun; tahun hanya ada di nomor
+`REG-YYYY-NNNN` dan setelan global `pengaturan_sekolah.tahun_ajaran`. Karena
+itu pergantian tahun **tidak otomatis** — data tahun lama harus diarsipkan
+secara sengaja. **Jangan hapus baris pendaftar**: 7 tabel anak memakai
+`ON DELETE CASCADE`, sehingga pembayaran, dokumen, dan riwayat seleksi ikut
+hilang. Skrip `database/reset_data_dummy.sql` hanya untuk data uji.
+
+**Jalur utama — tanpa CLI.** Operator membuka sidebar
+**Persiapan Tahun Ajaran** (`app/operator/persiapan.php`). Satu halaman berisi:
+
+- **Saklar pendaftaran** — tombol **Buka/Tutup Pendaftaran** yang langsung
+  berlaku pada formulir publik dan landing page. Tanggal buka/tutup di
+  Pengaturan Sistem tetap informasi jadwal, bukan penentu status. Saklar
+  memerlukan migrasi `20261115_pendaftaran_dibuka.sql` (sudah terdaftar di
+  `tools/migrasi-web.php`).
+- **Ringkasan musim** — pendaftar aktif per tahun, antrean yang belum selesai,
+  rombel aktif & kuota, serta cadangan terakhir.
+- **Daftar periksa "Siap buka SPMB"** — status hijau/kuning/merah untuk saklar,
+  setelan tahun/gelombang/tanggal, arsip musim lama, antrean, rombel, S&K,
+  Fonnte, dan cadangan ≤48 jam.
+
+Urutan yang disarankan:
+
+1. **Selesaikan musim lama** — semua pembayaran diputus, berkas final, dan
+   rekap keuangan/daftar siswa sudah diekspor (`app/bendahara/rekap.php`,
+   CSV Data Pendaftar).
+2. **Cadangkan** — tombol **Buat Cadangan Sekarang** di halaman Persiapan
+   (tersimpan sebagai `storage/backup/db/spmb-manual-<waktu>.sql.gz`), atau
+   `php tools/backup-db.php` bila tersedia SSH.
+3. **Tutup pendaftaran** lewat saklar agar tidak ada pendaftar baru yang masuk
+   di tengah pengarsipan.
+4. **Arsipkan tahun lama** — pada tabel per tahun tekan **Pratinjau**, ketik
+   `ARSIP YYYY`, isi alasan, biarkan **cadangan otomatis** tercentang, lalu
+   **Arsipkan**. Hanya baris `REG-YYYY-*` yang belum terarsip yang disentuh;
+   akun portal siswa terkait dinonaktifkan.
+5. **Verifikasi** — pendaftar lama hilang dari antrean/statistik/cek-status,
+   sedangkan baris pendaftar, pembayaran, dan dokumen tetap ada (Data Pendaftar
+   → filter **Terarsip**). Pemulihan per pendaftar: tombol **Pulihkan**.
+6. **Rombel** — di bagian **Rombel tahun baru**, kode sudah terisi otomatis
+   `kode-tahun` (71 → 71-27) dan opsi *nonaktifkan rombel lama* sudah tercentang;
+   periksa lalu tekan **Gandakan Semua**. Kosongkan kode satu baris bila rombel
+   itu tidak perlu dibuat, atau ubah kodenya bila sekolah memakai pola lain.
+   Kuota pendaftaran = `SUM(kuota)` kelas `is_aktif = 1`, jadi jangan biarkan
+   rombel lama dan baru aktif bersamaan.
+7. **Setelan baru** — ubah tahun ajaran, gelombang, tanggal, biaya, teks WA,
+   dan **naikkan versi S&K** di Pengaturan Sistem agar persetujuan angkatan
+   lama tidak dianggap berlaku.
+8. **Buka kembali** lewat saklar setelah daftar periksa tidak lagi merah.
+
+**Fallback CLI** (bila halaman tidak dapat dipakai): lihat sebaran tahun dengan
+`php tools/arsip-tahun.php`, simulasi dengan `--tahun=YYYY`, lalu eksekusi
+`--terapkan --oleh=<username>`. Tool ini membuat cadangan
+`storage/backup/db/spmb-sebelum-arsip-<tahun>-<waktu>.sql.gz` lebih dulu dan
+menyentuh hanya baris yang belum terarsip, jadi menjalankan ulang aman
+(0 kandidat). Opsi `--alasan="..."` (5–255 karakter) dan `--tanpa-cadangan`
+(tidak disarankan). Rombel tetap perlu digandakan/nonaktifkan dari CMS.
+
+Catatan: arsip memakai definisi tahun dari `REG-YYYY`, yaitu **tahun kalender**
+saat nomor dibuat — bukan `tahun_ajaran`. Bila pendaftaran 2027/2028 dibuka
+pada Januari 2027, nomornya `REG-2027`. Bila dua angkatan harus aktif
+bersamaan atau riwayat perlu difilter per tahun ajaran secara persis, perlu
+kolom tahun di `pendaftar` (belum ada).
+
 ---
 
 ## 4. Rilis & Pembaruan
@@ -269,12 +386,17 @@ php tools/backup-berkas.php    :: zip dokumen pendaftar
 2. Buat paket: `php tools/buat-paket.php v1.2` → `dist/mualimku-v1.2.zip`.
 3. Di server: ekstrak di atas instalasi lama (timpa file kode) —
    **jangan** timpa `.env`.
-4. Jalankan migrasi baru (phpMyAdmin, urut nama file — idempoten).
+4. Jalankan migrasi baru (urut nama file — idempoten). Tanpa SSH:
+   `tools/migrasi-web.php` seperti bagian **1.6a** (buat penanda
+   `storage/.izinkan-migrasi` dulu, dan tambahkan nama berkas batch baru di
+   `$TARGET`). Dengan phpMyAdmin: tab SQL per berkas, jangan lupa baris `USE`.
 5. Verifikasi: `php tools/cek-proyek.php` + `php tools/cek-statis.php`
    tanpa GAGAL (bila ada CLI); uji cepat: landing page,
    `app/spmb/cek-status.php`, login staf.
-6. Bila tahun ajaran berganti: ubah tahun ajaran & tanggal PPDB di
-   **Pengaturan Sistem** (nilai bawaan seed sudah 2027/2028, Fase 12 F.1).
+6. Bila tahun ajaran berganti: buka **Persiapan Tahun Ajaran** dan ikuti
+   prosedur **§3c** (saklar, arsip massal, rombel baru, daftar periksa), lalu
+   ubah tahun ajaran & tanggal SPMB di **Pengaturan Sistem** (nilai bawaan
+   seed sudah 2027/2028, Fase 12 F.1).
 
 ---
 

@@ -15,7 +15,7 @@
  * tetap lewat Verifikasi Pembayaran.
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['bendahara', 'admin']);
+require_role(['bendahara']);
 
 $me = current_user();
 $USER_LOGIN = [

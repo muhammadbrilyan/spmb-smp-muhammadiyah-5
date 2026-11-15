@@ -25,7 +25,7 @@ php -S localhost:8099
 
 | Pihak | Alamat | Berkas |
 |-------|--------|--------|
-| Sekolah (operator/bendahara/kepsek) | `<root>/admin` | `admin/index.php` → memuat `app/auth/login-sekolah.php` |
+| Sekolah (operator/bendahara) | `<root>/admin` | `admin/index.php` → memuat `app/auth/login-sekolah.php` |
 | Murid / orang tua | `<root>/app/auth/login.php` | tautan **Login Siswa** di halaman SPMB |
 | Publik SPMB (pendaftaran) | `<root>/` atau `<root>/app/spmb/index.php` | `index.php` mengalihkan ke halaman publik |
 
@@ -40,7 +40,6 @@ Pemisahan alamat hanya untuk kerapian & memudahkan staf; hak akses ditegakkan
 | `docs/ALUR-PENDAFTARAN.md` | Alur end-to-end, model tahap, tabel per fase |
 | `docs/UJI-MANUAL.md` | Checklist uji manual + skenario penyalahgunaan |
 | `docs/FUNGSI-OPERATOR.md` | Fungsi role operator per halaman kerja (verifikasi, jadwal, pengumuman, CMS) |
-| `docs/FUNGSI-KEPSEK.md` | Fungsi role kepala sekolah + catatan persetujuan hasil (bukan gerbang penerbitan) |
 | `docs/KEBIJAKAN-DATA.md` | Draf kebijakan retensi & privasi data |
 | `app/operator/panduan.php` | SOP operasional (tampil di aplikasi) |
 

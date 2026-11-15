@@ -7,7 +7,7 @@
  *   2. fallback includes/dummy.php (akun demo TANPA password / fail-closed)
  *      dipakai otomatis bila database tidak dapat dihubungi.
  *
- * Saat kolom role dipakai: ENUM('siswa','bendahara','operator','kepsek')
+ * Saat kolom role dipakai: ENUM('siswa','bendahara','operator')
  * sesuai PRD. Halaman dijaga require_role() di tiap berkas app/.
  */
 
@@ -152,6 +152,59 @@ function current_user()
     return $_SESSION['user'] ?? null;
 }
 
+/**
+ * Segarkan nama/jabatan/role dari tabel users sekali per request.
+ * Sesi menyimpan salinan saat login; tanpa ini perubahan di halaman
+ * Petugas & Hak Akses baru terlihat di topbar setelah pengguna login ulang.
+ */
+function sesi_identitas_sinkron()
+{
+    static $sudah = false;
+    if ($sudah) {
+        return;
+    }
+    $sudah = true;
+
+    global $META_ROLE;
+    $id = (string) ($_SESSION['user']['id'] ?? '');
+    $db = db();
+    if ($id === '' || $db === null) {
+        return;
+    }
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT username, role, nama_lengkap, jabatan, is_active
+               FROM users
+              WHERE id = ?'
+        );
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return;
+        }
+        if ((int) $row['is_active'] !== 1) {
+            logout();
+            return;
+        }
+
+        $meta = $META_ROLE[$row['role']] ?? [];
+        $nama = $row['nama_lengkap'] !== '' && $row['nama_lengkap'] !== null
+            ? $row['nama_lengkap']
+            : ($meta['nama'] ?? ($_SESSION['user']['nama'] ?? $row['username']));
+
+        $_SESSION['user']['username'] = $row['username'];
+        $_SESSION['user']['role']     = $row['role'];
+        $_SESSION['user']['nama']     = $nama;
+        $_SESSION['user']['jabatan']  = $row['jabatan'] !== '' && $row['jabatan'] !== null
+            ? $row['jabatan']
+            : ($meta['jabatan'] ?? '');
+        $_SESSION['user']['inisial']  = inisial($nama);
+    } catch (Throwable $e) {
+        /* DB bermasalah — biarkan sesi lama dipakai. */
+    }
+}
+
 function is_logged_in()
 {
     return isset($_SESSION['user']);
@@ -181,12 +234,9 @@ function role_home($role)
 {
     switch ($role) {
         case 'operator':
-        case 'admin':
             return url('app/operator/index.php');
         case 'bendahara':
             return url('app/bendahara/index.php');
-        case 'kepsek':
-            return url('app/kepsek/index.php');
         case 'siswa':
             return url('app/siswa/index.php');
         default:
@@ -214,7 +264,10 @@ function safe_next($next)
 function require_login()
 {
     if (is_logged_in()) {
-        return;
+        sesi_identitas_sinkron();
+        if (is_logged_in()) {
+            return;
+        }
     }
     $next = $_SERVER['REQUEST_URI'] ?? '';
 
@@ -223,7 +276,6 @@ function require_login()
     $tujuanLogin = 'app/auth/login.php'; /* default: portal siswa */
     if (strpos($uri, '/operator/') !== false
         || strpos($uri, '/bendahara/') !== false
-        || strpos($uri, '/kepsek/') !== false
         || strpos($uri, '/auth/login-sekolah') !== false) {
         /* Alamat pendek pihak sekolah (folder admin/ di root proyek). */
         $tujuanLogin = 'admin/';

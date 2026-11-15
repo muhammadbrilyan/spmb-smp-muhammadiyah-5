@@ -21,8 +21,8 @@
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
 
-/* Hak akses: hanya operator/admin yang boleh buka halaman ini. */
-require_role(['operator', 'admin']);
+/* Hak akses: hanya operator yang boleh buka halaman ini. */
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -165,6 +165,7 @@ $f = [
     'syarat_versi'         => (int) $teks('syarat_versi', '1'),
     'hero_banner_url'      => $PENGATURAN['hero_banner_url'] ?? '',
     'login_banner_url'     => $PENGATURAN['login_banner_url'] ?? '',
+    'favicon_url'          => $PENGATURAN['favicon_url'] ?? '',
     'deskripsi_sekolah'    => $teks('deskripsi_sekolah'),
     'tagline'              => $teks('tagline'),
     'label_uang_pangkal'   => $teks('label_uang_pangkal'),
@@ -484,6 +485,55 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     /* ------------------------------------------------------------
+     * Upload favicon (opsional) — ICO/PNG/SVG/WEBP, maks 512 KB.
+     * Dipakai <link rel="icon"> di head.php; tanpa input ini kolom
+     * favicon_url tidak pernah bisa diisi dari CMS.
+     * ------------------------------------------------------------ */
+    $faviconBaru = null;
+    if (!empty($_FILES['favicon']['name'])) {
+        $berkas = $_FILES['favicon'];
+        $izinEkstensi = ['ico', 'png', 'svg', 'webp'];
+        $izinMime = [
+            'image/vnd.microsoft.icon', 'image/x-icon', 'image/png',
+            'image/svg+xml', 'image/webp',
+        ];
+
+        if ($berkas['error'] !== UPLOAD_ERR_OK && $berkas['error'] !== UPLOAD_ERR_NO_FILE) {
+            $galat[] = 'Upload favicon gagal (kode ' . (int) $berkas['error'] . ').';
+        } else {
+            $ekstensi = strtolower(pathinfo($berkas['name'], PATHINFO_EXTENSION));
+            if (!in_array($ekstensi, $izinEkstensi, true)) {
+                $galat[] = 'Favicon harus berformat ICO, PNG, SVG, atau WEBP.';
+            } elseif ($berkas['size'] > 512 * 1024) {
+                $galat[] = 'Ukuran favicon maksimal 512 KB.';
+            } else {
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mime  = (string) $finfo->file($berkas['tmp_name']);
+                if (!in_array($mime, $izinMime, true)) {
+                    $galat[] = 'Isi berkas favicon bukan gambar yang sah.';
+                } else {
+                    $folder = dirname(__DIR__, 2) . '/assets/img/uploads';
+                    if (!is_dir($folder) && !@mkdir($folder, 0755, true)) {
+                        $galat[] = 'Folder upload tidak dapat dibuat.';
+                    } else {
+                        $namaFile = 'favicon-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.' . $ekstensi;
+                        if (!move_uploaded_file($berkas['tmp_name'], $folder . '/' . $namaFile)) {
+                            $galat[] = 'Berkas favicon gagal disimpan ke server.';
+                        } else {
+                            $faviconBaru = 'assets/img/uploads/' . $namaFile;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /* Kembalikan favicon ke logo sekolah (bawaan head.php). */
+    if (!empty($_POST['favicon_reset'])) {
+        $faviconBaru = '';
+    }
+
+    /* ------------------------------------------------------------
      * Upload banner hero (opsional) — JPG/PNG/WEBP, maks 4MB
      * ------------------------------------------------------------ */
     $bannerBaru = null;
@@ -667,6 +717,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             }
 
+            /* Favicon: upload baru, reset ke logo, atau pertahankan lama. */
+            $faviconAkhir = $faviconBaru !== null
+                ? ($faviconBaru !== '' ? $faviconBaru : null)
+                : ($f['favicon_url'] !== '' ? $f['favicon_url'] : null);
+            if ($faviconBaru === null && $faviconAkhir !== null) {
+                $cariFv = BASE_URL . '/assets/img/uploads/';
+                if (strpos($faviconAkhir, $cariFv) === 0) {
+                    $faviconAkhir = 'assets/img/uploads/' . substr($faviconAkhir, strlen($cariFv));
+                }
+            }
+
             /* QRIS: upload baru, reset, atau pertahankan lama. */
             $qrisAkhir = $qrisBaru !== null ? $qrisBaru : ($f['qris_image_url'] !== '' ? $f['qris_image_url'] : null);
             if ($qrisBaru === null && $f['qris_image_url'] !== '') {
@@ -696,6 +757,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     tahun_ajaran = ?, gelombang = ?,
                     tanggal_buka_ppdb = ?, tanggal_tutup_ppdb = ?, tanggal_pengumuman = ?,
                     deskripsi_gelombang = ?, logo_url = ?, hero_banner_url = ?, login_banner_url = ?,
+                    favicon_url = ?,
                     jalur_aktif = ?,
                     faq_list = ?,
                     wa_teks = ?,
@@ -746,6 +808,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $logoAkhir,
                 $bannerAkhir,
                 $loginBannerAkhir,
+                $faviconAkhir,
                 $f['jalur_aktif'],
                 $f['faq_list'] ?? null,
                 $f['wa_teks'] ?? null,
@@ -778,6 +841,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             }
 
+            /* Hapus berkas favicon lama bila diganti/di-reset. */
+            if ($faviconBaru !== null) {
+                $lamaFv = $PENGATURAN['favicon_url'] ?? '';
+                $posFv  = strpos($lamaFv, '/assets/img/uploads/');
+                if ($posFv !== false) {
+                    $pathLamaFv = dirname(__DIR__, 2) . substr($lamaFv, $posFv);
+                    if (is_file($pathLamaFv)) {
+                        @unlink($pathLamaFv);
+                    }
+                }
+            }
+
             /* Hapus berkas banner lama bila masih berada di folder upload. */
             if ($bannerBaru !== null && $bannerBaru !== '') {
                 $lamaBanner = $f['hero_banner_url'] ?? '';
@@ -806,6 +881,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
              * (tidak mengirim pesan WA). Sebelumnya operator tidak pernah tahu
              * apakah token yang baru disimpan benar — kegagalan baru terlihat
              * berjam kemudian saat kirim kredensial siswa gagal. */
+            unset($_SESSION['fonnte_dev']); /* Kesiapan Rilis memeriksa ulang perangkat */
             $tokenBaru   = trim((string) ($_POST['fonnte_token'] ?? '')) !== '';
             $tokenDariEnv = env_val('FONNTE_TOKEN', '') !== '';
             $cekWa = ($f['fonnte_token'] !== '' || $tokenDariEnv)
@@ -979,6 +1055,25 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             <label class="mt-3 flex items-center gap-2 text-[13px] text-ink-700">
               <input type="checkbox" name="logo_reset" value="1" class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
               Kembalikan ke logo bawaan (logo-sekolah.png)
+            </label>
+
+            <hr class="my-5 border-line-soft">
+
+            <label class="label" for="favicon">Favicon Browser Tab (ICO/PNG/SVG, maks 512 KB)</label>
+            <div class="flex items-center gap-3 rounded-xl border border-line bg-canvas p-3">
+              <img src="<?= e($f['favicon_url'] !== '' ? $f['favicon_url'] : $PENGATURAN['logo_url']) ?>" alt="Favicon" class="w-8 h-8 rounded-md bg-white border border-line object-contain p-0.5">
+              <p class="text-[12px] text-ink-500 min-w-0 truncate">
+                <?= $f['favicon_url'] !== '' ? e($f['favicon_url']) : 'Belum diatur — memakai logo sekolah' ?>
+              </p>
+            </div>
+            <input id="favicon" name="favicon" type="file" accept=".ico,.png,.svg,.webp" class="input h-auto py-2 mt-2 file:mr-3 file:btn file:btn-sm file:bg-canvas file:border-0 file:text-ink-700 file:font-semibold">
+            <div class="hint mt-1.5 space-y-0.5">
+              <p><strong>Rekomendasi:</strong> <strong>32 &times; 32 px</strong> atau <strong>64 &times; 64 px</strong>.</p>
+              <p>Format: ICO, PNG, SVG, atau WEBP. Kosongkan bila tidak ingin mengganti.</p>
+            </div>
+            <label class="mt-3 flex items-center gap-2 text-[13px] text-ink-700">
+              <input type="checkbox" name="favicon_reset" value="1" class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4">
+              Kembalikan mengikuti logo sekolah
             </label>
           </div>
 
@@ -1761,7 +1856,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <span class="badge badge-gray">tabel users</span>
         </div>
         <p class="mt-1 text-[13px] text-ink-500">
-          Nama, jabatan, username, dan password akun operator/bendahara/kepsek tersimpan di akun masing-masing,
+          Nama, jabatan, username, dan password akun operator/bendahara tersimpan di akun masing-masing,
           bukan pada formulir ini — simpan pengaturan lebih dulu, lalu kelola petugas di halaman khusus.
         </p>
         <div class="mt-4">

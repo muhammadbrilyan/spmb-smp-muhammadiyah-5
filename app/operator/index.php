@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../../includes/config.php';
 
-/* Hak akses: hanya role operator/admin yang boleh membuka dashboard ini. */
-require_role(['operator', 'admin']);
+/* Hak akses: hanya role operator yang boleh membuka dashboard ini. */
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -211,9 +211,8 @@ function op_pager(string $idTabel): string
 }
 
 $breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Operasional Operator SPMB' => null];
-/* Tombol Export & Penempatan Kelas dipindah dari topbar agar dashboard lebih bersih:
- * - Penempatan Kelas: menu sidebar "Pasca Penerimaan" + tombol di panel tab rombel.
- * - Export Rekap SPMB: menu "Aksi Massal" pada panel Akun & WA. */
+/* Dashboard ini murni pemantauan: aksi CRUD dan pengiriman dijalankan dari
+ * menu sidebar masing-masing, bukan dari tombol di sini. */
 require __DIR__ . '/../../includes/partials/topbar.php';
 ?>
 
@@ -247,18 +246,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
         <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Dashboard Operasional &amp; Seleksi SPMB</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          <?= e(APP_SHORT) ?> • Otomatisasi akun, pengiriman kredensial WA, penjadwalan tes, dan alokasi rombel <?= e($PENGATURAN['tahun_ajaran']) ?>.
+          <?= e(APP_SHORT) ?> • Verifikasi berkas, penjadwalan tes, pengumuman WhatsApp, dan alokasi rombel <?= e($PENGATURAN['tahun_ajaran']) ?>.
         </p>
-      </div>
-
-      <div class="flex flex-wrap gap-2.5 shrink-0">
-        <!-- [PERBAIKAN] Tombol blast WA semula ber-tag data-demo sehingga klik-nya nihil.
-             Logika blast sudah ada dan lengkap di app/operator/akun.php (aksi=blast),
-             jadi tombol ini kini membuka halaman tersebut. -->
-        <a href="<?= url('app/operator/akun.php') ?>" class="btn btn-outline">
-          <?= icon('send') ?> Kirim Blast WA Massal
-        </a>
-        <a href="<?= url('app/operator/export.php?rekap=seleksi') ?>" class="btn btn-primary shadow-drop"><?= icon('download') ?> Export Rekap Seleksi</a>
       </div>
     </div>
 
@@ -349,7 +338,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
     <!-- ====================== PANEL 1: AKUN & WA ====================== -->
     <section data-tab-panel="akun" class="mt-5">
 
-      <!-- Toolbar: cari + filter di kiri, 1 aksi utama + menu "Aksi Massal" di kanan -->
+      <!-- Toolbar: cari + filter status akun -->
       <div class="mt-5 flex flex-col md:flex-row md:items-center gap-3">
         <div class="relative flex-1 max-w-md">
           <span class="ms absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-ink-400">search</span>
@@ -361,34 +350,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <option value="Belum Dibuat">Belum Dibuat</option>
           <option value="Gagal">Gagal</option>
         </select>
-        <div class="flex-1"></div>
-        <button type="button" id="btn-generate-terpilih" class="btn btn-green">
-          <?= icon('send') ?> Generate &amp; Kirim WA Terpilih
-        </button>
-        <details class="relative">
-          <summary class="btn btn-outline list-none cursor-pointer"><?= icon('more_horiz', 'text-[18px]') ?> Aksi Massal</summary>
-          <div class="absolute right-0 z-30 mt-2 w-96 max-w-[90vw] card p-4 shadow-modal space-y-4">
-            <a href="<?= url('app/operator/export.php?rekap=pendaftar') ?>" class="btn btn-outline w-full"><?= icon('download') ?> Export Rekap SPMB</a>
-            <p class="-mt-2 text-xs text-ink-500">Unduh rekap seluruh pendaftar SPMB.</p>
-            <a href="<?= url('app/operator/export.php?rekap=pembayaran') ?>" class="btn btn-outline w-full"><?= icon('receipt_long') ?> Export Rekap Pembayaran</a>
-            <p class="-mt-2 text-xs text-ink-500">Unduh rincian pembayaran untuk dicocokkan dengan bendahara.</p>
-            <form method="post" action="<?= url('app/operator/akun.php') ?>" class="pt-4 border-t border-line-soft">
-              <?= csrf_field() ?>
-              <input type="hidden" name="aksi" value="generate_semua">
-              <button type="submit" class="btn btn-outline w-full" onclick="return confirm('Generate akun untuk semua pendaftar yang belum punya akun?');">
-                <?= icon('key') ?> Generate Semua Akun
-              </button>
-              <p class="mt-1.5 text-xs text-ink-500">Membuat akun untuk semua pendaftar yang belum punya akun.</p>
-            </form>
-            <form method="post" action="<?= url('app/operator/akun.php') ?>" class="pt-4 border-t border-line-soft">
-              <?= csrf_field() ?>
-              <input type="hidden" name="aksi" value="blast">
-              <label class="label" for="pesan_blast">Blast WA ke seluruh akun aktif</label>
-              <textarea id="pesan_blast" name="pesan_blast" class="textarea" rows="4" placeholder="Contoh: Pengumuman jadwal tes CBT akan disampaikan H-3..." required></textarea>
-              <button type="submit" class="btn btn-primary mt-3 w-full" onclick="return confirm('Kirim pesan ini ke semua pendaftar dengan akun aktif?');">Kirim Blast</button>
-            </form>
-          </div>
-        </details>
       </div>
 
       <!-- Tabel -->
@@ -397,19 +358,17 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           <table id="data-table" class="w-full min-w-[820px] border-collapse" data-paginate="10">
             <thead class="thead">
               <tr>
-                <th class="th w-12"><input id="check-all" type="checkbox" class="rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4"></th>
                 <th class="th">No. Pendaftaran</th>
                 <th class="th">Nama Siswa &amp; Asal Sekolah</th>
                 <th class="th">No. WA Orang Tua</th>
                 <th class="th">Status Akun &amp; Kredensial</th>
-                <th class="th text-right">Aksi Operator</th>
+                <th class="th text-right">Detail</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-line-soft">
               <?php foreach ($pendaftar as $p): ?>
                 <?php $toneAkun = $p['akun'] === 'Aktif' ? 'green' : ($p['akun'] === 'Gagal' ? 'red' : 'amber'); ?>
                 <tr class="tr-hover" data-status="<?= e($p['akun']) ?>">
-                  <td class="td"><input type="checkbox" class="row-check rounded border-line-mid text-primary focus:ring-primary/30 w-4 h-4" data-id="<?= e($p['id']) ?>"></td>
                   <td class="td">
                     <button class="font-mono text-[13px] font-semibold text-primary hover:underline text-left"
                             data-modal-open="modal-detail" data-modal-title="<?= e($p['reg']) ?>" data-modal-name="<?= e($p['nama']) ?>"
@@ -444,16 +403,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                               data-modal-open="modal-detail" data-modal-title="<?= e($p['reg']) ?>" data-modal-name="<?= e($p['nama']) ?>"
                               data-detail-id="<?= e($p['id']) ?>"
                               aria-label="Lihat detail"><?= icon('visibility', 'text-[18px]') ?></button>
-                      <form method="post" action="<?= url('app/operator/akun.php') ?>" class="inline">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="aksi" value="<?= $p['akun'] === 'Aktif' ? 'kirim_ulang' : 'generate' ?>">
-                        <input type="hidden" name="ids[]" value="<?= e($p['id']) ?>">
-                        <?php if ($p['akun'] === 'Aktif'): ?>
-                          <button type="submit" class="btn btn-sm btn-outline" title="Reset password & kirim kredensial baru"><?= icon('sync', 'text-[15px]') ?> Kirim Ulang</button>
-                        <?php else: ?>
-                          <button type="submit" class="btn btn-sm btn-green" onclick="return confirm('Generate akun & kirim kredensial ke <?= e($p['wa']) ?>?');"><?= icon('send', 'text-[15px]') ?> Generate &amp; Kirim</button>
-                        <?php endif; ?>
-                      </form>
                     </div>
                   </td>
                 </tr>
@@ -496,20 +445,11 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         </div>
       </div>
 
-      <!-- Form bulk generate (terisi lewat JS tombol "Generate & Kirim WA Terpilih") -->
-      <form id="form-bulk-akun" method="post" action="<?= url('app/operator/akun.php') ?>" class="hidden">
-        <?= csrf_field() ?>
-        <input type="hidden" name="aksi" value="generate">
-      </form>
-
     </section>
 
     <!-- ====================== PANEL 2: JADWAL TES ====================== -->
     <section data-tab-panel="jadwal" class="mt-5 hidden">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <p class="text-sm text-ink-500">Kelola jadwal tes CBT, wawancara BTQ, dan seleksi minat bakat (offline / video call).</p>
-        <a href="<?= url('app/operator/jadwal.php') ?>" class="btn btn-primary"><?= icon('event_available') ?> Jadwal Ujian</a>
-      </div>
+      <p class="text-sm text-ink-500">Jadwal tes CBT, wawancara BTQ, dan seleksi minat bakat (offline / video call).</p>
 
       <div class="mt-4 card overflow-hidden">
         <div class="overflow-x-auto scroll-thin">
@@ -522,7 +462,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                 <th class="th">Metode</th>
                 <th class="th">Peserta</th>
                 <th class="th">Status</th>
-                <th class="th text-right">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-line-soft">
@@ -536,14 +475,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                   </td>
                   <td class="td"><span class="font-semibold text-ink-900"><?= (int) $j['peserta'] ?></span> siswa</td>
                   <td class="td"><?= badge($j['status'], $j['tone']) ?></td>
-                  <td class="td text-right">
-                    <div class="inline-flex gap-2 justify-end">
-                      <!-- [PERBAIKAN] Tombol edit/kirim WA jadwal semula ber-tag data-demo
-                           (klik nihil). Aksi nyatanya ada di halaman Jadwal Ujian. -->
-                      <a href="<?= url('app/operator/jadwal.php') ?>" class="icon-box border border-line text-ink-500 hover:text-primary" aria-label="Edit"><?= icon('edit', 'text-[17px]') ?></a>
-                      <a href="<?= url('app/operator/jadwal.php') ?>" class="icon-box border border-line text-ink-500 hover:text-primary" aria-label="Kirim WA"><?= icon('send', 'text-[17px]') ?></a>
-                    </div>
-                  </td>
                 </tr>
               <?php endforeach; ?>
             </tbody>
@@ -555,10 +486,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
     <!-- ====================== PANEL 3: HASIL SELEKSI ====================== -->
     <section data-tab-panel="hasil" class="mt-5 hidden">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <p class="text-sm text-ink-500">Ringkasan nilai CBT, BTQ, dan wawancara (ubah lewat tombol di kanan) — status <strong>LULUS</strong> / <strong>TIDAK_LULUS</strong> ditentukan otomatis dari nilai akhir.</p>
-        <a href="<?= url('app/operator/seleksi.php') ?>" class="btn btn-primary"><?= icon('edit') ?> Input Hasil Seleksi</a>
-      </div>
+      <p class="text-sm text-ink-500">Ringkasan nilai CBT, BTQ, dan wawancara — status <strong>LULUS</strong> / <strong>TIDAK_LULUS</strong> ditentukan otomatis dari nilai akhir.</p>
 
       <div class="mt-4 card overflow-hidden">
         <div class="overflow-x-auto scroll-thin">
@@ -602,13 +530,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
     <!-- ====================== PANEL 4: ROMBEL ====================== -->
     <section data-tab-panel="rombel" class="mt-5 hidden">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <p class="text-sm text-ink-500">Penempatan kelas dinamis. Total kuota otomatis dihitung dari seluruh rombel aktif (<strong><?= (int) $PENGATURAN['kuota_total'] ?> siswa</strong>).</p>
-        <div class="flex flex-wrap gap-2">
-          <a href="<?= url('app/operator/penempatan.php') ?>" class="btn btn-primary"><?= icon('move_to_inbox') ?> Penempatan Kelas</a>
-          <a href="<?= url('app/operator/kelas.php') ?>" class="btn btn-outline"><?= icon('add') ?> Kelola Rombel &amp; Kuota</a>
-        </div>
-      </div>
+      <p class="text-sm text-ink-500">Penempatan kelas dinamis. Total kuota otomatis dihitung dari seluruh rombel aktif (<strong><?= (int) $PENGATURAN['kuota_total'] ?> siswa</strong>).</p>
 
       <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <?php foreach ($ROMBEL as $r):
@@ -641,14 +563,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
               <div class="h-full rounded-full <?= $tone ?>" style="width:<?= $persen ?>%"></div>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-line-soft flex items-center justify-between">
+            <div class="mt-4 pt-4 border-t border-line-soft">
               <span class="text-xs text-ink-500">Persentase Keterisian: <strong class="text-ink-900"><?= number_format($persen, 1, ',', '.') ?>%</strong></span>
-              <div class="flex gap-1.5">
-                <!-- [PERBAIKAN] Tombol edit/hapus rombel semula ber-tag data-demo (klik nihil).
-                     Aksi CRUD rombel & kuota ada di halaman Manajemen Kelas. -->
-                <a href="<?= url('app/operator/kelas.php') ?>" class="icon-box border border-line text-ink-500 hover:text-primary" aria-label="Edit rombel"><?= icon('edit', 'text-[17px]') ?></a>
-                <a href="<?= url('app/operator/kelas.php') ?>" class="icon-box border border-line text-ink-500 hover:text-red-600" aria-label="Hapus rombel"><?= icon('delete', 'text-[17px]') ?></a>
-              </div>
             </div>
           </article>
         <?php endforeach; ?>
@@ -690,22 +606,9 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 
       <div class="px-5 py-4 border-t border-line bg-canvas flex flex-wrap gap-3 justify-end">
         <button class="btn btn-outline" data-modal-close>Batal</button>
-        <!-- [PERBAIKAN] Tombol "Tolak Berkas" dihapus — tidak melakukan apa pun
-             di sini. Aksi terima/tolak yang sesungguhnya ada di Verifikasi Berkas. -->
-        <a href="<?= url('app/operator/verifikasi.php?tab=berkas') ?>" class="btn btn-green" data-modal-close><?= icon('task_alt') ?> Setujui &amp; Kirim Kredensial</a>
       </div>
 
     </div>
-  </div>
-</div>
-
-<!-- Aksi massal (muncul saat ada baris terpilih) -->
-<div id="bulk-bar" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40 lg:left-[calc(50%+132px)]">
-  <div class="animate-pop flex items-center gap-4 rounded-2xl bg-ink-900 text-white px-5 py-3 shadow-modal">
-    <span class="text-sm"><strong id="bulk-count">0</strong> baris dipilih</span>
-    <span class="w-px h-5 bg-white/20"></span>
-    <button type="button" id="btn-bulk-wa" class="btn btn-sm bg-accent hover:bg-[#0E9F6E] text-white"><?= icon('send', 'text-[15px]') ?> Generate &amp; Kirim WA</button>
-    <button class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick="document.getElementById('check-all').click()"><?= icon('close', 'text-[15px]') ?> Batal</button>
   </div>
 </div>
 
@@ -728,27 +631,6 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       body.innerHTML = d ? d.html : '<p class="sm:col-span-2 text-sm text-ink-500">Data pendaftar tidak ditemukan — muat ulang halaman.</p>';
       if (jl) jl.textContent = d ? d.jalur : '\u2014';
     });
-  })();
-</script>
-<script>
-  (function () {
-    function kirimTerpilih() {
-      var form  = document.getElementById('form-bulk-akun');
-      var cek   = Array.prototype.slice.call(document.querySelectorAll('.row-check:checked'));
-      if (!cek.length) { showToast('Pilih dulu minimal satu baris.', 'error'); return; }
-      if (!confirm('Generate akun (atau reset password) & kirim kredensial ke ' + cek.length + ' pendaftar terpilih?')) return;
-      form.querySelectorAll('input[name="ids[]"]').forEach(function (n) { n.remove(); });
-      cek.forEach(function (c) {
-        var i = document.createElement('input');
-        i.type = 'hidden'; i.name = 'ids[]'; i.value = c.dataset.id || '';
-        form.appendChild(i);
-      });
-      form.submit();
-    }
-    var btn = document.getElementById('btn-generate-terpilih');
-    if (btn) btn.addEventListener('click', kirimTerpilih);
-    var btn2 = document.getElementById('btn-bulk-wa');
-    if (btn2) btn2.addEventListener('click', kirimTerpilih);
   })();
 </script>
 </body>

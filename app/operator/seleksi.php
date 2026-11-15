@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -10,7 +10,7 @@ $USER_LOGIN = [
     'inisial' => $me['inisial'],
 ];
 
-$title = 'Input Hasil Seleksi';
+$title = 'Hasil Seleksi';
 
 /* Judul kolom nilai ikut nama kegiatan jadwal tes (lihat seleksi_label_kolom). */
 $kolom      = seleksi_label_kolom();
@@ -85,7 +85,7 @@ $jmlLulusTanpaKelas = lulus_belum_ditempatkan_jumlah();
 require_once __DIR__ . '/../../includes/partials/head.php';
 $activeMenu = 'seleksi';
 require __DIR__ . '/../../includes/partials/sidebar.php';
-$breadcrumbs = ['Portal Akademik', 'SPMB', 'Input Hasil Seleksi'];
+$breadcrumbs = ['Portal Akademik', 'SPMB', 'Hasil Seleksi'];
 $pageActions = '';
 require __DIR__ . '/../../includes/partials/topbar.php';
 ?>
@@ -97,7 +97,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <!-- Info jumlah calon siswa yang dinilai -->
       <span class="badge badge-gray"><?= count($pendaftarList) ?> calon siap dinilai</span>
     </div>
-    <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Input Hasil Seleksi</h1>
+    <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Hasil Seleksi</h1>
     <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
       Hanya pendaftar berstatus <strong>JADWAL_DITETAPKAN</strong> / <strong>NILAI_TERINPUT</strong> yang tampil di sini.
       Isi nilai <?= e($labelNilai) ?> (0–100). Nilai akhir = rata-rata ketiga nilai.

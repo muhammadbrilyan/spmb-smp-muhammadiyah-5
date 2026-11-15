@@ -20,6 +20,7 @@ if (is_logged_in()) {
 $galat  = [];
 $hasil  = null;          // hasil registrasi sukses
 $f = ['nama' => '', 'wa' => '', 'jalur' => '', 'asal' => ''];
+$pendaftaranDitutup = !pendaftaran_terbuka();
 
 $jalurValid = jalur_aktif();
 
@@ -50,7 +51,9 @@ if ($regToken === null) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_cek($_POST['_csrf'] ?? '')) {
+    if ($pendaftaranDitutup) {
+        $galat[] = 'Pendaftaran SPMB sedang ditutup. Pantau jadwal pembukaan berikutnya di halaman beranda atau hubungi panitia.';
+    } elseif (!csrf_cek($_POST['_csrf'] ?? '')) {
         $galat[] = 'Formulir kedaluwarsa. Muat ulang halaman lalu coba lagi.';
     } else {
         /* Honeypot — field tersembunyi, bot yang mengisi akan dianggap spam. */
@@ -129,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$title = $hasil ? 'Registrasi Berhasil' : 'Registrasi Awal SPMB';
+$title = $hasil ? 'Registrasi Berhasil' : ($pendaftaranDitutup ? 'Pendaftaran Ditutup' : 'Registrasi Awal SPMB');
 $desc  = 'Formulir registrasi awal penerimaan murid baru ' . APP_SHORT . ' — nomor pendaftaran otomatis.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
@@ -138,6 +141,11 @@ $bodyClass = 'bg-canvas text-ink-700 antialiased';
 $transferAktif = !empty($PENGATURAN['bayar_transfer_aktif']);
 $qrisAktif     = !empty($PENGATURAN['bayar_qris_aktif']);
 $gatewayAktif  = gateway_tersedia();
+
+$waPanitia = preg_replace('/\D+/', '', (string) ($PENGATURAN['kontak_wa_panitia'] ?? ''));
+if (strpos($waPanitia, '0') === 0) {
+    $waPanitia = '62' . substr($waPanitia, 1);
+}
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 ?>
@@ -225,7 +233,27 @@ require_once __DIR__ . '/../../includes/partials/head.php';
       </a>
       <div class="card p-6 sm:p-8 shadow-drop">
         <!-- JUDUL FORM: ganti teks judul & deskripsi di bawah ini -->
-        <h1 class="text-2xl font-bold text-ink-900">Registrasi Awal SPMB</h1>
+        <h1 class="text-2xl font-bold text-ink-900"><?= $pendaftaranDitutup ? 'Pendaftaran Sedang Ditutup' : 'Registrasi Awal SPMB' ?></h1>
+        <?php if ($pendaftaranDitutup): ?>
+          <div class="mt-5 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-5 text-sm text-[#92400E]" role="alert">
+            <p class="font-semibold">Formulir pendaftaran belum dibuka.</p>
+            <p class="mt-1.5 leading-relaxed">
+              Pendaftaran SPMB <?= e($PENGATURAN['tahun_ajaran']) ?> sedang ditutup.
+              <?php if (!empty($PENGATURAN['tanggal_buka_ppdb']) && !empty($PENGATURAN['tanggal_tutup_ppdb'])): ?>
+                Jadwal gelombang saat ini: <?= e(bulan($PENGATURAN['tanggal_buka_ppdb'])) ?> &ndash; <?= e(bulan($PENGATURAN['tanggal_tutup_ppdb'])) ?>.
+              <?php endif; ?>
+              Nomor pendaftaran yang sudah dimiliki tetap berlaku — gunakan menu Cek Status untuk memantau proses seleksi.
+            </p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <a href="<?= url('app/spmb/cek-status.php') ?>" class="btn btn-outline"><?= icon('search') ?> Cek Status</a>
+              <?php if ($waPanitia !== ''): ?>
+                <a href="https://wa.me/<?= e($waPanitia) ?>" target="_blank" rel="noopener" class="btn btn-primary">
+                  <?= icon('chat') ?> Hubungi Panitia
+                </a>
+              <?php endif; ?>
+            </div>
+          </div>
+        <?php else: ?>
         <p class="mt-1.5 text-sm text-ink-500">
           Isi data awal untuk mendapatkan nomor pendaftaran otomatis.
           Biaya formulir <strong class="text-ink-900"><?= rupiah($PENGATURAN['biaya_formulir']) ?></strong>
@@ -281,6 +309,7 @@ require_once __DIR__ . '/../../includes/partials/head.php';
             Maksimal 1 pendaftaran per nomor WhatsApp + nama. Form biodata terkunci sampai verifikasi panitia.
           </p>
         </form>
+        <?php endif; ?>
       </div>
     <?php endif; ?>
 

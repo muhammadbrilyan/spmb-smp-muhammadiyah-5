@@ -136,25 +136,32 @@ function notif_operator($tipe, $pendaftarId, $pesan)
 /**
  * Catat hasil pengiriman WhatsApp ke tabel `wa_log`.
  *
- * @param string $tujuan nomor tujuan (dinormalisasi Fonnte bila memungkinkan)
- * @param string $tipe   tipe notifikasi
+ * @param string      $tujuan nomor tujuan (dinormalisasi Fonnte bila memungkinkan)
+ * @param string      $tipe   tipe notifikasi
  * @param array{ok:bool, pesan:string, id:string|null} $hasil hasil wa_kirim()
+ * @param string|null $ref    kunci idempoten (mis. "prd-123@2026-11-15 08:00:00")
+ *                            — disimpan di kolom respons agar pengiriman ulang
+ *                            dapat dilewati tanpa perlu kolom baru.
  * @return void
  */
-function wa_log_catat($tujuan, $tipe, $hasil)
+function wa_log_catat($tujuan, $tipe, $hasil, $ref = null)
 {
     try {
         $ok = !empty($hasil['ok']);
+        $respons = [
+            'pesan' => (string) ($hasil['pesan'] ?? ''),
+            'id'    => $hasil['id'] ?? null,
+        ];
+        if (is_string($ref) && $ref !== '') {
+            $respons['ref'] = $ref;
+        }
         q_exec(
             'INSERT INTO wa_log (tujuan, tipe, status, respons) VALUES (?, ?, ?, ?)',
             [
                 (string) $tujuan,
                 (string) $tipe,
                 $ok ? 'TERKIRIM' : 'GAGAL',
-                json_encode([
-                    'pesan' => (string) ($hasil['pesan'] ?? ''),
-                    'id'    => $hasil['id'] ?? null,
-                ], JSON_UNESCAPED_UNICODE),
+                json_encode($respons, JSON_UNESCAPED_UNICODE),
             ]
         );
     } catch (Throwable $e) {

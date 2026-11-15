@@ -14,7 +14,7 @@
  * Berkas.php & verifikasi-data.php tinggal menjadi pengalih.
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $me = current_user();
 
@@ -174,12 +174,22 @@ if ($detailId !== '' && !$pend) {
 $hitung   = ['berkas' => 0, 'data' => 0];
 $antreanBerkas  = [];
 $antreanData    = [];
-$semuaData      = [];
 $FILTER_DATA = ['MENUNGGU_VERIFIKASI' => 'Menunggu', 'DITOLAK' => 'Perlu Perbaikan', 'DRAFT' => 'Draft', 'SEMUA' => 'Semua'];
 $sFilter = strtoupper(trim((string) ($_GET['s'] ?? 'MENUNGGU_VERIFIKASI')));
 if (!isset($FILTER_DATA[$sFilter])) {
     $sFilter = 'MENUNGGU_VERIFIKASI';
 }
+
+/* Pagination server-side untuk kedua antrean. */
+$perPilihan = [10, 25, 50];
+$per = (int) ($_GET['per'] ?? 10);
+if (!in_array($per, $perPilihan, true)) {
+    $per = 10;
+}
+$hal = max(1, (int) ($_GET['hal'] ?? 1));
+$totalHalaman = 1;
+$totalBaris = 0;
+$mulaiBaris = 0;
 
 /* Ruang kerja satu pendaftar. */
 $dok         = [];
@@ -202,25 +212,83 @@ if ($pend) {
         if ($d['status_verifikasi'] === 'PENDING')  { $dokBelum++; }
     }
 } else {
-    /* Antrean: satu query per kelompok, angkanya dipakai untuk badge tab. */
-    $antreanBerkas  = berkas_antrean();
-    $semuaData      = pendaftar_data_antrean('');
+    /* Antrean: hitungan agregat dipakai untuk badge tab & chip filter,
+     * lalu hanya satu halaman baris yang diambil dari database. */
+    $perStatus = [
+        'MENUNGGU_VERIFIKASI' => pendaftar_data_jumlah('MENUNGGU_VERIFIKASI'),
+        'DITOLAK'             => pendaftar_data_jumlah('DITOLAK'),
+        'DRAFT'               => pendaftar_data_jumlah('DRAFT'),
+        'TERVERIFIKASI'       => pendaftar_data_jumlah('TERVERIFIKASI'),
+    ];
+    $perStatus['SEMUA'] = array_sum($perStatus);
 
-    /* Satu query di atas dipakai untuk badge tab maupun chip filter. */
-    $perStatus = ['MENUNGGU_VERIFIKASI' => 0, 'DITOLAK' => 0, 'DRAFT' => 0, 'TERVERIFIKASI' => 0];
-    foreach ($semuaData as $r) {
-        $st = (string) $r['status_verifikasi'];
-        if (isset($perStatus[$st])) { $perStatus[$st]++; }
+    $hitung['berkas'] = berkas_antrean_jumlah();
+    $hitung['data']   = $perStatus['MENUNGGU_VERIFIKASI'];
+
+    if ($tab === 'berkas') {
+        $totalBaris   = $hitung['berkas'];
+        $totalHalaman = max(1, (int) ceil($totalBaris / $per));
+        $hal          = min($hal, $totalHalaman);
+        $mulaiBaris   = ($hal - 1) * $per;
+        $antreanBerkas = berkas_antrean($per, $mulaiBaris);
+    } else {
+        $statusFilter = $sFilter === 'SEMUA' ? '' : $sFilter;
+        $totalBaris   = $perStatus[$sFilter];
+        $totalHalaman = max(1, (int) ceil($totalBaris / $per));
+        $hal          = min($hal, $totalHalaman);
+        $mulaiBaris   = ($hal - 1) * $per;
+        $antreanData  = pendaftar_data_antrean($statusFilter, '', '', 'aktif', $per, $mulaiBaris);
     }
-    $hitung['berkas']  = count($antreanBerkas);
-    $hitung['data']    = $perStatus['MENUNGGU_VERIFIKASI'];
-
-    $antreanData = $sFilter === 'SEMUA'
-        ? $semuaData
-        : array_values(array_filter($semuaData, function ($r) use ($sFilter) {
-            return (string) $r['status_verifikasi'] === $sFilter;
-        }));
 }
+
+/** URL antrean dengan halaman/per-halaman yang dipilih. */
+$tautanAntrean = function ($halaman, $perBaru = null) use ($tab, $sFilter, $per) {
+    $q = ['tab' => $tab, 'hal' => $halaman];
+    if ($tab === 'data') {
+        $q['s'] = $sFilter;
+    }
+    $p = $perBaru ?? $per;
+    if ($p !== 10) {
+        $q['per'] = $p;
+    }
+    return 'verifikasi.php?' . http_build_query($q);
+};
+
+/** Bilah pagination antrean (dipakai tab berkas & data). */
+$pager = function () use ($hal, $totalHalaman, $totalBaris, $mulaiBaris, $per, $perPilihan, $tautanAntrean) {
+    if ($totalBaris <= 0) {
+        return '';
+    }
+    $mulai = max(1, $hal - 2);
+    $akhir = min($totalHalaman, $mulai + 4);
+    $mulai = max(1, $akhir - 4);
+    ob_start();
+    ?>
+    <div class="px-5 sm:px-6 py-4 border-t border-line flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-1.5 text-[12px] text-ink-500">
+        <span>Per halaman</span>
+        <?php foreach ($perPilihan as $n): ?>
+          <a href="<?= e($tautanAntrean(1, $n)) ?>" class="px-2 py-1 rounded-md font-semibold <?= $per === $n ? 'bg-primary-light text-primary' : 'text-ink-500 hover:bg-canvas' ?>"><?= (int) $n ?></a>
+        <?php endforeach; ?>
+        <span class="ml-2 hidden sm:inline">Menampilkan <?= (int) ($mulaiBaris + 1) ?>–<?= (int) ($mulaiBaris + min($per, $totalBaris - $mulaiBaris)) ?> dari <?= (int) $totalBaris ?></span>
+      </div>
+      <?php if ($totalHalaman > 1): ?>
+        <nav class="flex items-center gap-1" aria-label="Halaman">
+          <?php if ($hal > 1): ?>
+            <a href="<?= e($tautanAntrean($hal - 1)) ?>" class="btn btn-sm btn-outline" aria-label="Halaman sebelumnya"><?= icon('chevron_left', 'text-[16px]') ?></a>
+          <?php endif; ?>
+          <?php for ($n = $mulai; $n <= $akhir; $n++): ?>
+            <a href="<?= e($tautanAntrean($n)) ?>" class="px-2.5 py-1.5 rounded-md text-[13px] font-semibold <?= $n === $hal ? 'bg-primary text-white' : 'text-ink-600 hover:bg-canvas' ?>"><?= (int) $n ?></a>
+          <?php endfor; ?>
+          <?php if ($hal < $totalHalaman): ?>
+            <a href="<?= e($tautanAntrean($hal + 1)) ?>" class="btn btn-sm btn-outline" aria-label="Halaman berikutnya"><?= icon('chevron_right', 'text-[16px]') ?></a>
+          <?php endif; ?>
+        </nav>
+      <?php endif; ?>
+    </div>
+    <?php
+    return (string) ob_get_clean();
+};
 
 $USER_LOGIN = [
     'nama'    => $me['nama'],
@@ -229,15 +297,14 @@ $USER_LOGIN = [
     'inisial' => $me['inisial'],
 ];
 
-$title     = $pend ? 'Verifikasi ' . $pend['nama_siswa'] : 'Verifikasi Pendaftar';
+$title     = $pend ? 'Verifikasi ' . $pend['nama_siswa'] : 'Ruang Verifikasi';
 $desc      = 'Periksa berkas persyaratan dan data calon siswa dalam satu halaman.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 require_once __DIR__ . '/../../includes/partials/head.php';
-$activeMenu = 'verifikasi';
+$activeMenu = 'pendaftar';
 require __DIR__ . '/../../includes/partials/sidebar.php';
-$breadcrumbs = ['Operasional SPMB' => url('app/operator/index.php'), 'Verifikasi Pendaftar' => null];
-$pageActions = '<a href="' . url('app/operator/pendaftar.php') . '" class="btn btn-outline hidden md:inline-flex">' . icon('group') . ' Data Pendaftar</a>';
+$breadcrumbs = ['Operasional SPMB' => url('app/operator/index.php'), 'Data Pendaftar' => url('app/operator/pendaftar.php'), 'Verifikasi' => null];
 require __DIR__ . '/../../includes/partials/topbar.php';
 
 $flash = flash();
@@ -547,21 +614,21 @@ $flash = flash();
             <span class="badge badge-blue">Operasional SPMB</span>
             <span class="badge badge-gray"><?= e($PENGATURAN['gelombang'] ?? 'SPMB') ?></span>
           </div>
-          <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Verifikasi Pendaftar</h1>
+          <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Ruang Verifikasi</h1>
           <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-            Satu tempat untuk memeriksa berkas persyaratan dan data calon siswa.
+            Bagian dari <a href="<?= url('app/operator/pendaftar.php') ?>" class="font-semibold text-primary hover:underline">Data Pendaftar</a> — satu tempat untuk memeriksa berkas persyaratan dan data calon siswa.
             Klik <strong>Periksa</strong> untuk membuka seluruh data pendaftar dalam satu layar.
           </p>
         </div>
         <a href="<?= url('app/operator/pendaftar.php') ?>" class="btn btn-primary shrink-0 shadow-drop">
-          <?= icon('group') ?> Semua Pendaftar
+          <?= icon('group') ?> Daftar Pendaftar
         </a>
       </div>
 
       <!-- Tab antrean -->
       <div class="mt-6 border-b border-line flex gap-1 overflow-x-auto scroll-thin">
         <?php foreach ($TABS as $k => $label): ?>
-          <a href="verifikasi.php?tab=<?= e($k) ?>" class="tab-underline <?= $tab === $k ? 'text-primary border-primary' : '' ?>"
+          <a href="verifikasi.php?tab=<?= e($k) ?><?= $per !== 10 ? '&amp;per=' . (int) $per : '' ?>" class="tab-underline <?= $tab === $k ? 'text-primary border-primary' : '' ?>"
              <?= $tab === $k ? 'data-active="true"' : '' ?>>
             <?= e($label) ?>
             <?php if ($hitung[$k] > 0): ?><span class="badge badge-amber ml-1"><?= (int) $hitung[$k] ?></span><?php endif; ?>
@@ -614,6 +681,7 @@ $flash = flash();
               </tbody>
             </table>
           </div>
+          <?= $pager() ?>
         </section>
 
       <?php elseif ($tab === 'data'): ?>
@@ -621,10 +689,10 @@ $flash = flash();
         <div class="mt-5 flex flex-wrap items-center gap-2">
           <?php foreach ($FILTER_DATA as $st => $lbl): ?>
             <?php
-            $n = $st === 'SEMUA' ? count($semuaData) : (isset($perStatus[$st]) ? $perStatus[$st] : 0);
+            $n = $perStatus[$st] ?? 0;
             $aktif = $sFilter === $st;
             ?>
-            <a href="verifikasi.php?tab=data&amp;s=<?= e($st) ?>"
+            <a href="verifikasi.php?tab=data&amp;s=<?= e($st) ?><?= $per !== 10 ? '&amp;per=' . (int) $per : '' ?>"
                class="badge <?= $aktif ? 'badge-blue' : 'badge-gray' ?> <?= $st === 'MENUNGGU_VERIFIKASI' && !$aktif ? 'badge-amber' : '' ?>">
               <?= e($lbl) ?> · <?= (int) $n ?>
             </a>
@@ -670,6 +738,7 @@ $flash = flash();
               </tbody>
             </table>
           </div>
+          <?= $pager() ?>
         </section>
       <?php endif; ?>
 

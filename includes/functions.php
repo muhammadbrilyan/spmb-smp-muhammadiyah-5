@@ -65,6 +65,16 @@ function label_biaya_pendaftaran()
     return $l !== '' ? $l : 'Biaya Pendaftaran';
 }
 
+/**
+ * Status pendaftaran publik dari saklar CMS (Persiapan Tahun Ajaran).
+ * Tanggal buka/tutup hanya informasi jadwal — bukan penentu status.
+ * Default terbuka agar instalasi lama tanpa kolom tetap bisa mendaftar.
+ */
+function pendaftaran_terbuka()
+{
+    return (int) ($GLOBALS['PENGATURAN']['pendaftaran_dibuka'] ?? 1) === 1;
+}
+
 /** Nama bulan panjang Bahasa Indonesia. */
 function bulan($tanggal)
 {

@@ -16,6 +16,8 @@
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
 
+$DIBUKA = pendaftaran_terbuka();
+
 $title = 'SPMB ' . $PENGATURAN['tahun_ajaran'];
 $desc  = 'Sistem Penerimaan Murid Baru (SPMB) SMP Muhammadiyah 5 Kota Tangerang — pendaftaran online, pembayaran formulir, tes CBT & BTQ, hingga pengumuman hasil seleksi.';
 
@@ -32,6 +34,14 @@ $STATISTIK = [
     ['angka' => number_format(max(0, $stKuota - $stTerisi), 0, ',', '.'), 'label' => 'Kursi masih tersedia', 'icon' => 'event_seat',   'tone' => 'green'],
     ['angka' => number_format($stRombel, 0, ',', '.'),                'label' => 'Rombel kelas VII',   'icon' => 'meeting_room', 'tone' => 'amber'],
 ];
+
+/* Agenda publik hanya dari tabel jadwal_tes yang berstatus Terjadwal.
+ * Saat database tidak terhubung, jangan tampilkan contoh jadwal lama. */
+$jadwalLanding = db_aktif()
+    ? array_values(array_filter(daftar_jadwal_tes(), static function ($j) {
+        return ($j['status'] ?? '') === 'Terjadwal';
+    }))
+    : [];
 
 /* MENU NAVIGASI ATAS — tambah/hapus baris untuk ubah menu.
  * '#beranda' = anchor section di halaman ini sendiri. */
@@ -83,7 +93,11 @@ if (strpos($waPanitia, '0') === 0) {
       </nav>
 
       <div class="flex items-center gap-2 md:gap-1.5 lg:gap-2">
-        <a href="#registrasi" data-sorot="registrasi" class="btn btn-primary btn-sm md:h-10 md:px-3 md:text-sm lg:px-4 whitespace-nowrap"><?= icon('arrow_forward') ?><span class="hidden lg:inline">Daftar Sekarang</span><span class="lg:hidden">Daftar</span></a>
+        <?php if ($DIBUKA): ?>
+          <a href="#registrasi" data-sorot="registrasi" class="btn btn-primary btn-sm md:h-10 md:px-3 md:text-sm lg:px-4 whitespace-nowrap"><?= icon('arrow_forward') ?><span class="hidden lg:inline">Daftar Sekarang</span><span class="lg:hidden">Daftar</span></a>
+        <?php else: ?>
+          <span class="btn btn-ghost btn-sm md:h-10 md:px-3 md:text-sm lg:px-4 whitespace-nowrap text-ink-500" aria-disabled="true"><?= icon('lock') ?><span class="hidden lg:inline">Pendaftaran Ditutup</span><span class="lg:hidden">Ditutup</span></span>
+        <?php endif; ?>
         <a href="<?= url('app/spmb/cek-status.php') ?>" class="hidden md:inline-flex btn btn-ghost text-sm md:px-3 lg:px-4 whitespace-nowrap"><?= icon('search') ?> Cek Status</a>
         <a href="<?= url('app/auth/login.php') ?>" class="hidden md:inline-flex btn btn-ghost text-sm md:px-3 lg:px-4 whitespace-nowrap"><?= icon('school') ?> Login Siswa</a>
         <details class="relative hidden md:hidden">
@@ -116,7 +130,11 @@ if (strpos($waPanitia, '0') === 0) {
     <?php endforeach; ?>
   </nav>
   <div class="mt-6 pt-6 border-t border-line space-y-2">
-    <a href="#registrasi" data-sorot="registrasi" data-sidebar-close class="btn btn-primary btn-block"><?= icon('arrow_forward') ?> Daftar Sekarang</a>
+    <?php if ($DIBUKA): ?>
+      <a href="#registrasi" data-sorot="registrasi" data-sidebar-close class="btn btn-primary btn-block"><?= icon('arrow_forward') ?> Daftar Sekarang</a>
+    <?php else: ?>
+      <span class="btn btn-outline btn-block text-ink-500" aria-disabled="true"><?= icon('lock') ?> Pendaftaran Ditutup</span>
+    <?php endif; ?>
     <a href="<?= url('app/auth/login.php') ?>" class="btn btn-outline btn-block"><?= icon('school') ?> Login Siswa</a>
   </div>
 </div>
@@ -155,7 +173,7 @@ if (strpos($waPanitia, '0') === 0) {
       <div class="lg:col-span-7">
         <div class="flex flex-wrap items-center gap-2">
           <span class="badge badge-blue <?= $bannerHero ? 'bg-white/15 border-white/25 text-white backdrop-blur-sm' : '' ?>"><?= icon('school', 'text-[13px]') ?> SPMB · <?= e($PENGATURAN['tahun_ajaran']) ?></span>
-          <span class="badge badge-green <?= $bannerHero ? 'bg-white/15 border-white/25 text-white backdrop-blur-sm' : '' ?>"><?= dot('green') ?> Sesi Live Tahun Berjalan</span>
+          <span class="badge <?= $DIBUKA ? 'badge-green' : 'badge-gray' ?> <?= $bannerHero ? 'bg-white/15 border-white/25 text-white backdrop-blur-sm' : '' ?>"><?= $DIBUKA ? dot('green') . ' Pendaftaran Dibuka' : icon('lock', 'text-[13px]') . ' Pendaftaran Ditutup' ?></span>
         </div>
 
         <h1 class="mt-5 text-3xl sm:text-4xl lg:text-[42px] font-extrabold leading-[1.12] tracking-tight <?= $bannerHero ? 'text-white' : 'text-ink-900' ?>">
@@ -209,9 +227,10 @@ if (strpos($waPanitia, '0') === 0) {
                 <p class="text-xs text-ink-500">Isi data awal untuk mendapatkan kode registrasi.</p>
               </div>
             </div>
-            <span class="badge badge-green shrink-0"><?= dot('green') ?> Online 24 Jam</span>
+            <span class="badge <?= $DIBUKA ? 'badge-green' : 'badge-gray' ?> shrink-0"><?= $DIBUKA ? dot('green') . ' Online 24 Jam' : icon('lock', 'text-[13px]') . ' Ditutup' ?></span>
           </div>
 
+          <?php if ($DIBUKA): ?>
           <form class="mt-5 space-y-4" method="post" action="<?= url('app/auth/registrasi.php') ?>">
             <?= csrf_field() ?>
             <!-- Honeypot: jangan diisi — bot biasanya mengisi semua field -->
@@ -253,6 +272,25 @@ if (strpos($waPanitia, '0') === 0) {
               Nomor pendaftaran dibuat otomatis (REG-<?= date('Y') ?>-XXXX). Dengan menekan tombol ini, Anda akan diminta menyetujui Syarat &amp; Ketentuan pendaftaran terlebih dahulu.
             </p>
           </form>
+          <?php else: ?>
+            <div class="mt-5 rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-4 text-sm text-[#92400E]">
+              <p class="font-semibold">Pendaftaran sedang ditutup.</p>
+              <p class="mt-1.5 leading-relaxed">
+                Formulir akan dibuka kembali pada gelombang berikutnya.
+                <?php if (!empty($PENGATURAN['tanggal_buka_ppdb'])): ?>
+                  Jadwal tertera: <?= e(bulan($PENGATURAN['tanggal_buka_ppdb'])) ?>
+                  <?php if (!empty($PENGATURAN['tanggal_tutup_ppdb'])): ?>&ndash; <?= e(bulan($PENGATURAN['tanggal_tutup_ppdb'])) ?><?php endif; ?>.
+                <?php endif; ?>
+                Nomor pendaftaran lama tetap dapat dipantau.
+              </p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <a href="<?= url('app/spmb/cek-status.php') ?>" class="btn btn-outline btn-sm"><?= icon('search') ?> Cek Status</a>
+                <?php if ($waPanitia !== ''): ?>
+                  <a href="https://wa.me/<?= e($waPanitia) ?>" target="_blank" rel="noopener" class="btn btn-primary btn-sm"><?= icon('chat') ?> Hubungi Panitia</a>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -337,7 +375,7 @@ if (strpos($waPanitia, '0') === 0) {
         <?php endif; ?>
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Investasi Pendidikan</span>
-          <span class="badge badge-amber"><?= icon('schedule', 'text-[13px]') ?> T.A. 2025/2026</span>
+          <span class="badge badge-amber"><?= icon('schedule', 'text-[13px]') ?> T.A. <?= e($PENGATURAN['tahun_ajaran'] ?? APP_TAHUN) ?></span>
         </div>
         <h3 class="mt-4 font-bold text-ink-900 text-lg">Rincian SOP &amp; <?= e(label_biaya_pendaftaran()) ?></h3>
 
@@ -384,7 +422,7 @@ if (strpos($waPanitia, '0') === 0) {
               <span class="text-sm font-medium text-ink-700"><?= e($PENGATURAN['label_spp'] ?? 'SPP Bulanan') ?></span>
               <span class="badge badge-blue">Bulanan</span>
             </div>
-            <div class="mt-1 font-bold text-ink-900"><?= rupiah($PENGATURAN['biaya_spp']) ?></div>
+            <div class="mt-1 font-bold text-ink-900"><?= rupiah($PENGATURAN['biaya_spp'] ?? 0) ?></div>
             <div class="text-[11px] text-ink-400">Sesuai kebijakan yayasan &amp; pengaturan CMS.</div>
           </div>
           <?php if ($promo !== ''): ?>
@@ -406,20 +444,26 @@ if (strpos($waPanitia, '0') === 0) {
         </div>
         <h3 class="mt-4 font-bold text-ink-900 text-lg">Jadwal Tes Seleksi &amp; Verifikasi</h3>
 
-        <ul class="mt-4 space-y-3">
-          <?php foreach ($JADWAL_TES as $j): ?>
-            <li class="flex gap-3 rounded-xl border border-line p-3.5">
-              <span class="icon-box bg-canvas text-ink-500"><?= icon('event', 'text-[19px]') ?></span>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <p class="font-semibold text-ink-900 text-sm truncate"><?= e($j['nama']) ?></p>
-                  <span class="badge badge-<?= e($j['tone']) ?> shrink-0"><?= e($j['mode']) ?></span>
+        <?php if (!$jadwalLanding): ?>
+          <p class="mt-4 rounded-xl border border-line p-4 text-sm text-ink-500">
+            Jadwal seleksi belum diumumkan. Silakan pantau halaman ini atau hubungi panitia SPMB.
+          </p>
+        <?php else: ?>
+          <ul class="mt-4 space-y-3">
+            <?php foreach ($jadwalLanding as $j): ?>
+              <li class="flex gap-3 rounded-xl border border-line p-3.5">
+                <span class="icon-box bg-canvas text-ink-500"><?= icon('event', 'text-[19px]') ?></span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="font-semibold text-ink-900 text-sm truncate"><?= e($j['nama']) ?></p>
+                    <span class="badge badge-<?= e($j['tone']) ?> shrink-0"><?= e($j['mode']) ?></span>
+                  </div>
+                  <p class="mt-1 text-xs text-ink-500"><?= bulan($j['tgl']) ?> &middot; <?= e($j['jam']) ?></p>
                 </div>
-                <p class="mt-1 text-xs text-ink-500"><?= bulan($j['tgl']) ?> &middot; <?= e($j['jam']) ?></p>
-              </div>
-            </li>
-          <?php endforeach; ?>
-        </ul>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
 
         <div class="mt-4 rounded-xl bg-primary-light border border-primary/15 p-4">
           <div class="text-[11px] uppercase tracking-wider text-ink-500 font-semibold">Periode Pendaftaran <?= e($PENGATURAN['gelombang']) ?></div>

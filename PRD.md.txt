@@ -10,16 +10,21 @@
 * **Metode Pengembangan:** Agile Development Method
 * **Arsitektur Aplikasi:** 
   1. *Public SPMB Landing Page & Dynamic CMS View* (`/app/spmb`)
-  2. *Authenticated Student & Admin Portal* (`/app/siswa`, `/app/bendahara`, `/app/operator`, `/app/kepsek`)
+  2. *Authenticated Portal* (`/app/siswa`, `/app/bendahara`, `/app/operator`)
   3. *CMS Dynamic Settings Panel* (`/app/operator/pengaturan`)
-* **Tech Stack Utama:**
-  * **Framework:** Next.js (App Router, TypeScript)
-  * **Styling & Dynamic Theme:** Tailwind CSS (dengan CSS Variables / Dynamic Inline Theme), Shadcn UI
-  * **Database Engine:** MySQL (v8.0+)
-  * **ORM / Database Client:** Prisma ORM / Drizzle ORM / mysql2
-  * **File Storage:** Local Server Storage (`/public/uploads`) / Cloudinary / AWS S3
+* **Tech Stack Utama (sesuai implementasi):**
+  * **Bahasa & Framework:** PHP 8.1+ native (prosedural, tanpa framework/Composer)
+  * **Styling & Dynamic Theme:** Tailwind CSS 3.4 (build statis), Material Symbols, CSS variable untuk warna tema & mode gelap
+  * **Database Engine:** MySQL 8.0+ / MariaDB 10.4+
+  * **Database Client:** PDO dengan prepared statement (`EMULATE_PREPARES = false`), tanpa ORM
+  * **File Storage:** `storage/dokumen` (privat, diakses lewat gerbang `app/api/dokumen.php`) dan `assets/img/uploads` (logo/banner publik)
   * **WhatsApp Gateway:** Fonnte API (`https://api.fonnte.com/send`)
-  * **AI Integration:** Google AI Studio (Gemini SDK `@google/genai`)
+  * **Payment Gateway (opsional):** Midtrans Snap — hanya aktif bila kunci diisi
+  * **AI Integration:** tidak dipakai pada implementasi saat ini
+
+> **Catatan revisi 2026-11-15:** draf awal PRD menyebut Next.js/Prisma/Shadcn.
+> Implementasi yang berjalan adalah PHP native + PDO seperti di atas; dokumen ini
+> diselaraskan agar laporan Kerja Praktek tidak memuat klaim teknologi yang salah.
 
 ---
 
@@ -29,8 +34,12 @@
 |---|---|---|
 | `siswa` | Authenticated | Mengisi biodata lengkap, unggah berkas (max 2MB), cek status verifikasi bayar, jadwal tes (offline/video call), hasil seleksi, dan penempatan kelas. |
 | `bendahara` | Authenticated | Verifikasi bukti bayar formulir & pembaharuan skema uang masuk (Lunas / Angsuran 1 / Angsuran 2). |
-| `operator` / `admin` | Authenticated | **Akses Penuh CMS:** Mengubah logo, nama sekolah, alamat, warna tema, nominal biaya, daftar/nama/kuota kelas, kelola kredensial WA via Fonnte, atur tes, & input seleksi. |
-| `kepsek` | Authenticated | *View-only* dashboard analitik keterisian kuota & rekapitulasi finansial. |
+| `operator` | Authenticated | **Akses Penuh CMS:** Mengubah logo, nama sekolah, alamat, warna tema, nominal biaya, daftar/nama/kuota kelas, kelola kredensial WA via Fonnte, atur tes, & input seleksi. |
+
+> **Catatan revisi 2026-11-15:** tidak ada role `admin` di database.
+> Role yang sah hanya `siswa`, `bendahara`, dan `operator` (kolom `users.role`
+> bertipe ENUM ketiga nilai itu). Alamat `/admin` hanyalah URL pendek menuju
+> halaman login pihak sekolah, bukan peran tersendiri.
 
 ---
 
@@ -41,22 +50,21 @@
 3. **CMS Panel Manajemen Kelas (`/app/operator/kelas`):** Fitur CRUD (Tambah, Edit, Hapus) nama kelas (contoh: 7A, 7B, 7C) dan alokasi kuota per kelas.
 4. **Portal Akun Siswa (`/app/siswa`):** Dashboard status, form biodata lengkap, toggle pendaftar luar daerah, tab unggah berkas.
 5. **Dashboard Bendahara (`/app/bendahara`):** Antrean verifikasi bukti transfer formulir & penetapan status uang masuk.
-6. **Dashboard Operator (`/app/operator`):** Generasi akun & kirim WA, penjadwalan tes, input nilai seleksi, penempatan kelas dinamis.
-7. **Dashboard Kepala Sekolah (`/app/kepsek`):** Ringkasan analitik eksekutif & progres keterisian kelas.
+6. **Dashboard Operator (`/app/operator`):** Pemantauan akun & status WA, jadwal tes, hasil seleksi, serta penempatan kelas. Aksi tulis (generate/kirim kredensial, penjadwalan, input nilai, penempatan) dijalankan dari menu sidebar masing-masing.
 
 ---
 
 ### 4. REQUIREMENT FUNGSIONAL DETAIL
 
 #### F-01: CMS Pengaturan Branding & Identitas Website
-* **FR-01.1:** Operator/Admin dapat mengunggah dan mengubah **Logo Sekolah** yang otomatis diperbarui di Header dan Modal Landing Page.
-* **FR-01.2:** Operator/Admin dapat mengubah **Nama Sekolah, Alamat Lengkap, Nomor Kontak Panitia, dan Rekening Bank**.
-* **FR-01.3:** Operator/Admin dapat memilih **Warna Utama Website (Primary Color)** melalui *Color Picker*. Sistem menerapkan warna ini secara dinamis pada tombol, header, dan aksen UI.
-* **FR-01.4:** Operator/Admin dapat mengubah **Nominal Biaya Formulir Pendaftaran** (default: Rp200.000) yang langsung berdampak pada seluruh instruksi pembayaran pendaftar baru.
+* **FR-01.1:** Operator dapat mengunggah dan mengubah **Logo Sekolah** yang otomatis diperbarui di Header dan Modal Landing Page.
+* **FR-01.2:** Operator dapat mengubah **Nama Sekolah, Alamat Lengkap, Nomor Kontak Panitia, dan Rekening Bank**.
+* **FR-01.3:** Operator dapat memilih **Warna Utama Website (Primary Color)** melalui *Color Picker*. Sistem menerapkan warna ini secara dinamis pada tombol, header, dan aksen UI.
+* **FR-01.4:** Operator dapat mengubah **Nominal Biaya Formulir Pendaftaran** (default: Rp200.000) yang langsung berdampak pada seluruh instruksi pembayaran pendaftar baru.
 
 #### F-02: CMS Manajemen Kelas & Kuota Dinamis
-* **FR-02.1:** Operator/Admin dapat menambah, mengubah nama, atau menghapus kelas (contoh: Kelas 7A, 7B, 7C, dst.).
-* **FR-02.2:** Operator/Admin dapat menetapkan batas kuota individual per kelas (default: 30 siswa).
+* **FR-02.1:** Operator dapat menambah, mengubah nama, atau menghapus kelas (contoh: Kelas 7A, 7B, 7C, dst.).
+* **FR-02.2:** Operator dapat menetapkan batas kuota individual per kelas (default: 30 siswa).
 * **FR-02.3:** Total target kuota pendaftaran merupakan penjumlahan otomatis dari seluruh kuota kelas aktif.
 
 #### F-03: Registrasi Awal & Pembayaran Formulir (Dinamis)
@@ -75,11 +83,16 @@
 
 ### 5. SKEMA DATABASE & DATA MODEL (MYSQL DDL)
 
+> **Catatan:** blok DDL di bawah adalah **draf desain awal** dan terpotong di
+> tengah tabel `pembayaran`. Skema yang benar-benar dipakai ada di
+> `database/db_spmb_mualimku.sql` (20 tabel, kompatibel MySQL 8 / MariaDB 10.x),
+> dengan nama database `db_spmb_mualimku`.
+
 ```sql
 -- Skema Database MySQL PPDB & CMS SMP Muhammadiyah 5 Kota Tangerang
 
-CREATE DATABASE IF NOT EXISTS ppdb_smpm5 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE ppdb_smpm5;
+CREATE DATABASE IF NOT EXISTS db_spmb_mualimku CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE db_spmb_mualimku;
 
 -- 1. Tabel Pengaturan CMS Sekolah (Single Row Config)
 CREATE TABLE pengaturan_sekolah (
@@ -106,7 +119,7 @@ CREATE TABLE users (
   id VARCHAR(36) PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('siswa', 'bendahara', 'operator', 'kepsek') NOT NULL DEFAULT 'siswa',
+  role ENUM('siswa', 'bendahara', 'operator') NOT NULL DEFAULT 'siswa',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -151,13 +164,14 @@ memuat bagian 8.2 yang dirujuk audit Fase 12. Bila pihak sekolah memiliki
 dokumen PRD lengkap, serahkan ke pengelola agar bagian yang hilang bisa
 diselaraskan kembali.
 
-**Jumlah tabel implementasi kini 17** (bukan 5 pada skema di atas):
+**Jumlah tabel implementasi kini 20** (bukan 5 pada skema di atas):
 
 1. pengaturan_sekolah  2. users  3. pendaftar  4. orang_tua  5. pembayaran
 6. kelas  7. seleksi  8. jadwal_tes  9. dokumen  10. login_attempts
 11. rate_limit  12. peserta_ujian  13. penempatan_kelas  14. notifikasi
-15. wa_log  16. jenis_dokumen  17. retensi_log (Fase 12 E)
+15. wa_log  16. jenis_dokumen  17. retensi_log  18. notifikasi_siswa
+19. pengajuan_koreksi  20. pengumuman_umum
 
 Sumber kebenaran skema: `database/db_spmb_mualimku.sql` (portabel
-MySQL 8 / MariaDB 10.x). Perubahan skema wajib lewat
+MySQL 8 / MariaDB 10.x, nama database `db_spmb_mualimku`). Perubahan skema wajib lewat
 `database/migrations/YYYYMMDD_faseN_*.sql` yang idempoten.

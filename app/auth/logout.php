@@ -14,7 +14,7 @@ $roleTerakhir = user_role();
 logout();
 
 /* Staf sekolah kembali ke login sekolah, siswa ke portal siswa. */
-if (in_array($roleTerakhir, ['operator', 'admin', 'bendahara', 'kepsek'], true)) {
+if (in_array($roleTerakhir, ['operator', 'bendahara'], true)) {
     header('Location: ' . url('admin/'));
 } else {
     header('Location: ' . url('app/auth/login.php'));

@@ -46,12 +46,29 @@ if (!array_key_exists($tampilkan, $tampilkanLabel)) {
     $tampilkan = 'aktif';
 }
 
-/** URL daftar kembali dengan filter yang sedang dipakai. */
-$tautanDaftar = function ($tambah = []) use ($status, $cari, $tampilkan) {
-    $q = array_merge(
-        array_filter(['status' => $status, 'q' => $cari, 'tampilkan' => $tampilkan]),
-        $tambah
-    );
+/* Pagination server-side: daftar bisa berisi ribuan pendaftar, jadi LIMIT
+ * dijalankan di database, bukan memuat semuanya lalu dipotong di PHP. */
+$perPilihan = [10, 25, 50];
+$per = (int) ($_GET['per'] ?? 25);
+if (!in_array($per, $perPilihan, true)) {
+    $per = 25;
+}
+$hal = max(1, (int) ($_GET['hal'] ?? 1));
+
+/** URL daftar kembali dengan filter + halaman yang sedang dipakai. */
+$tautanDaftar = function ($tambah = []) use ($status, $cari, $tampilkan, $per, &$hal) {
+    $q = array_filter(['status' => $status, 'q' => $cari, 'tampilkan' => $tampilkan]);
+    if ($per !== 25) {
+        $q['per'] = $per;
+    }
+    $q['hal'] = $hal;
+    foreach ($tambah as $k => $v) {
+        if ($v === null || $v === '') {
+            unset($q[$k]);
+        } else {
+            $q[$k] = $v;
+        }
+    }
     return 'pendaftar.php' . ($q ? '?' . http_build_query($q) : '');
 };
 
@@ -92,7 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$daftar = pendaftar_data_antrean($status, $cari, '', $tampilkan);
+$totalData = pendaftar_data_jumlah($status, $cari, '', $tampilkan);
+$totalHal  = max(1, (int) ceil($totalData / $per));
+$hal       = min($hal, $totalHal);
+$offset    = ($hal - 1) * $per;
+$daftar    = pendaftar_data_antrean($status, $cari, '', $tampilkan, $per, $offset);
 
 $ringkas = [
     'total'      => (int) (q_col('SELECT COUNT(*) FROM pendaftar WHERE arsip_at IS NULL') ?? 0),
@@ -103,10 +124,13 @@ $ringkas = [
 ];
 
 /* Tautan filter yang mempertahankan kata kunci pencarian + mode tampilan. */
-$tautanFilter = function ($nilai) use ($cari, $tampilkan) {
+$tautanFilter = function ($nilai) use ($cari, $tampilkan, $per) {
     $q = ['status' => $nilai, 'tampilkan' => $tampilkan];
     if ($cari !== '') {
         $q['q'] = $cari;
+    }
+    if ($per !== 25) {
+        $q['per'] = $per;
     }
     return url('app/operator/pendaftar.php?' . http_build_query($q));
 };
@@ -132,12 +156,17 @@ $flash = flash();
         </div>
         <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Data Pendaftar</h1>
         <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
-          Cari pendaftar, pantau status verifikasi data, dan buka detail untuk memeriksa kelengkapan formulir.
+          Cari pendaftar, pantau status verifikasi, lalu buka ruang verifikasi untuk memutuskan berkas persyaratan dan data calon siswa.
         </p>
       </div>
-      <a href="<?= url('app/operator/verifikasi.php?tab=data') ?>" class="btn btn-primary shrink-0 shadow-drop">
-        <?= icon('fact_check') ?> Antrean Verifikasi Data
-      </a>
+      <div class="flex flex-wrap gap-2.5 shrink-0">
+        <a href="<?= url('app/operator/verifikasi.php?tab=data') ?>" class="btn btn-outline">
+          <?= icon('verified_user') ?> Antrean Data Siswa
+        </a>
+        <a href="<?= url('app/operator/verifikasi.php') ?>" class="btn btn-primary shadow-drop">
+          <?= icon('fact_check') ?> Ruang Verifikasi
+        </a>
+      </div>
     </div>
 
     <?php if ($flash): ?>
@@ -231,6 +260,7 @@ $flash = flash();
             <?php endforeach; ?>
           </select>
         </div>
+        <input type="hidden" name="per" value="<?= (int) $per ?>">
         <div class="flex gap-2.5 shrink-0">
           <button type="submit" class="btn btn-primary"><?= icon('search') ?> Terapkan</button>
           <?php if ($cari !== '' || $status !== '' || $tampilkan !== 'aktif'): ?>
@@ -246,7 +276,11 @@ $flash = flash();
         <div>
           <h2 class="font-bold text-ink-900">Daftar Pendaftar</h2>
           <p class="mt-1 text-[13px] text-ink-500">
-            <?= count($daftar) ?> data ditampilkan<?= $cari !== '' ? ' untuk pencarian “' . e($cari) . '”' : '' ?>.
+            <?php if ($totalData > 0): ?>
+              Menampilkan <?= (int) ($offset + 1) ?>–<?= (int) ($offset + count($daftar)) ?> dari <?= (int) $totalData ?> data<?= $cari !== '' ? ' untuk pencarian “' . e($cari) . '”' : '' ?>.
+            <?php else: ?>
+              0 data<?= $cari !== '' ? ' untuk pencarian “' . e($cari) . '”' : '' ?>.
+            <?php endif; ?>
           </p>
         </div>
         <span class="badge badge-gray"><?= $tampilkan === 'arsip' ? 'Urut waktu pengarsipan' : ($tampilkan === 'semua' ? 'Termasuk pendaftar terarsip' : 'Urut antrean verifikasi') ?></span>
@@ -280,6 +314,10 @@ $flash = flash();
               <?php
               $lv = $statusLabel[$p['status_verifikasi']] ?? [$p['status_verifikasi'], 'gray'];
               $lt = label_tahap($p['tahap']);
+              /* Ruang verifikasi dibuka pada tab yang memang sedang ditunggu:
+               * berkas dulu selama tahapnya masih berkas, setelah itu data. */
+              $tabMasuk = in_array((string) $p['tahap'], ['BERKAS_DISUBMIT', 'BERKAS_REVISI'], true) ? 'berkas' : 'data';
+              $tautanPeriksa = url('app/operator/verifikasi.php?tab=' . $tabMasuk . '&id=' . rawurlencode($p['id']));
               $terarsip = !empty($p['arsip_at']);
               $berubahSetelahVerifikasi = !$terarsip
                   && !empty($p['data_verified_at'])
@@ -288,7 +326,7 @@ $flash = flash();
               ?>
               <tr class="tr-hover align-top <?= $terarsip ? 'opacity-70' : '' ?>">
                 <td class="td">
-                  <a href="<?= url('app/operator/verifikasi.php?tab=data&amp;id=' . rawurlencode($p['id'])) ?>" class="font-semibold text-ink-900 hover:text-primary">
+                  <a href="<?= $tautanPeriksa ?>" class="font-semibold text-ink-900 hover:text-primary">
                     <?= e($p['nama_siswa']) ?>
                   </a>
                   <p class="mt-0.5 font-mono text-[12px] text-ink-500"><?= e($p['no_pendaftaran']) ?></p>
@@ -348,7 +386,7 @@ $flash = flash();
                         </button>
                       </form>
                     <?php else: ?>
-                      <a href="<?= url('app/operator/verifikasi.php?tab=data&amp;id=' . rawurlencode($p['id'])) ?>" class="btn btn-sm btn-outline">
+                      <a href="<?= $tautanPeriksa ?>" class="btn btn-sm btn-outline">
                         <?= icon('fact_check', 'text-[15px]') ?> Periksa
                       </a>
                       <button type="button" class="btn btn-sm btn-outline"
@@ -366,10 +404,42 @@ $flash = flash();
           </tbody>
         </table>
       </div>
+
+      <?php if ($totalData > 0): ?>
+        <?php
+        $mulaiHal = max(1, $hal - 2);
+        $akhirHal = min($totalHal, $mulaiHal + 4);
+        $mulaiHal = max(1, $akhirHal - 4);
+        ?>
+        <div class="px-5 sm:px-6 py-4 border-t border-line flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-1.5 text-[12px] text-ink-500">
+            <span>Per halaman</span>
+            <?php foreach ($perPilihan as $n): ?>
+              <a href="<?= e($tautanDaftar(['hal' => 1, 'per' => $n === 25 ? '' : $n])) ?>"
+                 class="px-2 py-1 rounded-md font-semibold <?= $per === $n ? 'bg-primary-light text-primary' : 'text-ink-500 hover:bg-canvas' ?>"><?= (int) $n ?></a>
+            <?php endforeach; ?>
+          </div>
+
+          <?php if ($totalHal > 1): ?>
+            <nav class="flex items-center gap-1" aria-label="Halaman">
+              <?php if ($hal > 1): ?>
+                <a href="<?= e($tautanDaftar(['hal' => $hal - 1])) ?>" class="btn btn-sm btn-outline" aria-label="Halaman sebelumnya"><?= icon('chevron_left', 'text-[16px]') ?></a>
+              <?php endif; ?>
+              <?php for ($n = $mulaiHal; $n <= $akhirHal; $n++): ?>
+                <a href="<?= e($tautanDaftar(['hal' => $n])) ?>"
+                   class="px-2.5 py-1.5 rounded-md text-[13px] font-semibold <?= $n === $hal ? 'bg-primary text-white' : 'text-ink-600 hover:bg-canvas' ?>"><?= (int) $n ?></a>
+              <?php endfor; ?>
+              <?php if ($hal < $totalHal): ?>
+                <a href="<?= e($tautanDaftar(['hal' => $hal + 1])) ?>" class="btn btn-sm btn-outline" aria-label="Halaman berikutnya"><?= icon('chevron_right', 'text-[16px]') ?></a>
+              <?php endif; ?>
+            </nav>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
     </section>
 
     <p class="mt-4 text-[12px] text-ink-400">
-      Catatan: perubahan status verifikasi data dilakukan pada halaman detail agar catatan panitia tercatat.
+      Catatan: keputusan berkas dan status verifikasi data diambil di <strong>ruang verifikasi</strong> (tombol Periksa) agar catatan panitia tercatat.
       Pengarsipan bersifat <strong>tidak menghapus apa pun</strong> — data pendaftar, pembayaran, dan berkas tetap utuh
       dan dapat dipulihkan; hanya barisnya dikeluarkan dari antrean kerja, statistik, export, dan akun portal siswa
       dinonaktifkan sementara.

@@ -1,6 +1,6 @@
 <?php
 /* ==================================================================
- * LOGIN STAFF (Operator, Bendahara, Kepala Sekolah)
+ * LOGIN STAFF (Operator, Bendahara)
  * Login siswa/ortu ada di app/auth/login.php (terpisah).
  *
  * Alamat yang dipakai staf: <root aplikasi>/admin — folder admin/index.php
@@ -48,14 +48,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $title = 'Login Pihak Sekolah';
-$desc  = 'Masuk ke dashboard operator, bendahara, atau kepala sekolah SMP Muhammadiyah 5 Kota Tangerang.';
+$desc  = 'Masuk ke dashboard operator atau bendahara SMP Muhammadiyah 5 Kota Tangerang.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 require_once __DIR__ . '/../../includes/partials/head.php';
 
 /* Hanya role staf yang ditampilkan di halaman ini. */
-$ROLE_SEKOLAH = ['operator', 'bendahara', 'kepsek'];
-$ikon_role = ['operator' => 'settings_suggest', 'bendahara' => 'payments', 'kepsek' => 'workspace_premium'];
+$ROLE_SEKOLAH = ['operator', 'bendahara'];
+$ikon_role = ['operator' => 'settings_suggest', 'bendahara' => 'payments'];
 ?>
 
 <div class="min-h-screen lg:grid lg:grid-cols-2">
@@ -93,7 +93,6 @@ $ikon_role = ['operator' => 'settings_suggest', 'bendahara' => 'payments', 'keps
       <ul class="mt-8 space-y-3 text-sm text-white/85">
         <li class="flex items-center gap-3"><span class="icon-box bg-white/10 text-white"><?= icon('settings_suggest') ?></span> Operator — kelola penuh seluruh tahapan SPMB</li>
         <li class="flex items-center gap-3"><span class="icon-box bg-white/10 text-white"><?= icon('payments') ?></span> Bendahara — verifikasi pembayaran &amp; rekap keuangan</li>
-        <li class="flex items-center gap-3"><span class="icon-box bg-white/10 text-white"><?= icon('workspace_premium') ?></span> Kepala Sekolah — monitoring &amp; persetujuan akhir</li>
       </ul>
     </div>
 
@@ -123,7 +122,7 @@ $ikon_role = ['operator' => 'settings_suggest', 'bendahara' => 'payments', 'keps
       <div class="flex items-center justify-between gap-3">
         <div>
           <h2 class="text-2xl font-bold text-ink-900 tracking-tight">Login Pihak Sekolah</h2>
-          <p class="mt-1 text-sm text-ink-500">Khusus operator, bendahara, dan kepala sekolah.</p>
+          <p class="mt-1 text-sm text-ink-500">Khusus operator dan bendahara.</p>
         </div>
         <span class="badge badge-blue hidden sm:inline-flex"><?= dot('green') ?> Internal</span>
       </div>

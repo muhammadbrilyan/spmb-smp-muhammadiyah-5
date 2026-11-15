@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [

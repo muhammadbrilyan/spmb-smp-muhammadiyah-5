@@ -9,7 +9,7 @@ require_once __DIR__ . '/../../includes/config.php';
 /* Hak akses: bendahara (keputusan 2026-10-28 — verifikasi pembayaran adalah
  * kewenangan bendahara, operator hanya melihat status) + admin sebagai
  * superuser yang dipakai halaman keuangan lainnya. */
-require_role(['bendahara', 'admin']);
+require_role(['bendahara']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -245,15 +245,6 @@ $flash = flash();
                           </button>
                         </form>
                       <?php endif; ?>
-
-                      <form method="post" action="<?= url('app/bendahara/verifikasi.php') ?>" class="inline"
-                            onsubmit="return confirm('Verifikasi pembayaran <?= e($p['reg']) ?> — <?= e($p['jenis']) ?> sebesar <?= e(rupiah($p['nominal'])) ?>?')">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="pembayaran_id" value="<?= e($p['id']) ?>">
-                        <input type="hidden" name="aksi" value="verifikasi">
-                        <input type="hidden" name="saringan" value="<?= e($s) ?>">
-                        <button type="submit" class="btn btn-sm btn-green"><?= icon('task_alt', 'text-[15px]') ?> Verifikasi</button>
-                      </form>
 
                       <button class="btn btn-sm btn-danger"
                               data-modal-open="modal-tolak"

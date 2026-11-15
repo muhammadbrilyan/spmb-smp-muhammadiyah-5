@@ -1,6 +1,6 @@
 <?php
 /**
- * Topbar dashboard — sama untuk semua peran (operator/bendahara/kepsek/admin/siswa).
+ * Topbar dashboard — sama untuk semua peran (operator/bendahara/admin/siswa).
  * Variabel: $pageActions (HTML opsional)
  *
  * Breadcrumb dan chip status gateway WA tidak lagi dirender: nama halaman sudah
@@ -49,7 +49,7 @@ $roleTop     = user_role();
      * dan titik merah notifikasi hardcode (selalu merah walau tidak ada pesan).
      * Kini menjadi tautan nyata; inilah yang menggantikan menu "Notifikasi" &
      * "Panduan" saat dihapus dari sidebar. */
-    $bolehNotf = in_array($roleTop, ['operator', 'bendahara', 'kepsek', 'admin'], true);
+    $bolehNotf = in_array($roleTop, ['operator', 'bendahara'], true);
     /* Siswa memakai notifikasi per penerima; staf memakai papan operator. */
     if ($roleTop === 'siswa') {
         $pidNotifTop = isset($siswa['id']) ? (string) $siswa['id'] : '';
@@ -74,7 +74,7 @@ $roleTop     = user_role();
       <?= icon('notifications') ?>
       <?php /* [PERBAIKAN] Badge selalu dirender (walau tersembunyi) dan memakai
               penanda .notif-badge-count — dipakai bersama oleh badge sidebar di
-              halaman bendahara/kepsek. Sebelumnya id="notif-badge" ada di
+              halaman bendahara. Sebelumnya id="notif-badge" ada di
               sidebar dan polling ikut pindah ke sini saat menu Notifikasi
               dihapus dari sidebar operator. */ ?>
       <span class="notif-badge-count absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-1 rounded-full text-[10px] font-bold grid place-items-center ring-2 ring-white <?= $jmlNotf > 0 ? 'bg-red-600 text-white' : 'hidden' ?>"><?= $jmlNotf > 0 ? ($jmlNotf > 99 ? '99+' : (int) $jmlNotf) : '' ?></span>
@@ -86,7 +86,7 @@ $roleTop     = user_role();
     <?php if ($bolehNotf || $roleTop === 'siswa'): ?>
     <script>
     /* Polling ringan jumlah notifikasi belum dibaca — tiap 60 detik, tanpa library.
-     * Menyasar SEMUA elemen .notif-badge-count (topbar + sidebar bendahara/kepsek)
+     * Menyasar SEMUA elemen .notif-badge-count (topbar + sidebar bendahara)
      * sehingga tidak ada lagi badge yang membeku di angka lama. */
     (function () {
       var endpoint = <?= json_encode(url('app/api/notif-count.php')) ?>;

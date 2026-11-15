@@ -365,7 +365,7 @@ function siswa_kabar_terbaru($siswa, $pembayaran, $kartuUjian, $pengumuman, $pen
         $kabar[] = [
             'ikon' => 'campaign', 'tone' => 'gray',
             'judul' => 'Informasi SPMB ' . ($GLOBALS['PENGATURAN']['gelombang'] ?? ''),
-            'pesan' => trim((string) ($GLOBALS['PENGATURAN']['ticker_header'] ?? '')),
+            'pesan' => trim((string) ($GLOBALS['PENGATURAN']['ticker'] ?? '')),
             'tanggal' => null,
             'tautan' => url('app/siswa/notifikasi.php'),
         ];

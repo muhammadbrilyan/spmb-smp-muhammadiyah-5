@@ -7,7 +7,7 @@
  *     Format item: icon (nama ikon), judul, role (siapa yang lihat), langkah (array teks)
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin', 'bendahara', 'kepsek']);
+require_role(['operator', 'bendahara']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -18,7 +18,7 @@ $USER_LOGIN = [
 ];
 
 $title = 'Panduan & SOP';
-$desc  = 'Panduan operasional SPMB untuk operator, bendahara, dan kepala sekolah.';
+$desc  = 'Panduan operasional SPMB untuk operator dan bendahara.';
 $bodyClass = 'bg-canvas text-ink-700 antialiased';
 
 require_once __DIR__ . '/../../includes/partials/head.php';
@@ -33,7 +33,7 @@ $panduan = [
     [
         'icon' => 'assignment',
         'judul' => 'Manajemen Kelas & Kuota',
-        'role'  => ['operator', 'admin', 'kepsek'],
+        'role'  => ['operator'],
         'langkah' => [
             'Buka menu <strong>Manajemen Kelas</strong>.',
             'Klik <em>Tambah Kelas</em>, isi kode (huruf/angka, mis. 7A), nama kelas, wali kelas, dan kuota.',
@@ -45,19 +45,19 @@ $panduan = [
     [
         'icon' => 'how_to_reg',
         'judul' => 'Pendaftaran & Verifikasi',
-        'role'  => ['operator', 'admin'],
+        'role'  => ['operator'],
         'langkah' => [
             'Pendaftar mengisi form publik di landing atau operator isi manual via <strong>Pendaftaran Baru</strong>.',
-            'Buka tab <strong>Verifikasi</strong> di dashboard — daftar pendaftar MENUNGGU_VERIFIKASI.',
-            'Periksa berkas yang diunggah (KTP, KK, SKL, dsb.) di kolom Dokumen.',
-            'Klik <em>Verifikasi</em> untuk menyetujui atau <em>Tolak</em> bila berkas tidak lengkap.',
+            'Buka <strong>Data Pendaftar</strong> — kolom Verifikasi Data &amp; Berkas menunjukkan siapa yang menunggu; tombol <strong>Ruang Verifikasi</strong> membuka antreannya.',
+            'Klik <em>Periksa</em> pada satu pendaftar — berkas persyaratan dan data calon siswa tampil di satu layar.',
+            'Putuskan tiap berkas (Setujui / Tolak + alasan), lalu tetapkan status verifikasi data.',
             'Setelah TERVERIFIKASI, pendaftar masuk tahap seleksi.',
         ],
     ],
     [
         'icon' => 'notifications', 'badge' => 'F3',
         'judul' => 'Notifikasi Panitia (Fase 3)',
-        'role'  => ['operator', 'admin', 'bendahara'],
+        'role'  => ['operator', 'bendahara'],
         'langkah' => [
             'Setiap pemicu tercatat di menu <strong>Notifikasi</strong> — bukti bayar diunggah, pembayaran gateway terverifikasi/lunas, pendaftar baru, berkas disubmit, data diajukan verifikasi. Lencana sidebar menampilkan jumlah belum dibaca dan polling tiap 60 detik.',
             'Yang berbunyi di WhatsApp panitia: uang masuk (bukti transfer/QRIS &amp; gateway), <strong>calon siswa baru mendaftar</strong>, <strong>data diajukan</strong> — termasuk kirim ulang data yang tadi ditolak — dan <strong>berkas dikirim</strong>. Kabar operasional itu dibatasi 3 pesan/jam per pendaftar supaya klik berulang tidak menjebol kuota Fonnte.',
@@ -71,7 +71,7 @@ $panduan = [
     [
         'icon' => 'group_add',
         'judul' => 'Generate Akun Siswa',
-        'role'  => ['operator', 'admin'],
+        'role'  => ['operator'],
         'langkah' => [
             'Buka tab <strong>Akun</strong> di dashboard operator.',
             'Pastikan token Fonnte sudah diisi di <strong>Pengaturan → WhatsApp Gateway</strong> agar kredensial terkirim otomatis.',
@@ -84,7 +84,7 @@ $panduan = [
     [
         'icon' => 'payments',
         'judul' => 'Verifikasi Pembayaran (Bendahara)',
-        'role'  => ['bendahara', 'admin', 'kepsek'],
+        'role'  => ['bendahara'],
         'langkah' => [
             'Login sebagai Bendahara → buka <strong>Verifikasi Pembayaran</strong>.',
             'Daftar tagihan PENDING tampil dengan unggahan bukti transfer.',
@@ -99,7 +99,7 @@ $panduan = [
     [
         'icon' => 'verified_user', 'badge' => 'F4',
         'judul' => 'Verifikasi Pembayaran & Kirim Akun (Fase 4)',
-        'role'  => ['bendahara', 'admin', 'kepsek'],
+        'role'  => ['bendahara'],
         'langkah' => [
             'Buka <strong>Verifikasi Pembayaran</strong> — daftar bukti MENUNGGU_VERIFIKASI_BAYAR.',
             '<em>Setujui</em> → status BAYAR_TERVERIFIKASI (tombol hijau). <em>Tolak</em> → wajib isi alasan, status kembali MENUNGGU_PEMBAYARAN + WA alasan ke orang tua.',
@@ -111,12 +111,12 @@ $panduan = [
     [
         'icon' => 'folder_shared', 'badge' => 'F5',
         'judul' => 'Berkas Dinamis (Fase 5)',
-        'role'  => ['operator', 'admin'],
+        'role'  => ['operator'],
         'langkah' => [
             'Kelola daftar jenis berkas di <strong>Pengaturan → Daftar Berkas</strong> (tambah/ubah/nonaktif; set format & maksimum unggah per jenis).',
             'Siswa mengunggah berkas di portal — validasi format/ukuran/MIME dilakukan server.',
             'Submit hanya bisa bila semua berkas <em>wajib</em> lengkap → pendaftar masuk BERKAS_DISUBMIT + notifikasi operator.',
-            'Buka <strong>Verifikasi Pendaftar</strong> tab Berkas Persyaratan — antrean BERKAS_DISUBMIT / BERKAS_REVISI.',
+            'Buka <strong>Data Pendaftar</strong> → tombol <strong>Ruang Verifikasi</strong> (tab Berkas Persyaratan) — antrean BERKAS_DISUBMIT / BERKAS_REVISI.',
             'Putuskan per berkas: Setujui / Tolak (alasan wajib). Semua lolos → BERKAS_TERVERIFIKASI; ada ditolak → BERKAS_REVISI + WA ke orang tua (hanya berkas ditolak yang dibuka kembali).',
             'WA penolakan menautkan penerima ke halaman <strong>Cek Status Pendaftaran</strong> (bukan halaman bayar) — di sana ada tombol <em>Buka Halaman Pembayaran</em> untuk mendapat tautan bayar baru tanpa mengetik ulang apa pun.',
         ],
@@ -124,7 +124,7 @@ $panduan = [
     [
         'icon' => 'assignment',
         'judul' => 'Jadwal Tes & Input Seleksi',
-        'role'  => ['operator', 'admin', 'kepsek'],
+        'role'  => ['operator'],
         'langkah' => [
             'Buka <strong>Jadwal Ujian</strong> — tambah jadwal (kode auto TES-NN), set metode & status TERJADWAL.',
             'Klik ikon <em>chat</em> pada baris jadwal untuk kirim notifikasi WA jadwal ke seluruh wali siswa terjadwal.',
@@ -137,7 +137,7 @@ $panduan = [
     [
         'icon' => 'event_seat', 'badge' => 'F6',
         'judul' => 'Peserta Ujian (Fase 6)',
-        'role'  => ['operator', 'admin', 'kepsek'],
+        'role'  => ['operator'],
         'langkah' => [
             'Buka <strong>Jadwal Ujian</strong> — isi Ruangan & Kapasitas per jadwal (kapasitas 0 = tanpa batas).',
             'Bagian <strong>Peserta Ujian</strong> ada di halaman yang sama, di bawah daftar jadwal — klik <em>Atur Peserta Otomatis</em> (urut no_pendaftaran, penuhi kapasitas, transaksi DB).',
@@ -152,7 +152,7 @@ $panduan = [
     [
         'icon' => 'fact_check', 'badge' => 'F7',
         'judul' => 'Input Hasil Seleksi (Fase 7)',
-        'role'  => ['operator', 'admin', 'kepsek'],
+        'role'  => ['operator'],
         'langkah' => [
             'Hanya pendaftar JADWAL_DITETAPKAN / NILAI_TERINPUT yang tampil di <strong>Input Seleksi</strong>.',
             'Judul kolom nilai mengikuti <em>nama kegiatan pada jadwal tes</em> (3 kegiatan pertama, urut tanggal & jam) dan otomatis disingkat; arahkan kursor ke judul untuk nama lengkapnya.',
@@ -166,7 +166,7 @@ $panduan = [
     [
         'icon' => 'campaign', 'badge' => 'F8',
         'judul' => 'Pengumuman Hasil (Fase 8)',
-        'role'  => ['operator', 'admin', 'kepsek'],
+        'role'  => ['operator'],
         'langkah' => [
             'Hasil seleksi & penempatan disembunyikan dari publik/portal sampai diumumkan.',
             'Buka <strong>Pengumuman Hasil</strong> — pilih <em>Umumkan Sekarang</em> atau <em>Jadwalkan</em> (waktu server database).',
@@ -179,7 +179,7 @@ $panduan = [
     [
         'icon' => 'move_to_inbox', 'badge' => 'AKHIR',
         'judul' => 'Penempatan Kelas',
-        'role'  => ['operator', 'admin', 'kepsek'],
+        'role'  => ['operator'],
         'langkah' => [
             'Buka <strong>Penempatan Kelas</strong> — kartu keterisian menampilkan sisa kursi tiap rombel.',
             'Siswa berstatus LULUS yang belum ditempatkan muncul urut nilai tertinggi.',
@@ -191,7 +191,7 @@ $panduan = [
     [
         'icon' => 'settings_suggest', 'badge' => 'CMS',
         'judul' => 'Pengaturan Sistem & WA Gateway',
-        'role'  => ['operator', 'admin'],
+        'role'  => ['operator'],
         'langkah' => [
             'Buka <strong>Pengaturan</strong> di menu operator.',
             'Seksi 1–6 mengatur konten landing (ticker, hero, statistik, biaya) — termasuk blok <strong>Tanya Jawab (FAQ) Landing</strong> yang mengisi section Pusat Bantuan di halaman depan.',
@@ -205,7 +205,7 @@ $panduan = [
     [
         'icon' => 'download', 'badge' => 'Ekspor',
         'judul' => 'Export Rekap CSV',
-        'role'  => ['operator', 'admin', 'bendahara'],
+        'role'  => ['operator', 'bendahara'],
         'langkah' => [
             'Dari dashboard operator, klik <em>Export Rekap SPMB</em> atau <em>Export Rekap Seleksi</em>.',
             'Atau akses langsung: <code>export.php?rekap=pendaftar|seleksi|pembayaran</code>.',
@@ -215,9 +215,9 @@ $panduan = [
     [
         'icon' => 'task_alt', 'badge' => 'F11',
         'judul' => 'Kesiapan Rilis & Kesiapan Operasional (Fase 11)',
-        'role'  => ['operator', 'admin'],
+        'role'  => ['operator'],
         'langkah' => [
-            'Buka menu <strong>Kesiapan Rilis</strong> di sidebar (hanya operator/admin) — halaman baca-saja, tidak mengubah apa pun.',
+            'Buka menu <strong>Kesiapan Rilis</strong> di sidebar (hanya operator) — halaman baca-saja, tidak mengubah apa pun.',
             'Skor kesiapan menampilkan persentase item siap; status: <em>SIAP</em> / <em>SIAP DENGAN CATATAN</em> / <em>BELUM SIAP</em> (ada item gagal).',
             '13 item checklist: URL publik (APP_URL), rekening & WA panitia (deteksi nomor contoh), jadwal+S&amp;K, akun staf terkunci, hash password lemah, skema terbaru, metode bayar, kunci Midtrans, token Fonnte, izin folder, umur cadangan DB, notif WA uang masuk ke bendahara.',
             'Kartu <strong>Antrean Operasional</strong>: berkas disubmit, revisi siswa, bukti bayar menunggu, siap kirim akun — angka mengikuti data per tahap.',
@@ -228,20 +228,21 @@ $panduan = [
     [
         'icon' => 'inventory_2', 'badge' => 'F11',
         'judul' => 'Instrumen Rilis: Cadangan, Paket & Seed Demo',
-        'role'  => ['operator', 'admin', 'bendahara'],
+        'role'  => ['operator', 'bendahara'],
         'langkah' => [
             'Cadangan database: <code>php tools/backup-db.php</code> → file gzip di <code>storage/backup/db/</code> (rotasi otomatis 14 hari). Password DB lewat environment — tidak pernah dicetak ke layar.',
             'Cadangan berkas: <code>php tools/backup-berkas.php</code> → zip <code>storage/dokumen</code> ke <code>storage/backup/</code> (rotasi 14 hari).',
             'Jadwalkan harian (Windows <code>schtasks</code> / cron Linux) — contoh perintah &amp; skrip pemulihan ada di <code>docs/DEPLOY.md</code> bagian Cadangan.',
             'Paket rilis: <code>php tools/buat-paket.php</code> → zip di <code>dist/</code> yang sudah diverifikasi bebas <code>.env</code>, <code>.git</code>, dan folder data pribadi — aman diunggah ke hosting.',
             'Data demo UAT lengkap (11 tahap, berkas, ujian): <code>mysql -u root db_spmb_mualimku &lt; database/seed_demo.sql</code> — idempoten; hapus dengan <code>seed_demo_hapus.sql</code>.',
-            'Semua tools di atas <strong>CLI-only</strong> — dibuka lewat browser akan 404.',
+            '<strong>Migrasi di hosting tanpa SSH</strong>: buat berkas <code>storage/.izinkan-migrasi</code> berisi kode acak lewat File Manager → buka <code>/tools/migrasi-web.php</code> → masukkan kode → Jalankan. Nama database otomatis dari <code>.env</code> server (baris <code>USE</code> pada berkas SQL dilompati, jadi tidak ada yang perlu disunting), hasilnya diverifikasi ulang per objek, dan penandanya terhapus sendiri bila selesai. Berkas SQL yang dijalankan hanya yang didaftarkan di alat ini — bukan seluruh folder <code>database/migrations/</code>.',
+            'Semua tools di atas <strong>CLI-only</strong> — dibuka lewat browser akan ditolak (403/404). Dua pengecualian sekali-pakai: <code>set-password-web.php</code> dan <code>migrasi-web.php</code>, keduanya tetap 404 selama berkas penanda <code>storage/.izinkan-*</code> tidak dibuat.',
         ],
     ],
     [
         'icon' => 'school', 'badge' => 'Portal Siswa',
         'judul' => 'Portal Siswa',
-        'role'  => ['operator', 'admin', 'kepsek'],
+        'role'  => ['operator'],
         'langkah' => [
             'Siswa login → portal menampilkan status verifikasi, seleksi, dan penempatan.',
             'Biodata bisa diedit selama belum TERVERIFIKASI/DITOLAK.',
@@ -258,7 +259,7 @@ $panduan = [
 
     <div class="flex items-center gap-2 flex-wrap">
       <span class="badge badge-blue">Panduan</span>
-      <span class="badge badge-gray">Untuk <?= e($me['role'] === 'bendahara' ? 'Bendahara' : ($me['role'] === 'kepsek' ? 'Kepala Sekolah' : 'Operator')) ?></span>
+      <span class="badge badge-gray">Untuk <?= e($me['role'] === 'bendahara' ? 'Bendahara' : 'Operator') ?></span>
     </div>
     <h1 class="mt-3 text-2xl sm:text-[28px] font-bold tracking-tight text-ink-900">Panduan & SOP SPMB</h1>
     <p class="mt-1.5 text-sm text-ink-500 max-w-3xl">
@@ -269,9 +270,6 @@ $panduan = [
       <?php foreach ($panduan as $p):
         /* Sembunyikan bagian yang tidak relevan untuk role bendahara. */
         if ($me['role'] === 'bendahara' && !in_array('bendahara', $p['role'], true)) {
-            continue;
-        }
-        if ($me['role'] === 'kepsek' && !in_array('kepsek', $p['role'], true)) {
             continue;
         }
         /* Jangkar per judul agar dashboard lain bisa menautkan bagian spesifik,
@@ -303,18 +301,20 @@ $panduan = [
         <li>Semua aksi POST dilindungi CSRF — jangan refresh halaman hasil ekspor/submit tanpa sengaja (bisa tampil "Formulir kedaluwarsa").</li>
         <li>Username siswa dibuat otomatis & unik. Password di-hash bcrypt — tidak bisa dilihat ulang; reset terbaik via CLI: <code>php tools/set-password.php &lt;username&gt;</code> (min 10 karakter, konfirmasi 2×).</li>
         <li><strong>Alamat masuk dipisah</strong> — pihak sekolah cukup satu alamat: <a href="<?= url('admin/') ?>" target="_blank" rel="noopener"><code><?= e(url('admin/')) ?></code></a> (Login Pihak Sekolah; otomatis lanjut ke dashboard bila sudah login), murid/orang tua lewat tombol <em>Login Siswa</em> di halaman SPMB. Bagikan alamat <code>/admin</code> hanya ke panitia — alamat pendek hanya memudahkan diingat, BUKAN pembatas akses: setiap halaman staf tetap dijaga <code>require_role()</code>.</li>
-        <li><strong>GANTI PASSWORD DEFAULT sebelum go-live</strong> — akun operator/bendahara/kepsek WAJIB diganti. Buka menu <a href="<?= url('app/staf/ganti-password.php') ?>">Ganti Password</a> di sidebar. Setelah reset via CLI, staf akan otomatis dipaksa ganti password saat login berikutnya. Password lama/daftarnya tidak lagi disimpan di file <code>hak akses.txt</code> (sudah dihapus).</li>
-        <li><strong>Seed SQL mengunci akun staf</strong> (Fase 11): hash <code>'!LOCKED'</code> — tidak bisa login apa pun password lama. Setelah impor database, jalankan <code>php tools/set-password.php &lt;username&gt;</code> untuk operator/bendahara/kepsek (dan <code>siswa</code> bila memakai <code>database/seed_demo.sql</code>) sebelum login pertama. <strong>Hosting tanpa SSH (cPanel):</strong> buat penanda <code>storage/.izinkan-set-password</code> via File Manager, buka <code>/tools/set-password-web.php</code>, selesaikan, lalu hapus penanda + berkas tool (Fase 12).</li>
+        <li><strong>GANTI PASSWORD DEFAULT sebelum go-live</strong> — akun operator/bendahara WAJIB diganti. Buka menu <a href="<?= url('app/staf/ganti-password.php') ?>">Ganti Password</a> di sidebar. Setelah reset via CLI, staf akan otomatis dipaksa ganti password saat login berikutnya. Password lama/daftarnya tidak lagi disimpan di file <code>hak akses.txt</code> (sudah dihapus).</li>
+        <li><strong>Seed SQL mengunci akun staf</strong> (Fase 11): hash <code>'!LOCKED'</code> — tidak bisa login apa pun password lama. Setelah impor database, jalankan <code>php tools/set-password.php &lt;username&gt;</code> untuk operator/bendahara (dan <code>siswa</code> bila memakai <code>database/seed_demo.sql</code>) sebelum login pertama. <strong>Hosting tanpa SSH (cPanel):</strong> buat penanda <code>storage/.izinkan-set-password</code> via File Manager, buka <code>/tools/set-password-web.php</code>, selesaikan — penanda terhapus sendiri dan alat kembali 404 (berkas tool boleh tetap ada).</li>
         <li><strong>Token bayar disimpan ter-hash</strong> (Fase 11): kolom <code>pay_token_hash</code> (SHA-256, UNIQUE); registrasi ulang dengan data sama <strong>merotasi</strong> token sehingga tautan bayar lama mati. Token mentah hanya tampil 3 tempat: halaman sukses registrasi, pesan WA registrasi, dan hasil tombol <em>Buka Halaman Pembayaran</em> di cek-status — pengunjung langsung dialihkan, tokennya tidak pernah ditampilkan di halaman. Karena token baru menggantikan yang lama, tautan bayar di pesan WA ikut mati setelah tombol itu dipakai.</li>
         <li><strong>Rate anti-penyalahgunaan</strong> (Fase 11): ganti password maks 5 percobaan / 15 menit (per IP &amp; per akun); kirim WA registrasi maks 3 / nomor / 24 jam; cek-status dihitung per IP (10 / 15 menit) dan lintas IP per nomor pendaftaran (5 / 15 menit, format <code>REG-YYYY-NNNN</code> saja yang dihitung, hanya saat gagal); tombol tautan bayar maks 8 / jam per pendaftar dan hanya untuk hasil pencarian yang terbukti di sesi ini.</li>
         <li><strong>Isi pesan WA instruksi bayar otomatis mengikuti metode aktif</strong> — jika transfer/QRIS/gateway dimatikan di Pengaturan, langkahnya ikut hilang; selama teksnya belum disunting, kalimat penutupnya: "Setelah pembayaran terverifikasi, akun dan password dikirim lewat WhatsApp." Seluruh kalimat WA ke wali (tujuh pesan) bisa diubah di <strong>Pengaturan → Teks Pesan WhatsApp ke Calon Murid</strong> (seksi 7b) — baris yang dibiarkan sama dengan bawaan tetap memakai kalimat aplikasi.</li>
-        <li><strong>Cadangan data wajib dijadwalkan</strong> sebelum go-live: <code>php tools/backup-db.php</code> &amp; <code>php tools/backup-berkas.php</code> (retensi 14 hari) — lihat skrip <code>schtasks</code>/cron di <code>docs/DEPLOY.md</code>. Tool rilis (buat-paket, backup, cek-proyek, cek-statis, retensi, uji-*) bersifat CLI-only (akses web = 404); satu-satunya tool ber-web adalah <code>set-password-web.php</code> yang hanya aktif selama penanda <code>.izinkan-set-password</code> ada (Fase 12).</li>
+        <li><strong>Cadangan data wajib dijadwalkan</strong> sebelum go-live: <code>php tools/backup-db.php</code> &amp; <code>php tools/backup-berkas.php</code> (retensi 14 hari) — lihat skrip <code>schtasks</code>/cron di <code>docs/DEPLOY.md</code>. Tool rilis (buat-paket, backup, cek-proyek, cek-statis, retensi, uji-*) bersifat CLI-only (lewat web ditolak: 403 dari <code>tools/.htaccess</code>, 404 dari penjaga <code>PHP_SAPI</code>); yang boleh lewat web hanya dua tool sekali-pakai — <code>set-password-web.php</code> dan <code>migrasi-web.php</code> — dan keduanya tetap 404 selama penanda <code>storage/.izinkan-*</code> tidak ada (Fase 12).</li>
+        <li><strong>Pergantian tahun ajaran:</strong> buka menu <a href="<?= url('app/operator/persiapan.php') ?>">Persiapan Tahun Ajaran</a> — di satu halaman ada saklar <em>Buka/Tutup Pendaftaran</em>, ringkasan musim, daftar periksa <em>Siap buka SPMB</em>, arsip massal tahun lama (pratinjau + konfirmasi + cadangan otomatis), gandakan rombel tahun baru, dan tombol cadangan database. Jangan hapus baris pendaftar (pembayaran &amp; dokumen ikut terhapus lewat cascade) — arsip bersifat lunak dan bisa dipulihkan per pendaftar dari Data Pendaftar → filter Terarsip. Prosedur lengkap: <code>docs/DEPLOY.md</code> §3c.</li>
+        <li><strong>Menjalankan migrasi di hosting tanpa SSH</strong>: buat penanda <code>storage/.izinkan-migrasi</code> berisi kode acak (≥8 karakter) lewat File Manager, buka <code>/tools/migrasi-web.php</code>, masukkan kode yang sama, lalu <em>Jalankan</em>. Nama database diambil dari <code>.env</code> server itu sendiri — berkas migrasi <strong>tidak</strong> perlu disunting (baris <code>USE</code> dilompati, sehingga tidak ada lagi kasus "import sukses" padahal yang diubah database yang salah). Setiap target diverifikasi ulang lewat <code>information_schema</code> sebelum dinyatakan selesai; setelah semuanya hijau penanda terhapus sendiri dan alat kembali 404. Prosedur lengkap: <code>docs/DEPLOY.md</code> §1.6a.</li>
         <li>API key Fonnte & Midtrans dibaca dari file <code>.env</code> di root proyek (di luar tree publik); bila kosong, fallback ke kolom CMS. <strong>Midtrans opsional</strong> — tanpa key, pembayaran tetap jalan via transfer manual / QRIS. <code>APP_URL</code> di <code>.env</code> dipakai untuk tautan WhatsApp absolut (kosongkan saat localhost).</li>
-        <li>Berkas pribadi (KK, akta, bukti transfer) disimpan di <code>storage/dokumen/</code> dan hanya bisa diakses lewat gate PHP yang mengecek login & kepemilikan — hanya operator/admin/bendahara (kepsek melihat hasil & pengumuman lewat halamannya sendiri).</li>
+        <li>Berkas pribadi (KK, akta, bukti transfer) disimpan di <code>storage/dokumen/</code> dan hanya bisa diakses lewat gate PHP yang mengecek login &amp; kepemilikan — hanya operator/bendahara.</li>
         <li><strong>Retensi berkas pribadi</strong> (Fase 12): aktifkan &amp; atur batas bulan di menu <a href="<?= url('app/operator/retensi.php') ?>">Retensi Data</a>; eksekusi (web/CLI) hanya menghapus berkas fisik + jejak dokumen — baris pendaftar &amp; hasil seleksi tetap ada, semua tercatat di <code>retensi_log</code>. Draf kebijakan utk tinjauan sekolah/hukum: <code>docs/KEBIJAKAN-DATA.md</code>.</li>
         <li>Rate limiting login (max 5 gagal / 15 menit / IP) disimpan di tabel <code>login_attempts</code> — tidak bisa dilewati dengan membuang cookie.</li>
         <li><strong>MySQL XAMPP sering crash</strong> — setelah restart, jalankan <code>mysql -u root &lt; database/fix-grants.sql</code> agar user <code>spmb_app</code> tetap punya hak akses.</li>
-        <li><strong>Petugas &amp; Hak Akses</strong>: menu grup Pengaturan Sistem untuk mengubah nama/jabatan petugas, mengganti username, menambah petugas baru (operator/bendahara/kepsek), serta mereset password petugas yang lupa. Password hasil reset bersifat <strong>sementara</strong> — petugas wajib menggantinya pada login pertama. Akun yang sedang dipakai login sendiri hanya bisa diubah nama &amp; jabatannya, dan minimal satu akun operator harus tetap aktif. Bila <em>belum ada</em> akun yang bisa login (semua masih <code>!LOCKED</code>), gunakan <code>php tools/set-password.php &lt;username&gt;</code>.</li>
+        <li><strong>Petugas &amp; Hak Akses</strong>: menu grup Pengaturan Sistem untuk mengubah nama/jabatan petugas, mengganti username, menambah petugas baru (operator/bendahara), serta mereset password petugas yang lupa. Password hasil reset bersifat <strong>sementara</strong> — petugas wajib menggantinya pada login pertama. Akun yang sedang dipakai login sendiri hanya bisa diubah nama &amp; jabatannya, dan minimal satu akun operator harus tetap aktif. Bila <em>belum ada</em> akun yang bisa login (semua masih <code>!LOCKED</code>), gunakan <code>php tools/set-password.php &lt;username&gt;</code>.</li>
         <li>Pendaftar yang DITOLAK otomatis tidak muncul di rekap seleksi & ekspor.</li>
         <li>Hubungi admin sistem bila ada kendala teknis atau perlu reset database ke seed awal.</li>
       </ul>

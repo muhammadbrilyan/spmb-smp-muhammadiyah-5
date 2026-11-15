@@ -145,14 +145,15 @@ flowchart TD
   nomor pendaftaran tetap **wajib 4 digit WA** (pencarian nama dihapus; nomor pendaftaran berjalan
   sehingga tetap dijaga). Revisi 2026-11-06.
 - Hasil seleksi & penempatan disembunyikan publik/portal sampai diumumkan
-- Revisi 2026-11-02: persetujuan kepala sekolah (`app/kepsek/penetapan.php`) menjadi
-  **catatan resmi**, bukan gerbang — operator menerbitkan langsung; gerbang yang tersisa
-  hanya CSRF + konfirmasi LULUS tanpa kelas. WA pengumuman kini memuat tautan hasil
-  `app/siswa/hasil.php` (absolut via `url_abs()`)
+- Revisi 2026-11-02: persetujuan atasan menjadi **catatan resmi**, bukan gerbang —
+  operator menerbitkan langsung; gerbang yang tersisa hanya CSRF + konfirmasi
+  LULUS tanpa kelas. WA pengumuman kini memuat tautan hasil
+  `app/siswa/hasil.php` (absolut via `url_abs()`). Halaman persetujuan beserta
+  role-nya dihapus 2026-11-13.
 - Halaman: `app/operator/pengumuman.php`, API `app/api/pengumuman-wa.php`
 
 ### Fase 9 — Panduan & Dokumentasi
-- `app/operator/panduan.php` — SOP per peran (operator, bendahara, kepsek)
+- `app/operator/panduan.php` — SOP per peran (operator, bendahara)
 - `.env.example` — template kredensial (DB, Fonnte, Midtrans)
 - `docs/ALUR-PENDAFTARAN.md` — dokumen ini
 
@@ -167,8 +168,8 @@ flowchart TD
   `app/spmb/cek-status.php` (dan untuk tombol tautan bayar per pendaftar); pesan "tidak ditemukan"
   & "4 digit salah" **seragam** (anti-enumerasi); `pengumuman_status()` **read-only**
   (finalisasi tahap di jalur operator).
-- **Bagian D**: `url_abs()` + env `APP_URL` untuk tautan WhatsApp; **kepsek tidak lagi**
-  boleh mengunduh berkas pribadi di `app/api/dokumen.php`.
+- **Bagian D**: `url_abs()` + env `APP_URL` untuk tautan WhatsApp; akses berkas
+  pribadi di `app/api/dokumen.php` dibatasi operator/bendahara.
 
 ### Fase 11 — Tutup Sisa Fase 10 + Kesiapan Produksi
 
@@ -208,7 +209,7 @@ flowchart TD
   (read-only): APP_URL, placeholder rekening/WA panitia, jadwal+S&K, akun `!LOCKED`,
   hash lemah, skema `pay_token_hash`, metode bayar, kunci Midtrans, token Fonnte,
   izin storage, umur cadangan DB, notif WA operator; skor % + kartu antrean operasional
-  per tahap; menu sidebar **Kesiapan Rilis** (operator/admin).
+  per tahap; menu sidebar **Kesiapan Rilis** (operator).
 
 ## Alur Lengkap (Fase per Fase)
 
@@ -246,8 +247,8 @@ SOP per peran. `.env.example`. Dokumen ini. Uji e2e manual lengkap.
 Pembayaran online bersifat **opsional** (toggle + paksa-0 server-side). Reset password
 via `php tools/set-password.php <username>` (CLI) → paksa ganti password. Unggah bukti
 bayar publik: CSRF + `pay_token` + metode/tahap aktif. Cek-status: pesan seragam +
-rate per no_pendaftaran. Tautan WA absolut (`url_abs`/`APP_URL`). Kepsek keluar dari
-gate unduh berkas pribadi.
+rate per no_pendaftaran. Tautan WA absolut (`url_abs`/`APP_URL`). Akses berkas
+pribadi dibatasi operator/bendahara.
 
 ### Fase 11 — Tutup Sisa Fase 10 + Kesiapan Produksi
 Token bayar disimpan sebagai **hash UNIQUE** (`pay_token_hash`) — registrasi idempoten
@@ -271,7 +272,7 @@ kartu antrean operasional — read-only.
 - **Rate limit**: login (5/15mnt/IP), cek-status (10/15mnt/IP **+** 5/15mnt/no_pendaftaran),
   tombol tautan bayar (8/jam/pendaftar), unggah bukti (10/menit/IP, tiap percobaan dicatat).
 - **Gate dokumen**: akses file berkas via `app/api/dokumen.php` — login + kepemilikan;
-  **hanya operator/admin/bendahara** (kepsek tidak lagi ikut, Fase 10).
+  **hanya operator/bendahara**.
 - **Akun**: `hak akses.txt` dihapus dari disk; reset password via CLI `tools/set-password.php`
   (min 10 karakter, set `wajib_ganti_password=1`); staf wajib ganti password sebelum halaman lain.
 - **Unggah bukti bayar**: CSRF wajib, `pay_token` regex `^[a-f0-9]{64}$`, metode/tahap dicek server-side,
@@ -298,9 +299,9 @@ kartu antrean operasional — read-only.
 - **Alat rilis**: `tools/buat-paket.php`, `tools/cek-proyek.php`, `tools/backup-db.php`,
   `tools/backup-berkas.php` — semuanya **CLI-only** (akses web 404); zip rilis diverifikasi bebas
   `.env`/rahasia; cadangan DB & berkas otomatis rotasi 14 hari.
-- **Kesiapan produksi**: `app/operator/kesiapan.php` (operator/admin) — checklist read-only 18 item
+- **Kesiapan produksi**: `app/operator/kesiapan.php` (operator) — checklist read-only 18 item
   + skor + antrean operasional; pemeriksaan teknis lanjutan via `php tools/cek-proyek.php`.
-- **Arsip pendaftaran (soft archive)**: operator/admin menandai pendaftar selesai/batal lewat
+- **Arsip pendaftaran (soft archive)**: operator menandai pendaftar selesai/batal lewat
   `pendaftar_arsip()` (`arsip_at`/`arsip_alasan`/`arsip_oleh`) — **tidak ada hapus permanen** karena
   7 FK cascade ke pembayaran, dokumen, koreksi, peserta ujian, seleksi & penempatan kelas.
   Akun siswa ikut `is_active=0` sementara dan dipulihkan oleh `pendaftar_pulih()`. Semua antrean kerja,
@@ -317,7 +318,6 @@ login sampai diatur via CLI. Akun siswa demo hanya di `database/seed_demo.sql`
 |------|----------|---------------|------------------|
 | Operator | `operator` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php operator` |
 | Bendahara | `bendahara` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php bendahara` |
-| Kepsek | `kepsek` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php kepsek` |
 | Siswa (demo, seed_demo.sql) | `siswa` | `!LOCKED` (tidak bisa login) | `php tools/set-password.php siswa` |
 
 Setelah reset, akun staf akan **dipaksa Ganti Password** pada login berikutnya.

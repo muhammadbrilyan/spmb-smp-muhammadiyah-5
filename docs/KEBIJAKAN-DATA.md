@@ -51,7 +51,7 @@ Kebijakan retensi **dapat diaktifkan dan diatur** oleh operator sekolah
 - Eksekusi selalu tercatat pada tabel `retensi_log` (waktu, nomor pendaftaran, alasan, jumlah berkas, operator).
 - Retensi **tidak pernah** menghapus: nilai seleksi, penempatan kelas, data akademik, atau baris pendaftar.
 - Eksekusi massal melalui CLI (`tools/retensi.php`) memerlukan retensi diaktifkan terlebih dahulu dan secara bawaan hanya bersifat simulasi (*dry-run*).
-- **Arsip Pendaftaran (soft archive)**: operator/admin dapat menandai satu pendaftar sebagai
+- **Arsip Pendaftaran (soft archive)**: operator dapat menandai satu pendaftar sebagai
   terarsip lewat halaman *Data Pendaftar* (alasan wajib dicatat; maks 10 aksi/jam per operator).
   Pendaftar terarsip keluar dari seluruh antrean kerja, statistik, ekspor, penghitung publik,
   halaman cek-status, dan tautan bayar; akun portal siswanya dinonaktifkan sementara

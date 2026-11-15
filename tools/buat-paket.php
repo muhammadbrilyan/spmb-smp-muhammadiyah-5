@@ -77,8 +77,10 @@ function paket_kecuali_awalan_nama()
 function paket_kecuali_polosan()
 {
     /* '.env' di sini menangkap .env pada level mana pun;
-       .env.example TIDAK cocok (fnmatch butuh kecocokan penuh). */
-    return ['.env', 'tmp-*', '*.bak', '*.old', '*.swp', '*~', '*.log'];
+       .env.example TIDAK cocok (fnmatch butuh kecocokan penuh).
+       '.izinkan-*' = penanda alat sekali-pakai (set-password-web, migrasi-web):
+       isinya kode pembuka alat itu, jadi tak boleh ikut paket. */
+    return ['.env', '.izinkan-*', 'tmp-*', '*.bak', '*.old', '*.swp', '*~', '*.log'];
 }
 
 function paket_dikecualikan($rel)
@@ -239,6 +241,7 @@ function paket_mode_uji()
     /* Umpan: file yang TIDAK BOLEH masuk zip. */
     $umpan = [
         '.env'                              => "RAHASIA=1\n",
+        'storage/.izinkan-migrasi'          => "KODEPENANDA",
         'storage/backup/x.sql.gz'           => "cadangan",
         'storage/dokumen/rahasia.pdf'       => "berkas pribadi",
         'hak akses.txt'                     => "daftar password",

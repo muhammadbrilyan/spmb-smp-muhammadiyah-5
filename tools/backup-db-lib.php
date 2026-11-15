@@ -15,8 +15,13 @@
 
 function backup_gagal($pesan)
 {
-    fwrite(STDERR, 'GAGAL: ' . $pesan . "\n");
-    exit(1);
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, 'GAGAL: ' . $pesan . "\n");
+        exit(1);
+    }
+    /* Dipanggil juga dari halaman CMS (cadangan sekali klik): jangan keluar
+     * diam-diam — lempar pesan agar pemanggil bisa menampilkannya. */
+    throw new RuntimeException($pesan);
 }
 
 /** Cari mysqldump — null bila tidak tersedia / shell dinonaktifkan. */

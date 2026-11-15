@@ -9,9 +9,7 @@
  * Aturan akses:
  *   - Siswa  : hanya boleh mengunduh berkas miliknya sendiri
  *              (dicek lewat tabel dokumen / pembayaran).
- *   - Staff  : operator/admin/bendahara saja boleh semua berkas terdaftar.
- *              [Fase 10] Kepsek TIDAK termasuk — berkas pribadi (KK, akta,
- *              ijazah, bukti transfer) di luar kewenangannya diunduh.
+ *   - Staff  : operator/bendahara saja boleh semua berkas terdaftar.
  *   - Tamu   : ditolak.
  */
 require_once __DIR__ . '/../../includes/config.php';
@@ -26,7 +24,7 @@ if (!is_logged_in()) {
 
 $nama  = basename((string) ($_GET['f'] ?? ''));
 $role  = user_role();
-$staff = in_array($role, ['operator', 'admin', 'bendahara'], true);
+$staff = in_array($role, ['operator', 'bendahara'], true);
 
 if ($nama === '' || !preg_match('/^(dok|bukti)-[A-Za-z0-9._-]+\.(jpg|jpeg|png|pdf)$/i', $nama)) {
     http_response_code(400);

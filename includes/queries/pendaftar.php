@@ -114,7 +114,7 @@ function stat_operator()
 }
 
 /**
- * CORONG PPDB untuk laporan Kepala Sekolah — satu query, enam tahap.
+ * CORONG PPDB untuk laporan — satu query, enam tahap.
  *
  * Tiap tahap dihitung BEBAS (bukan selisih tahap sebelumnya) karena jalur
  * pendaftar tidak selalu berurutan: misalnya akun bisa aktif sebelum biodata
@@ -452,39 +452,15 @@ function lulus_belum_ditempatkan_jumlah()
  * ================================================================== */
 
 /**
- * Daftar pendaftar untuk halaman Data Pendaftar / Verifikasi Data.
- * @param string $status    filter status_verifikasi ('' = semua)
- * @param string $cari      pencarian nama / no. pendaftaran / NISN / WA
- * @param string $id        ambil satu pendaftar saja (dipakai halaman detail)
- * @param string $tampilkan 'aktif' (default, tanpa terarsip) | 'arsip' | 'semua'
- * @return array<int,array>
+ * Susun klausa WHERE untuk daftar/antrean pendaftar.
+ * Dipakai bersama oleh pengambilan baris (dengan LIMIT) dan hitungan total
+ * agar filter tidak pernah berbeda antara halaman dan pagination.
+ *
+ * @return array{0:string,1:array}
  */
-function pendaftar_data_antrean($status = '', $cari = '', $id = '', $tampilkan = 'aktif')
+function pendaftar_data_filter($status = '', $cari = '', $id = '', $tampilkan = 'aktif')
 {
-    $sql = "SELECT p.id, p.user_id, p.no_pendaftaran, p.nama_siswa, p.nisn, p.jenis_kelamin,
-                   p.tempat_lahir, p.tanggal_lahir, p.alamat, p.asal_sekolah, p.jalur,
-                   p.is_luar_daerah, p.kelas_id, p.status_verifikasi, p.status_seleksi,
-                   p.status_akun, p.tahap, p.catatan_verifikasi_data, p.data_verified_at,
-                   p.data_verified_by, p.arsip_at, p.arsip_alasan, p.arsip_oleh, p.created_at, p.updated_at,
-                   u.username, o.nama_orang_tua, o.no_whatsapp, o.pekerjaan,
-                   o.penghasilan_bulanan, o.alamat AS alamat_orang_tua,
-                   k.kode AS kelas_kode, k.nama_kelas, vu.nama_lengkap AS data_verifier,
-                   au.nama_lengkap AS arsip_petugas,
-                   (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.file_url IS NOT NULL) AS dok_terisi,
-                   (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.status_verifikasi = 'VERIFIED') AS dok_verifikasi,
-                   (SELECT COUNT(*) FROM jenis_dokumen j WHERE j.aktif = 1 AND j.wajib = 1) AS dok_wajib,
-                   (SELECT COALESCE(SUM(b.nominal),0) FROM pembayaran b
-                     WHERE b.pendaftar_id = p.id
-                       AND b.status IN ('VERIFIED','LUNAS','ANGSURAN_1','ANGSURAN_2')) AS bayar_verified,
-                   (SELECT COUNT(*) FROM pembayaran b WHERE b.pendaftar_id = p.id AND b.status = 'PENDING') AS bayar_pending
-              FROM pendaftar p
-         LEFT JOIN users u ON u.id = p.user_id
-         LEFT JOIN users vu ON vu.id = p.data_verified_by
-         LEFT JOIN users au ON au.id = p.arsip_oleh
-         LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
-         LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
-         LEFT JOIN kelas k ON k.id = pk.kelas_id
-             WHERE 1 = 1";
+    $sql = ' WHERE 1 = 1';
     $params = [];
 
     $tampilkan = strtolower(trim((string) $tampilkan));
@@ -516,11 +492,70 @@ function pendaftar_data_antrean($status = '', $cari = '', $id = '', $tampilkan =
         $params[] = $like;
     }
 
+    return [$sql, $params];
+}
+
+/**
+ * Daftar pendaftar untuk halaman Data Pendaftar / Verifikasi Data.
+ * @param string $status    filter status_verifikasi ('' = semua)
+ * @param string $cari      pencarian nama / no. pendaftaran / NISN / WA
+ * @param string $id        ambil satu pendaftar saja (dipakai halaman detail)
+ * @param string $tampilkan 'aktif' (default, tanpa terarsip) | 'arsip' | 'semua'
+ * @param int    $limit     jumlah baris (0 = tanpa batas, perilaku lama)
+ * @param int    $offset    baris awal (dipakai bila $limit > 0)
+ * @return array<int,array>
+ */
+function pendaftar_data_antrean($status = '', $cari = '', $id = '', $tampilkan = 'aktif', $limit = 0, $offset = 0)
+{
+    [$where, $params] = pendaftar_data_filter($status, $cari, $id, $tampilkan);
+    $tampilkan = strtolower(trim((string) $tampilkan));
+
+    $sql = "SELECT p.id, p.user_id, p.no_pendaftaran, p.nama_siswa, p.nisn, p.jenis_kelamin,
+                   p.tempat_lahir, p.tanggal_lahir, p.alamat, p.asal_sekolah, p.jalur,
+                   p.is_luar_daerah, p.kelas_id, p.status_verifikasi, p.status_seleksi,
+                   p.status_akun, p.tahap, p.catatan_verifikasi_data, p.data_verified_at,
+                   p.data_verified_by, p.arsip_at, p.arsip_alasan, p.arsip_oleh, p.created_at, p.updated_at,
+                   u.username, o.nama_orang_tua, o.no_whatsapp, o.pekerjaan,
+                   o.penghasilan_bulanan, o.alamat AS alamat_orang_tua,
+                   k.kode AS kelas_kode, k.nama_kelas, vu.nama_lengkap AS data_verifier,
+                   au.nama_lengkap AS arsip_petugas,
+                   (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.file_url IS NOT NULL) AS dok_terisi,
+                   (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.status_verifikasi = 'VERIFIED') AS dok_verifikasi,
+                   (SELECT COUNT(*) FROM jenis_dokumen j WHERE j.aktif = 1 AND j.wajib = 1) AS dok_wajib,
+                   (SELECT COALESCE(SUM(b.nominal),0) FROM pembayaran b
+                     WHERE b.pendaftar_id = p.id
+                       AND b.status IN ('VERIFIED','LUNAS','ANGSURAN_1','ANGSURAN_2')) AS bayar_verified,
+                   (SELECT COUNT(*) FROM pembayaran b WHERE b.pendaftar_id = p.id AND b.status = 'PENDING') AS bayar_pending
+              FROM pendaftar p
+         LEFT JOIN users u ON u.id = p.user_id
+         LEFT JOIN users vu ON vu.id = p.data_verified_by
+         LEFT JOIN users au ON au.id = p.arsip_oleh
+         LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
+         LEFT JOIN penempatan_kelas pk ON pk.pendaftar_id = p.id
+         LEFT JOIN kelas k ON k.id = pk.kelas_id"
+        . $where;
+
     $sql .= $tampilkan === 'arsip'
         ? ' ORDER BY p.arsip_at DESC, p.no_pendaftaran'
         : " ORDER BY FIELD(p.status_verifikasi, 'MENUNGGU_VERIFIKASI', 'DRAFT', 'TERVERIFIKASI', 'DITOLAK'),
                       p.updated_at DESC, p.no_pendaftaran";
+
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ' . max(1, (int) $limit) . ' OFFSET ' . max(0, (int) $offset);
+    }
     return q_all($sql, $params) ?: [];
+}
+
+/** Jumlah baris yang cocok dengan filter daftar pendaftar. */
+function pendaftar_data_jumlah($status = '', $cari = '', $id = '', $tampilkan = 'aktif')
+{
+    [$where, $params] = pendaftar_data_filter($status, $cari, $id, $tampilkan);
+    return (int) (q_col(
+        'SELECT COUNT(DISTINCT p.id) FROM pendaftar p
+           LEFT JOIN orang_tua o ON o.pendaftar_id = p.id'
+        . $where,
+        $params
+    ) ?: 0);
 }
 
 /** Detail satu pendaftar untuk verifikasi data. */
@@ -761,5 +796,101 @@ function pendaftar_pulih($pendaftar_id)
     }
 
     return ['ok' => true, 'pesan' => 'Pendaftaran ' . $pend['no_pendaftaran'] . ' dipulihkan ke antrean aktif.'];
+}
+
+/* ==================================================================
+ * ARSIP MASSAL PER TAHUN (CLI tools/arsip-tahun.php)
+ *
+ * Tahun pendaftaran dibaca dari nomor REG-YYYY-NNNN — tabel pendaftar
+ * tidak menyimpan kolom tahun. Dipakai saat pergantian tahun ajaran:
+ * baris pendaftar, pembayaran, dan dokumen TETAP utuh (bukan penghapusan).
+ * ================================================================== */
+
+/** Jumlah pendaftar aktif per tahun, urut tahun. */
+function pendaftar_arsip_tahun_ringkasan()
+{
+    return q_all(
+        "SELECT SUBSTRING(no_pendaftaran, 5, 4) AS tahun, COUNT(*) AS jumlah
+           FROM pendaftar
+          WHERE arsip_at IS NULL AND no_pendaftaran REGEXP '^REG-[0-9]{4}-'
+          GROUP BY tahun
+          ORDER BY tahun"
+    ) ?: [];
+}
+
+/** Kandidat arsip massal satu tahun (belum terarsip). */
+function pendaftar_arsip_tahun_kandidat($tahun)
+{
+    $tahun = preg_replace('/\D+/', '', (string) $tahun);
+    if (strlen($tahun) !== 4) {
+        return [];
+    }
+    return q_all(
+        'SELECT id, no_pendaftaran, nama_siswa, user_id, created_at
+           FROM pendaftar
+          WHERE arsip_at IS NULL AND no_pendaftaran LIKE ?
+          ORDER BY no_pendaftaran',
+        ['REG-' . $tahun . '-%']
+    ) ?: [];
+}
+
+/**
+ * Arsipkan semua pendaftar aktif satu tahun dalam satu transaksi.
+ * Akun portal siswa ikut dinonaktifkan (sama seperti pendaftar_arsip()).
+ *
+ * @return array{ok:bool,pesan:string,jumlah:int,akun:int}
+ */
+function pendaftar_arsip_tahun($tahun, $alasan, $oleh = null)
+{
+    $tahun  = preg_replace('/\D+/', '', (string) $tahun);
+    $alasan = mb_substr(trim((string) $alasan), 0, 255);
+    if (strlen($tahun) !== 4) {
+        return ['ok' => false, 'pesan' => 'Tahun tidak valid.', 'jumlah' => 0, 'akun' => 0];
+    }
+    if (mb_strlen($alasan) < 5) {
+        return ['ok' => false, 'pesan' => 'Alasan pengarsipan wajib diisi (minimal 5 karakter).', 'jumlah' => 0, 'akun' => 0];
+    }
+
+    $kandidat = pendaftar_arsip_tahun_kandidat($tahun);
+    if (!$kandidat) {
+        return ['ok' => true, 'pesan' => 'Tidak ada pendaftar aktif pada tahun ' . $tahun . '.', 'jumlah' => 0, 'akun' => 0];
+    }
+
+    $userIds = array_values(array_unique(array_filter(array_column($kandidat, 'user_id'))));
+    $db = db();
+    if ($db === null) {
+        return ['ok' => false, 'pesan' => 'Database tidak aktif.', 'jumlah' => 0, 'akun' => 0];
+    }
+
+    try {
+        $db->beginTransaction();
+        $u = $db->prepare(
+            'UPDATE pendaftar SET arsip_at = NOW(), arsip_alasan = ?, arsip_oleh = ?
+              WHERE arsip_at IS NULL AND no_pendaftaran LIKE ?'
+        );
+        $u->execute([$alasan, $oleh !== null && $oleh !== '' ? $oleh : null, 'REG-' . $tahun . '-%']);
+        $jumlah = $u->rowCount();
+
+        $akun = 0;
+        foreach (array_chunk($userIds, 500) as $potong) {
+            $tanda = implode(',', array_fill(0, count($potong), '?'));
+            $s = $db->prepare("UPDATE users SET is_active = 0 WHERE is_active = 1 AND id IN ($tanda)");
+            $s->execute($potong);
+            $akun += $s->rowCount();
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if (method_exists($db, 'rollBack')) {
+            try { $db->rollBack(); } catch (Throwable $x) { /* abaikan */ }
+        }
+        return ['ok' => false, 'pesan' => 'Gagal mengarsipkan tahun ' . $tahun . '.', 'jumlah' => 0, 'akun' => 0];
+    }
+
+    return [
+        'ok'     => true,
+        'pesan'  => $jumlah . ' pendaftar tahun ' . $tahun . ' diarsipkan.',
+        'jumlah' => (int) $jumlah,
+        'akun'   => (int) $akun,
+    ];
 }
 

@@ -2,13 +2,12 @@
 /* ==================================================================
  * PENGUMUMAN HASIL SELEKSI (Fase 8).
  * - Umumkan sekarang / jadwalkan / batalkan jadwal.
- * - Operator menerbitkan langsung; persetujuan kepala sekolah (menu
- *   Persetujuan Hasil di portal kepsek) hanya menjadi catatan, bukan gerbang.
+ * - Operator menerbitkan langsung tanpa gerbang persetujuan lain.
  * - Peringatan bila ada LULUS belum ditempatkan kelas.
  * - Kirim WA batch 10/request via AJAX + "kirim ulang yang gagal".
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -113,7 +112,7 @@ require_once __DIR__ . '/../../includes/partials/topbar.php';
       <div class="rounded-2xl border border-line p-4">
         <p class="text-[12px] text-ink-500 uppercase tracking-wide">Target WA Pengumuman</p>
         <p class="mt-1.5 font-bold text-ink-900 text-2xl"><?= (int) $jmlTargetWa ?></p>
-        <p class="text-[12px] text-ink-400 mt-0.5">pendaftar dengan status seleksi + nomor WA</p>
+        <p class="text-[12px] text-ink-400 mt-0.5">pendaftar belum menerima WA pengumuman siklus ini</p>
       </div>
       <div class="rounded-2xl border border-line p-4">
         <p class="text-[12px] text-ink-500 uppercase tracking-wide">Integritas Data</p>
@@ -181,7 +180,8 @@ require_once __DIR__ . '/../../includes/partials/topbar.php';
     <span class="badge badge-green">Notifikasi WA</span>
     <h2 class="mt-2 text-lg font-bold text-ink-900">Kirim WA Pengumuman</h2>
     <p class="mt-1 text-sm text-ink-500">
-      Batch 10 nomor per request. Pastikan hasil sudah diumumkan sebelum mengirim agar isi pesan sesuai.
+      Batch 10 nomor per request. Penerima yang sudah berhasil dikirimi pada siklus pengumuman ini
+      dilewati otomatis, jadi menekan tombol dua kali atau memuat ulang halaman tidak mengirim pesan ganda.
     </p>
 
     <div class="mt-5 flex flex-wrap gap-3 items-center">
@@ -247,25 +247,27 @@ require_once __DIR__ . '/../../includes/partials/topbar.php';
     busy = true;
     btnKirim.disabled = true; btnUlang.disabled = true;
     res.classList.add('hidden');
-    var offset = 0, totalTerkirim = 0, totalGagal = 0, total = 0;
+    var totalTerkirim = 0, totalGagal = 0, totalAwal = 0, putaran = 0;
 
     function batch() {
       var fd = new FormData();
       fd.append('_csrf', csrf);
       fd.append('mode', mode);
-      fd.append('offset', offset);
+      /* Server selalu memproses sisa teratas; target sudah terkirim
+         disaring, jadi offset tetap 0. */
+      fd.append('offset', '0');
       fetch('<?= url('app/api/pengumuman-wa.php') ?>', { method: 'POST', body: fd, credentials: 'same-origin' })
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (!d.ok) { selesai(0, 0, d.pesan || 'Terjadi kesalahan.'); busy = false; btnKirim.disabled = false; btnUlang.disabled = false; return; }
-          totalTerkirim += d.terkirim; totalGagal += d.gagal; total = d.total;
-          tampil(totalTerkirim, totalGagal, d.sisa, total);
-          if (d.selesai) {
+          if (putaran === 0) { totalAwal = d.total; }
+          totalTerkirim += d.terkirim; totalGagal += d.gagal;
+          tampil(totalTerkirim, totalGagal, d.sisa, totalAwal);
+          if (d.selesai || ++putaran > 200) {
             selesai(totalTerkirim, totalGagal, d.pesan || 'Selesai.');
             busy = false; btnKirim.disabled = false; btnUlang.disabled = false;
             return;
           }
-          offset += 10;
           batch();
         })
         .catch(function () { selesai(0, 0, 'Koneksi gagal. Coba lagi.'); busy = false; btnKirim.disabled = false; btnUlang.disabled = false; });

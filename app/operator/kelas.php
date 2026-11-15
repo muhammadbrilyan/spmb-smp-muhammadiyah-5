@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -20,8 +20,8 @@ $bodyClass = 'bg-canvas text-ink-700 antialiased';
 function kelas_pesan_galat($kode, $nama, $kuota, $kecualiId = null)
 {
     $pesan = [];
-    if ($kode === '' || !preg_match('/^[A-Z0-9]{1,10}$/', $kode)) {
-        $pesan[] = 'Kode kelas wajib diisi (huruf/angka, maks 10 karakter), contoh: 7A.';
+    if ($kode === '' || !preg_match('/^[A-Z0-9][A-Z0-9-]{0,9}$/', $kode)) {
+        $pesan[] = 'Kode kelas wajib diisi (huruf/angka/tanda hubung, maks 10 karakter), contoh: 7A atau 71-27.';
     }
     if ($nama === '') {
         $pesan[] = 'Nama kelas wajib diisi.';

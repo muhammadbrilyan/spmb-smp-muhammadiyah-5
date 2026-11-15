@@ -263,7 +263,7 @@ html.gelap .rail-pemisah { background-color: #334155; }
   tr { break-inside: avoid; }
 }
 
-/* Laporan siap cetak (rekap keuangan & pembiayaan kepsek): kertas A4 dan
+/* Laporan siap cetak (rekap keuangan): kertas A4 dan
  * elemen yang hanya boleh muncul di atas kertas. */
 @page { size: A4; margin: 14mm 12mm; }
 .hanya-cetak { display: none; }

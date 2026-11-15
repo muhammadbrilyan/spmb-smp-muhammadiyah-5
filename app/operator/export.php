@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin', 'bendahara']);
+require_role(['operator', 'bendahara']);
 
 $jenis = $_GET['rekap'] ?? '';
 $izin  = ['pendaftar', 'seleksi', 'pembayaran'];

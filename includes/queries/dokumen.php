@@ -344,10 +344,9 @@ function dokumen_submit($pendaftar_id)
  * ================================================================== */
 
 /** Antrean: pendaftar dengan tahap BERKAS_DISUBMIT + ringkasan berkas. */
-function berkas_antrean()
+function berkas_antrean($limit = 0, $offset = 0)
 {
-    $baris = q_all(
-        "SELECT p.id, p.no_pendaftaran, p.nama_siswa, p.asal_sekolah, p.tahap, p.created_at,
+    $sql = "SELECT p.id, p.no_pendaftaran, p.nama_siswa, p.asal_sekolah, p.tahap, p.created_at,
                 o.no_whatsapp, o.nama_orang_tua,
                 (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.file_url IS NOT NULL) AS jml_berkas,
                 (SELECT COUNT(*) FROM dokumen d WHERE d.pendaftar_id = p.id AND d.status_verifikasi = 'VERIFIED') AS jml_lolos,
@@ -356,9 +355,21 @@ function berkas_antrean()
       LEFT JOIN orang_tua o ON o.pendaftar_id = p.id
           WHERE p.tahap IN ('BERKAS_DISUBMIT', 'BERKAS_REVISI')
             AND p.arsip_at IS NULL
-       ORDER BY FIELD(p.tahap,'BERKAS_DISUBMIT','BERKAS_REVISI'), p.no_pendaftaran"
-    );
+       ORDER BY FIELD(p.tahap,'BERKAS_DISUBMIT','BERKAS_REVISI'), p.no_pendaftaran";
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ' . max(1, (int) $limit) . ' OFFSET ' . max(0, (int) $offset);
+    }
+    $baris = q_all($sql);
     return $baris ?: [];
+}
+
+/** Jumlah pendaftar dalam antrean verifikasi berkas. */
+function berkas_antrean_jumlah()
+{
+    return (int) (q_col(
+        "SELECT COUNT(*) FROM pendaftar p
+          WHERE p.tahap IN ('BERKAS_DISUBMIT', 'BERKAS_REVISI') AND p.arsip_at IS NULL"
+    ) ?: 0);
 }
 
 /** Detail berkas satu pendaftar untuk halaman verifikasi. */

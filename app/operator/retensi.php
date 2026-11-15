@@ -1,6 +1,6 @@
 <?php
 /**
- * Fase 12 E2 — Retensi Data & Privasi (operator/admin).
+ * Fase 12 E2 — Retensi Data & Privasi (operator).
  *
  * Menghapus BUKAN baris pendaftar, melainkan berkas pribadi fisik
  * (KK, akta, bukti transfer) di storage/dokumen beserta jejaknya di
@@ -9,7 +9,7 @@
  */
 require_once __DIR__ . '/../../includes/config.php';
 
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $me = current_user();
 $USER_LOGIN = [

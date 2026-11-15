@@ -14,7 +14,7 @@
 require_once __DIR__ . '/../../includes/config.php';
 /* Gerbang disamakan dengan halaman antreannya — dahulu ikut membuka
  * 'operator' padahal aksinya menulis keputusan bayar (kewenangan bendahara). */
-require_role(['bendahara', 'admin']);
+require_role(['bendahara']);
 
 /* Kembali ke antrean pembayaran (lihat app/bendahara/pembayaran.php).
  * ?saringan dari form dipertahankan selama nilainya dikenal — selain itu

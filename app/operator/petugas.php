@@ -1,6 +1,6 @@
 <?php
 /* ==================================================================
- * PETUGAS & HAK AKSES — kelola akun staf (operator, bendahara, kepsek).
+ * PETUGAS & HAK AKSES — kelola akun staf (operator, bendahara).
  *
  * Operator dapat: mengubah nama/jabatan/username petugas, menyetel
  * password sementara (wajib diganti saat login pertama), menambah petugas
@@ -10,7 +10,7 @@
  * (lihat menu Generate Akun).
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
-require_role(['operator', 'admin']);
+require_role(['operator']);
 
 $meId = (string) (current_user()['id'] ?? '');
 
@@ -55,9 +55,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 . 'Login memakai akun lain untuk mengubahnya.'];
         } else {
             $hasil = petugas_ubah_identitas($id, $_POST['nama'] ?? '', $_POST['jabatan'] ?? '', $_POST['username'] ?? null);
-            if ($hasil['ok'] && $salahDiri) {
-                $hasil['pesan'] .= ' Nama di menu berubah setelah Anda login ulang.';
-            }
         }
     } elseif ($aksi === 'password') {
         if ($salahDiri) {
@@ -106,7 +103,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
 $flash    = flash();
 $petugas  = petugas_semua();
 $roleKatalog = petugas_role_katalog();
-$toneRole = ['operator' => 'blue', 'bendahara' => 'green', 'kepsek' => 'amber'];
+$toneRole = ['operator' => 'blue', 'bendahara' => 'green'];
 $gantiDiri = url('app/staf/ganti-password.php');
 $waBendahara = petugas_notif_wa_bhawa();
 ?>

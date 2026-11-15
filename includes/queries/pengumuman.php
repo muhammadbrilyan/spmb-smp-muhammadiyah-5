@@ -201,51 +201,97 @@ function pengumuman_pesan_wa($pendaftarId)
 }
 
 /**
- * Kirim WA pengumuman batch (maks $limit per request) via AJAX.
+ * Kunci siklus pengumuman untuk dedupe WA.
+ * Berubah saat operator mengumumkan ulang, sehingga siklus baru boleh
+ * mengirim lagi tanpa terhalang log siklus sebelumnya.
+ * @return string
+ */
+function pengumuman_wa_siklus()
+{
+    $waktu = q_col('SELECT hasil_diumumkan_pada FROM pengaturan_sekolah WHERE id = 1');
+    return $waktu ? (string) $waktu : 'belum-diumumkan';
+}
+
+/** Escape nilai ref agar aman dipakai di pola LIKE. */
+function pengumuman_wa_ref_like($ref)
+{
+    return '%"ref":"' . addcslashes((string) $ref, '%_\\') . '"%';
+}
+
+/**
+ * Kirim WA pengumuman batch (maks 10 nomor per request) via AJAX.
  *
- * @param int    $offset offset target (mode 'kirim')
- * @param string $mode   'kirim' (semua target) | 'ulang_gagal' (hanya yang wa_log PENGUMUMAN GAGAL)
+ * Idempoten: penerima yang sudah punya log PENGUMUMAN berstatus TERKIRIM
+ * untuk siklus pengumuman aktif dilewati, sehingga menekan tombol dua kali
+ * atau memuat ulang halaman tidak mengirim pesan ganda. Karena himpunan
+ * target menyusut tiap batch, penomoran selalu mulai dari baris pertama
+ * (offset diabaikan) dan klien berhenti saat `sisa` = 0.
+ *
+ * @param int    $offset dipertahankan untuk kompatibilitas; selalu 0
+ * @param string $mode   'kirim' (target belum terkirim) | 'ulang_gagal'
  * @return array{ok:bool,terkirim:int,gagal:int,sisa:int,total:int,selesai:bool,pesan:string}
  */
 function pengumuman_wa_batch($offset = 0, $mode = 'kirim')
 {
     $limit = 10;
-    $offset = max(0, (int) $offset);
     $mode = ($mode === 'ulang_gagal') ? 'ulang_gagal' : 'kirim';
 
     if (!db_aktif()) {
         return ['ok' => false, 'terkirim' => 0, 'gagal' => 0, 'sisa' => 0, 'total' => 0, 'selesai' => true, 'pesan' => 'Database tidak aktif.'];
     }
 
-    $where = "p.status_seleksi IN ('LULUS','TIDAK_LULUS') AND p.arsip_at IS NULL";
+    $siklus = pengumuman_wa_siklus();
+    $syaratRef = "wl.tipe = 'PENGUMUMAN' AND wl.tujuan = o.no_whatsapp
+                  AND wl.respons LIKE CONCAT('%\"ref\":\"', p.id, '@', ?, '\"%')";
+    $sudahTerkirim = "EXISTS (SELECT 1 FROM wa_log wl WHERE {$syaratRef} AND wl.status = 'TERKIRIM')";
+
+    $where = "p.status_seleksi IN ('LULUS','TIDAK_LULUS') AND p.arsip_at IS NULL
+              AND o.no_whatsapp <> '' AND NOT ({$sudahTerkirim})";
+    $params = [$siklus];
     if ($mode === 'ulang_gagal') {
-        $where .= " AND EXISTS (SELECT 1 FROM wa_log wl2 WHERE wl2.tipe = 'PENGUMUMAN' AND wl2.status = 'GAGAL' AND wl2.tujuan = o.no_whatsapp) ";
+        $where .= " AND EXISTS (SELECT 1 FROM wa_log wg WHERE wg.tipe = 'PENGUMUMAN'
+                                  AND wg.tujuan = o.no_whatsapp AND wg.status = 'GAGAL'
+                                  AND wg.respons LIKE CONCAT('%\"ref\":\"', p.id, '@', ?, '\"%'))";
+        $params[] = $siklus;
     }
 
     $total = (int) (q_col(
-        "SELECT COUNT(*) FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id WHERE {$where}"
+        "SELECT COUNT(*) FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id WHERE {$where}",
+        $params
     ) ?: 0);
 
     $baris = q_all(
-        "SELECT p.id FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id
+        "SELECT p.id, o.no_whatsapp FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id
           WHERE {$where}
           ORDER BY p.no_pendaftaran ASC
-          LIMIT {$limit} OFFSET {$offset}",
-        []
+          LIMIT {$limit}",
+        $params
     ) ?: [];
 
     $terkirim = 0;
     $gagal = 0;
     foreach ($baris as $b) {
+        $ref = (string) $b['id'] . '@' . $siklus;
         $pesan = pengumuman_pesan_wa($b['id']);
-        $p = q_all('SELECT o.no_whatsapp FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id WHERE p.id = ? LIMIT 1', [$b['id']]);
-        $tujuan = $p ? ($p[0]['no_whatsapp'] ?? '') : '';
+        $tujuan = (string) ($b['no_whatsapp'] ?? '');
+
+        /* Cek ulang tepat sebelum kirim: dua tab/request bersamaan tidak
+         * boleh mengirim pesan yang sama dua kali. */
+        $sudah = (int) (q_col(
+            "SELECT COUNT(*) FROM wa_log WHERE tipe = 'PENGUMUMAN' AND status = 'TERKIRIM'
+              AND tujuan = ? AND respons LIKE ?",
+            [$tujuan, pengumuman_wa_ref_like($ref)]
+        ) ?: 0);
+        if ($sudah > 0) {
+            continue;
+        }
+
         if ($pesan === '' || $tujuan === '') {
             $gagal++;
             continue;
         }
         $r = wa_kirim($tujuan, $pesan);
-        wa_log_catat($tujuan, 'PENGUMUMAN', $r);
+        wa_log_catat($tujuan, 'PENGUMUMAN', $r, $ref);
         if (!empty($r['ok'])) {
             $terkirim++;
         } else {
@@ -253,7 +299,7 @@ function pengumuman_wa_batch($offset = 0, $mode = 'kirim')
         }
     }
 
-    $sisa = max(0, $total - ($offset + count($baris)));
+    $sisa = max(0, $total - count($baris));
     $selesai = $sisa === 0;
     return [
         'ok' => true,
@@ -267,13 +313,24 @@ function pengumuman_wa_batch($offset = 0, $mode = 'kirim')
 }
 
 /**
- * Jumlah pendaftar ber-status_seleksi LULUS/TIDAK_LULUS yang punya nomor WA.
+ * Jumlah pendaftar ber-status_seleksi LULUS/TIDAK_LULUS yang punya nomor WA
+ * dan BELUM menerima WA pengumuman pada siklus aktif.
  * @return int
  */
 function pengumuman_target_wa_jumlah()
 {
+    if (!db_aktif()) {
+        return 0;
+    }
+    $siklus = pengumuman_wa_siklus();
     return (int) (q_col(
         "SELECT COUNT(*) FROM pendaftar p JOIN orang_tua o ON o.pendaftar_id = p.id
-          WHERE p.status_seleksi IN ('LULUS','TIDAK_LULUS') AND p.arsip_at IS NULL AND o.no_whatsapp <> ''"
+          WHERE p.status_seleksi IN ('LULUS','TIDAK_LULUS') AND p.arsip_at IS NULL
+            AND o.no_whatsapp <> ''
+            AND NOT EXISTS (SELECT 1 FROM wa_log wl
+                             WHERE wl.tipe = 'PENGUMUMAN' AND wl.status = 'TERKIRIM'
+                               AND wl.tujuan = o.no_whatsapp
+                               AND wl.respons LIKE CONCAT('%\"ref\":\"', p.id, '@', ?, '\"%'))",
+        [$siklus]
     ) ?: 0);
 }

@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../includes/config.php';
 /* Hak akses: bendahara (keputusan 2026-10-28 — verifikasi pembayaran adalah
  * kewenangan bendahara, operator hanya melihat status) + admin sebagai
  * superuser yang dipakai halaman keuangan lainnya. */
-require_role(['bendahara', 'admin']);
+require_role(['bendahara']);
 
 $me = current_user();
 $USER_LOGIN = [
@@ -64,9 +64,6 @@ $badgeRole  = 'BENDAHARA';
 require __DIR__ . '/../../includes/partials/sidebar.php';
 
 $breadcrumbs = ['Portal Akademik' => null, 'SPMB' => null, 'Dashboard Bendahara' => null];
-$pageActions = '
-  <a href="' . url('app/bendahara/rekap.php') . '" class="btn btn-outline hidden md:inline-flex">' . icon('print') . ' Cetak Rekap Keuangan</a>
-';
 require __DIR__ . '/../../includes/partials/topbar.php';
 
 $flash = flash();
@@ -132,12 +129,6 @@ foreach ($deret as $d) {
             <?= icon('send') ?> Kirim Pengingat Jatuh Tempo
           </button>
         </form>
-        <a href="<?= url('app/bendahara/pembayaran.php') ?>" class="btn btn-primary shadow-drop whitespace-nowrap">
-          <?= icon('fact_check') ?> Verifikasi Pembayaran
-          <?php if ($stat['menunggu'] > 0): ?>
-            <span class="ml-1 rounded-full bg-white/25 px-2 py-0.5 text-[12px] font-bold"><?= (int) $stat['menunggu'] ?></span>
-          <?php endif; ?>
-        </a>
       </div>
     </div>
 
@@ -286,12 +277,11 @@ foreach ($deret as $d) {
                   <th class="th text-right">Terverifikasi</th>
                   <th class="th text-right">Menunggu</th>
                   <th class="th text-right">Ditolak</th>
-                  <th class="th text-right">Total Tagihan</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-line-soft">
                 <?php if (!$perJenis): ?>
-                  <tr><td class="td text-center text-ink-400" colspan="5">Belum ada transaksi pembayaran.</td></tr>
+                  <tr><td class="td text-center text-ink-400" colspan="4">Belum ada transaksi pembayaran.</td></tr>
                 <?php endif; ?>
                 <?php foreach ($perJenis as $kode => $j): ?>
                   <tr class="tr-hover">
@@ -310,7 +300,6 @@ foreach ($deret as $d) {
                     <td class="td text-right">
                       <span class="badge badge-red"><?= (int) $j['jml_tolak'] ?></span>
                     </td>
-                    <td class="td text-right font-semibold text-ink-700"><?= (int) $j['jml'] ?> baris</td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
@@ -399,43 +388,6 @@ foreach ($deret as $d) {
                 <?= badge($a['status'], $a['tone']) ?>
               </div>
             <?php endforeach; ?>
-          </div>
-        </section>
-
-        <!-- Tautan kerja -->
-        <section class="card p-5">
-          <h2 class="font-bold text-ink-900 text-sm">Ruang Kerja Bendahara</h2>
-          <div class="mt-3 space-y-2">
-            <a href="<?= url('app/bendahara/pembayaran.php') ?>" class="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 hover:border-primary/40 hover:bg-canvas">
-              <span class="flex items-center gap-2.5 min-w-0">
-                <span class="icon-box bg-primary-light text-primary shrink-0"><?= icon('fact_check', 'text-[18px]') ?></span>
-                <span class="min-w-0">
-                  <span class="block text-[13px] font-semibold text-ink-900">Verifikasi Pembayaran</span>
-                  <span class="block text-[11px] text-ink-500">Setujui atau tolak bukti transfer</span>
-                </span>
-              </span>
-              <?= icon('arrow_forward', 'text-[16px] text-ink-400') ?>
-            </a>
-            <a href="<?= url('app/bendahara/rekap.php') ?>" class="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 hover:border-primary/40 hover:bg-canvas">
-              <span class="flex items-center gap-2.5 min-w-0">
-                <span class="icon-box bg-primary-light text-primary shrink-0"><?= icon('print', 'text-[18px]') ?></span>
-                <span class="min-w-0">
-                  <span class="block text-[13px] font-semibold text-ink-900">Cetak Rekap Keuangan</span>
-                  <span class="block text-[11px] text-ink-500">Laporan siap cetak / PDF</span>
-                </span>
-              </span>
-              <?= icon('arrow_forward', 'text-[16px] text-ink-400') ?>
-            </a>
-            <a href="<?= url('app/operator/panduan.php#verifikasi-pembayaran-bendahara') ?>" class="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 hover:border-primary/40 hover:bg-canvas">
-              <span class="flex items-center gap-2.5 min-w-0">
-                <span class="icon-box bg-primary-light text-primary shrink-0"><?= icon('support_agent', 'text-[18px]') ?></span>
-                <span class="min-w-0">
-                  <span class="block text-[13px] font-semibold text-ink-900">Panduan SOP Keuangan</span>
-                  <span class="block text-[11px] text-ink-500">Prosedur verifikasi &amp; penolakan</span>
-                </span>
-              </span>
-              <?= icon('arrow_forward', 'text-[16px] text-ink-400') ?>
-            </a>
           </div>
         </section>
 

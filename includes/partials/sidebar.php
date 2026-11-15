@@ -6,7 +6,7 @@
  *            Jadwal & Kartu Ujian, Hasil Seleksi, Akademik, Pengaturan Akun).
  * - Operator: operasional SPMB (pendaftar, verifikasi, jadwal, tes, seleksi,
  *            penempatan, pengumuman, pengaturan).
- * - Bendahara/Kepsek: menu monitoring yang sudah ada tetap dipertahankan.
+ * - Bendahara: menu monitoring yang sudah ada tetap dipertahankan.
  *
  * Variabel dari halaman pemanggil: $activeMenu (menu aktif), $badgeRole (opsional).
  */
@@ -18,7 +18,7 @@ $badgeRole  = $badgeRole ?? strtoupper((string) $role);
  * badge menu "Notifikasi" di sidebar, dan menu itu kini sudah dihapus untuk
  * operator (aksesnya lewat ikon notifikasi di topbar). Perhitungannya dipindah
  * ke bawah, tepat setelah $navGrup terbentuk, sehingga HANYA dijalankan bila
- * role itu benar-benar punya menu notifikasi (bendahara/kepsek).
+ * role itu benar-benar punya menu notifikasi (bendahara).
  * Polling pembaruan jumlahnya juga pindah ke topbar. */
 
 /** Helper satu baris menu. */
@@ -66,31 +66,34 @@ if ($role === 'siswa') {
      *   2. Panduan & SOP       -> ikon bantuan "?" di topbar
      *   3. Pendaftaran Manual  -> tombol CTA tepat di atas daftar menu ini
      *   4. Ganti Password      -> link di bagian bawah sidebar
-     * Hasil: 18 -> 14 menu dalam 4 grup; kartu profil & link bantuan di footer
-     * ikut dihapus agar sidebar lebih ringkas (keduanya sudah ada di topbar). */
+     * Hasil: 18 -> 12 menu dalam 4 grup; kartu profil & link bantuan di footer
+     * ikut dihapus agar sidebar lebih ringkas (keduanya sudah ada di topbar).
+     * Menu "Verifikasi Pendaftar" juga tidak berdiri sendiri: ruang verifikasinya
+     * dibuka dari "Data Pendaftar" (tombol Ruang Verifikasi + Tombol Periksa per
+     * baris), sehingga daftar & pemeriksaan berada di satu pintu. Menu
+     * "Pengumuman Umum" (papan informasi bebas) dihapus seluruhnya 2026-11-13. */
     $navGrup = [
         [
             'judul' => 'Operasional SPMB',
             'menu'  => [
                 $menuItem('dashboard', 'dashboard', 'Dashboard Operasional', url('app/operator/index.php')),
                 $menuItem('pendaftar', 'group', 'Data Pendaftar', url('app/operator/pendaftar.php')),
-                $menuItem('verifikasi', 'fact_check', 'Verifikasi Pendaftar', url('app/operator/verifikasi.php')),
+                $menuItem('persiapan', 'event_repeat', 'Persiapan Tahun Ajaran', url('app/operator/persiapan.php')),
             ],
         ],
         [
             'judul' => 'Seleksi & Penerimaan',
             'menu'  => [
                 $menuItem('jadwal', 'event', 'Jadwal Ujian', url('app/operator/jadwal.php')),
-                $menuItem('seleksi', 'assignment', 'Data & Status Tes', url('app/operator/seleksi.php')),
+                $menuItem('seleksi', 'assignment', 'Hasil Seleksi', url('app/operator/seleksi.php')),
                 $menuItem('pengumuman', 'campaign', 'Pengumuman Hasil', url('app/operator/pengumuman.php')),
-                $menuItem('pengumuman-umum', 'notifications_active', 'Pengumuman Umum', url('app/operator/pengumuman-umum.php')),
             ],
         ],
         [
             'judul' => 'Pasca Penerimaan',
             'menu'  => [
-                $menuItem('penempatan', 'move_to_inbox', 'Penempatan Kelas', url('app/operator/penempatan.php')),
                 $menuItem('kelas', 'class', 'Manajemen Kelas', url('app/operator/kelas.php')),
+                $menuItem('penempatan', 'move_to_inbox', 'Penempatan Kelas', url('app/operator/penempatan.php')),
             ],
         ],
         [
@@ -115,25 +118,8 @@ if ($role === 'siswa') {
                 $menuItem('pembayaran', 'fact_check', 'Verifikasi Pembayaran', url('app/bendahara/pembayaran.php')),
                 /* Riwayat per calon memakai tabel tagihan yang sama dengan portal siswa. */
                 $menuItem('riwayat-bayar', 'receipt_long', 'Riwayat Pembayaran', url('app/bendahara/riwayat.php')),
-                $menuItem('rekap', 'account_balance_wallet', 'Rekap Keuangan', url('app/bendahara/rekap.php')),
                 $menuItem('notifikasi', 'notifications', 'Notifikasi', url('app/operator/notifikasi.php')),
                 $menuItem('panduan', 'support_agent', 'Panduan & SOP', url('app/operator/panduan.php')),
-                $menuItem('ganti-pass', 'lock', 'Ganti Password', url('app/staf/ganti-password.php')),
-            ],
-        ],
-    ];
-} elseif ($role === 'kepsek') {
-    $navGrup = [
-        [
-            'judul' => 'Monitoring',
-            'menu'  => [
-                $menuItem('dashboard', 'dashboard', 'Dashboard Kepala Sekolah', url('app/kepsek/index.php')),
-                $menuItem('penetapan', 'how_to_reg', 'Persetujuan Hasil', url('app/kepsek/penetapan.php')),
-                $menuItem('rekap', 'account_balance_wallet', 'Rekap Keuangan', url('app/bendahara/rekap.php')),
-                $menuItem('pembiayaan', 'request_quote', 'Pembiayaan & Tunggakan', url('app/kepsek/keuangan.php')),
-                $menuItem('notifikasi', 'notifications', 'Notifikasi', url('app/operator/notifikasi.php')),
-                $menuItem('panduan', 'support_agent', 'Panduan & SOP', url('app/operator/panduan.php')),
-                $menuItem('ganti-pass', 'lock', 'Ganti Password', url('app/staf/ganti-password.php')),
             ],
         ],
     ];
@@ -147,7 +133,7 @@ if ($role === 'siswa') {
 }
 
 /* [PERBAIKAN] Hitung jumlah notifikasi BELUM DIBACA hanya bila role itu punya
- * menu Notifikasi di sidebar (siswa/bendahara/kepsek). Untuk operator, menu
+ * menu Notifikasi di sidebar (siswa/bendahara). Untuk operator, menu
  * itu sudah dihapus — aksesnya lewat ikon notifikasi di topbar, jadi query ini
  * tidak perlu dijalankan di sini.
  * Siswa memakai notifikasi_siswa (per penerima), staf memakai papan operator. */
@@ -268,7 +254,10 @@ foreach ($navGrup as $gNav) {
        yang sama sudah tampil di topbar, dan kartu itu hanya memakan tinggi
        sidebar. Yang tersisa: dua aksi yang benar-benar dipakai. -->
   <div class="sidebar-kaki px-4 pb-4 pt-3 border-t border-line">
-    <?php if ($role !== 'siswa'): ?>
+    <?php /* Bendahara tidak punya menu Ganti Password: reset/permintaan ganti
+            password dilayani operator. Password pertama tetap wajib diganti
+            lewat redirect wajib_ganti_password saat login pertama. */ ?>
+    <?php if (!in_array($role, ['siswa', 'bendahara'], true)): ?>
       <a href="<?= url('app/staf/ganti-password.php') ?>" class="nav-link" title="Ganti Password">
         <span class="ms text-[20px] text-ink-400">lock</span> <span class="sidebar-teks">Ganti Password</span>
       </a>

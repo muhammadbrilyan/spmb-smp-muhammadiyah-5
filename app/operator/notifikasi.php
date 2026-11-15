@@ -7,7 +7,7 @@
  * ================================================================== */
 require_once __DIR__ . '/../../includes/config.php';
 
-require_role(['operator', 'admin', 'bendahara', 'kepsek']);
+require_role(['operator', 'bendahara']);
 
 /* --- Proses POST (PRG) --- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -50,7 +50,7 @@ $rows = q_all(
 
 /* Sasaran tombol "Buka" per tipe — tambah baris di sini saat tipe baru muncul.
  * `peran` menentukan siapa yang boleh membukanya: papan ini juga read-only
- * untuk bendahara/kepsek, jadi tanpa cek ini mereka dilontarkan require_role()
+ * untuk bendahara, jadi tanpa cek ini mereka dilontarkan require_role()
  * ke app/portal/index.php dan tidak tahu kenapa. */
 function notif_sasaran($tipe)
 {
@@ -59,18 +59,18 @@ function notif_sasaran($tipe)
         case 'PEMBAYARAN_GATEWAY_LUNAS':
         case 'PEMBAYARAN_GATEWAY_MASUK':
         case 'PENOLAKAN_BAYAR':
-            return ['tautan' => url('app/bendahara/pembayaran.php'), 'peran' => ['bendahara', 'admin'], 'punya' => 'Bendahara'];
+            return ['tautan' => url('app/bendahara/pembayaran.php'), 'peran' => ['bendahara'], 'punya' => 'Bendahara'];
         case 'BERKAS_DISUBMIT':
         case 'BERKAS_REVISI':
-            return ['tautan' => url('app/operator/verifikasi.php?tab=berkas'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
+            return ['tautan' => url('app/operator/verifikasi.php?tab=berkas'), 'peran' => ['operator'], 'punya' => 'Operator'];
         case 'VERIFIKASI_DATA':
-            return ['tautan' => url('app/operator/verifikasi.php?tab=data'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
+            return ['tautan' => url('app/operator/verifikasi.php?tab=data'), 'peran' => ['operator'], 'punya' => 'Operator'];
         case 'PENDAFTAR_BARU':
-            return ['tautan' => url('app/operator/pendaftar.php'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
+            return ['tautan' => url('app/operator/pendaftar.php'), 'peran' => ['operator'], 'punya' => 'Operator'];
         case 'KOREKSI_DATA':
             /* Tipe lama: antrean koreksi sudah ditutup, notifikasinya tetap
                bisa dibuka lewat antrean verifikasi data. */
-            return ['tautan' => url('app/operator/verifikasi.php?tab=data'), 'peran' => ['operator', 'admin'], 'punya' => 'Operator'];
+            return ['tautan' => url('app/operator/verifikasi.php?tab=data'), 'peran' => ['operator'], 'punya' => 'Operator'];
         default:
             return ['tautan' => '', 'peran' => [], 'punya' => ''];
     }
