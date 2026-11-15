@@ -596,6 +596,22 @@ di database uji — jangan memakai data asli.
 | Y11 | Kartu cadangan → **Buat Cadangan Sekarang** | File `.sql.gz` baru muncul di `storage/backup/db/`, flash menyebut jumlah tabel & ukuran; klik berulang >4×/jam ditolak |
 | Y12 | Buka halaman sebagai bendahara/siswa, atau POST tanpa CSRF | Bendahara/siswa → ditolak `require_role(['operator'])`; POST tanpa CSRF → "Formulir kedaluwarsa", tidak ada perubahan |
 
+## Z. Wajib Ganti Password Siswa Baru (2026-11-15)
+
+Akun siswa yang dibuat bendahara memakai password acak yang dikirim lewat WhatsApp. Sejak
+2026-11-15 akun itu ditandai `users.wajib_ganti_password = 1` dan portal menutup semua menu
+sampai password diganti. Reset password (tombol *Kirim Ulang*) memasang tanda yang sama.
+
+| # | Langkah | Diharapkan |
+|---|---------|-----------|
+| Z1 | Verifikasi pembayaran sampai akun siswa terbit, lalu cek `SELECT username, wajib_ganti_password FROM users WHERE role='siswa'` | Baris baru bernilai **1**; pesan WA kredensial memuat kalimat "Saat login pertama, sistem akan meminta Anda mengganti password bawaan ini" |
+| Z2 | Login pertama dengan username/password dari WA, lalu buka **dashboard** `app/siswa/index.php` (atau menu apa pun) | Dialihkan **302** ke `app/siswa/akun.php` dengan flash merah "Demi keamanan akun, ganti password bawaan terlebih dahulu…" — dashboard, Data Siswa, Keuangan, dan menu lain tidak terbuka |
+| Z3 | Halaman **Pengaturan Akun** dalam keadaan wajib ganti | Banner amber **"Wajib ganti password"** tampil di atas, tombol *Dashboard* disembunyikan, dan formulir ganti password tetap bisa dipakai (halaman ini satu-satunya yang lolos) |
+| Z4 | Ganti password dengan aturan yang sama (≥10 karakter, ≠ username, ≠ password lama) | Sukses → `wajib_ganti_password` menjadi **0**, sesi tetap login, dan pengguna langsung mendarat di dashboard dengan pesan "…semua menu kini terbuka". Setelah itu semua menu dapat dibuka (**200**) |
+| Z5 | Tekan **Kirim Ulang** kredensial di halaman Akun operator | Password baru dikirim dan `wajib_ganti_password` kembali **1** — login berikutnya dipaksa mengganti lagi |
+| Z6 | Buka `app/siswa/akun.php` langsung saat sesi siswa masih bertanda wajib | **200** (tidak loop); POST ganti password tanpa CSRF ditolak "Formulir kedaluwarsa" tanpa mengubah apa pun |
+| Z7 | Akun siswa lama yang tanda-nya 0 (mis. sebelum perubahan ini) | Tidak terpengaruh — hanya akun baru dan hasil reset yang dipaksa; peran sekolah tetap diarahkan ke `app/staf/ganti-password.php` |
+
 ## Skenario Penyalahgunaan (wajib lolos)
 
 | # | Serangan yang disimulasikan | Diharapkan |

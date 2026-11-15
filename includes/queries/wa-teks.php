@@ -74,7 +74,7 @@ function wa_teks_katalog()
                 . "No. REG : {no_pendaftaran}\n\n"
                 . "Username : {username}\n"
                 . "Password : {password}\n\n"
-                . "Silakan login di portal sekolah. Mohon simpan kredensial ini baik-baik dan segera ganti password setelah login pertama.\n\n"
+                . "Silakan login di portal sekolah. Saat login pertama, sistem akan meminta Anda mengganti password bawaan ini — simpan kredensial sementara ini baik-baik.\n\n"
                 . "{tahun_ajaran}\n{info_spp}\n"
                 . "Salam,\nPanitia SPMB {sekolah}",
         ],

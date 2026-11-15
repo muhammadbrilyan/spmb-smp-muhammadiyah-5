@@ -44,8 +44,11 @@ function akun_buat($pendaftar_id)
     }
     try {
         $db->beginTransaction();
-        $db->prepare('INSERT INTO users (id, username, password_hash, role, nama_lengkap, jabatan, is_active)
-                      VALUES (?, ?, ?, ?, ?, ?, 1)')
+        /* wajib_ganti_password = 1: password acak dikirim lewat WA, jadi portal
+         * memaksa siswa menggantinya saat login pertama (lihat
+         * wajib_ganti_password_cek()). */
+        $db->prepare('INSERT INTO users (id, username, password_hash, role, nama_lengkap, jabatan, is_active, wajib_ganti_password)
+                      VALUES (?, ?, ?, ?, ?, ?, 1, 1)')
             ->execute([$userId, $username, password_hash($password, PASSWORD_DEFAULT), 'siswa', $p['nama_siswa'], 'Calon Siswa SPMB']);
         $db->prepare("UPDATE pendaftar SET user_id = ?, status_akun = 'AKTIF' WHERE id = ?")
            ->execute([$userId, $pendaftar_id]);
@@ -65,7 +68,10 @@ function akun_buat($pendaftar_id)
 function akun_reset_password($user_id)
 {
     $password = password_acak();
-    $ok = q_exec('UPDATE users SET password_hash = ? WHERE id = ? AND role = ?', [password_hash($password, PASSWORD_DEFAULT), $user_id, 'siswa']);
+    $ok = q_exec(
+        'UPDATE users SET password_hash = ?, wajib_ganti_password = 1 WHERE id = ? AND role = ?',
+        [password_hash($password, PASSWORD_DEFAULT), $user_id, 'siswa']
+    );
     return $ok ? ['ok' => true, 'password' => $password] : ['ok' => false, 'pesan' => 'Gagal mereset password.'];
 }
 

@@ -10,6 +10,10 @@ $title = 'Pengaturan Akun';
 $desc  = 'Ubah password, lihat informasi akun, dan kelola sesi portal siswa.';
 require __DIR__ . '/_bootstrap.php';
 
+/* Akun baru (dan hasil reset) memakai password bawaan dari WhatsApp, jadi
+ * semua menu portal dialihkan ke sini sampai password diganti. */
+$wajibGanti = (int) (q_col('SELECT wajib_ganti_password FROM users WHERE id = ?', [$me['id']]) ?? 0) === 1;
+
 /* ==================================================================
  * PROSES POST — GANTI PASSWORD
  * ================================================================== */
@@ -66,8 +70,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 );
                 if ($ok) {
                     session_regenerate_id(true);
-                    flash('sukses', 'Password berhasil diganti. Gunakan password baru pada login berikutnya.');
-                    header('Location: ' . url('app/siswa/akun.php'));
+                    flash('sukses', $wajibGanti
+                        ? 'Password berhasil diganti. Selamat datang di portal siswa — semua menu kini terbuka.'
+                        : 'Password berhasil diganti. Gunakan password baru pada login berikutnya.');
+                    header('Location: ' . url($wajibGanti ? 'app/siswa/index.php' : 'app/siswa/akun.php'));
                     exit;
                 }
                 $galat[] = 'Gagal menyimpan password baru.';
@@ -116,12 +122,20 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           Kelola keamanan akun dan periksa kredensial yang terdaftar. Data profil lengkap ada pada menu Data Siswa.
         </p>
       </div>
-      <a href="<?= url('app/siswa/index.php') ?>" class="btn btn-outline shrink-0"><?= icon('arrow_back') ?> Dashboard</a>
+      <a href="<?= url('app/siswa/index.php') ?>" class="btn btn-outline shrink-0<?= $wajibGanti ? ' hidden' : '' ?>"><?= icon('arrow_back') ?> Dashboard</a>
     </div>
 
     <?php if ($flash): ?>
       <div class="mt-5 rounded-xl border <?= $flash['tipe'] === 'sukses' ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800' ?> px-4 py-3 text-sm">
         <?= e($flash['pesan']) ?>
+      </div>
+    <?php endif; ?>
+
+    <?php if ($wajibGanti): ?>
+      <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p class="font-semibold">Wajib ganti password</p>
+        <p class="mt-1">Akun ini masih memakai password bawaan yang dikirim lewat WhatsApp. Ganti sekarang —
+          menu portal lain belum bisa dibuka sampai password diganti.</p>
       </div>
     <?php endif; ?>
 

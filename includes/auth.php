@@ -301,14 +301,14 @@ function require_role($roles)
 
 /**
  * [Fase 10] Cek paksa ganti password.
- * Akun yang di-reset lewat tools/set-password.php ditandai
- * users.wajib_ganti_password = 1 — hanya halaman Ganti Password
- * yang boleh dibuka sampai pengguna sukses mengganti password.
- * Khusus role staf (portal siswa tidak memiliki alur ini).
+ * Akun baru/reset ditandai users.wajib_ganti_password = 1 — hanya halaman
+ * Ganti Password (staf) atau Pengaturan Akun (siswa) yang boleh dibuka
+ * sampai pengguna sukses mengganti password.
  */
 function wajib_ganti_password_cek()
 {
-    if (user_role() === null || user_role() === 'siswa') {
+    $role = user_role();
+    if ($role === null) {
         return;
     }
     $me = current_user();
@@ -317,9 +317,12 @@ function wajib_ganti_password_cek()
         return;
     }
 
-    /* Kecualikan halaman ganti-password itu sendiri agar tidak loop. */
+    /* Halaman ganti password per peran — dikecualikan agar redirect tidak
+     * berputar. Siswa memakai menu Pengaturan Akun karena halaman staf
+     * menolak peran siswa. */
+    $tujuan = $role === 'siswa' ? 'app/siswa/akun.php' : 'app/staf/ganti-password.php';
     $script = strtolower(str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''));
-    if (strpos($script, '/app/staf/ganti-password.php') !== false) {
+    if (strpos($script, '/' . $tujuan) !== false) {
         return;
     }
 
@@ -328,8 +331,10 @@ function wajib_ganti_password_cek()
         return;
     }
 
-    flash('error', 'Anda wajib mengganti password terlebih dahulu.');
-    header('Location: ' . url('app/staf/ganti-password.php'));
+    flash('error', $role === 'siswa'
+        ? 'Demi keamanan akun, ganti password bawaan terlebih dahulu sebelum membuka menu lain.'
+        : 'Anda wajib mengganti password terlebih dahulu.');
+    header('Location: ' . url($tujuan));
     exit;
 }
 
