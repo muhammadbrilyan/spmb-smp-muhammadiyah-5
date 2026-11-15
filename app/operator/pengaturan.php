@@ -965,11 +965,74 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </div>
     <?php endif; ?>
 
+    <style>
+      /* Navigasi lompat-seksi — halaman ini saja, tanpa menyentuh tailwind.css global. */
+      .nav-seksi {
+        position: sticky;
+        top: 64px;
+        z-index: 20;
+        margin: 1.25rem -1rem 0;
+        padding: .55rem 1rem;
+        background: rgba(255, 255, 255, .96);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid #E5E7EB;
+      }
+      @media (min-width: 640px) {
+        .nav-seksi { margin-left: -1.5rem; margin-right: -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
+      }
+      @media (min-width: 1024px) {
+        .nav-seksi { margin-left: -2rem; margin-right: -2rem; padding-left: 2rem; padding-right: 2rem; }
+      }
+      .nav-seksi-daftar { display: flex; gap: .375rem; overflow-x: auto; scrollbar-width: thin; padding-bottom: 1px; }
+      .nav-seksi-daftar::-webkit-scrollbar { height: 4px; }
+      .nav-seksi-daftar::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 999px; }
+      .nav-seksi a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        text-decoration: none;
+        font-size: 12.5px;
+        font-weight: 600;
+        line-height: 1.6;
+        padding: .3rem .75rem;
+        border-radius: 999px;
+        color: #4B5563;
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+      }
+      .nav-seksi a:hover { border-color: var(--color-primary); color: var(--color-primary); }
+      .nav-seksi a.aktif {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: var(--color-primary-contrast);
+      }
+      .pengaturan-seksi { scroll-margin-top: 124px; }
+    </style>
+
+    <nav class="nav-seksi no-print" aria-label="Navigasi bagian pengaturan">
+      <div class="nav-seksi-daftar" id="nav-seksi-daftar">
+        <a href="#sec-identitas">Identitas</a>
+        <a href="#sec-aset">Aset &amp; Tema</a>
+        <a href="#sec-teks-depan">Teks Depan</a>
+        <a href="#sec-faq">FAQ</a>
+        <a href="#sec-biaya">Biaya</a>
+        <a href="#sec-rekening">Rekening</a>
+        <a href="#sec-gelombang">Gelombang</a>
+        <a href="#sec-jalur">Jalur</a>
+        <a href="#sec-wa">WhatsApp</a>
+        <a href="#sec-teks-wa">Teks WA</a>
+        <a href="#sec-midtrans">Midtrans</a>
+        <a href="#sec-bayar-snk">Bayar &amp; S&amp;K</a>
+        <a href="#sec-berkas">Berkas</a>
+        <a href="#sec-petugas">Petugas</a>
+      </div>
+    </nav>
+
     <form method="post" enctype="multipart/form-data" action="<?= url('app/operator/pengaturan.php') ?>" class="mt-6 space-y-5">
       <?= csrf_field() ?>
 
       <!-- ============ 1. IDENTITAS & KONTAK ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-identitas" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Identitas &amp; Kontak Institusi</h2>
         <p class="mt-1 text-[13px] text-ink-500">Nama resmi, alamat, WhatsApp panitia, email institusi, dan tautan media sosial sekolah.</p>
 
@@ -1027,7 +1090,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- ============ 2. LOGO & WARNA TEMA ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-aset" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Aset Visual &amp; Warna Tema</h2>
         <p class="mt-1 text-[13px] text-ink-500">Logo dipakai di landing, login, sidebar, dan footer (maks 2 MB).</p>
 
@@ -1164,7 +1227,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- ============ 3. RUNNING TEXT & PROFIL ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-teks-depan" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Running Text &amp; Profil Singkat</h2>
         <div class="mt-5 space-y-4">
           <div>
@@ -1191,7 +1254,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- ============ 3b. FAQ LANDING ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-faq" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Tanya Jawab (FAQ) Landing</h2>
         <p class="mt-1 text-[13px] text-ink-500">
           Isi section <strong>Pusat Bantuan — Tanya Jawab Seputar SPMB</strong> di halaman depan.
@@ -1243,7 +1306,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- ============ 4. TARIF & BIAYA ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-biaya" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Rincian Biaya SPMB</h2>
         <p class="mt-1 text-[13px] text-ink-500">Angka di bawah dipakai langsung oleh landing page, portal siswa, dan dashboard bendahara.</p>
         <div class="mt-5 grid gap-4 sm:grid-cols-2">
@@ -1422,7 +1485,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- ============ 5. REKENING ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-rekening" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Rekening Bank Resmi Institusi</h2>
         <div class="mt-5 grid gap-4 sm:grid-cols-3">
           <div>
@@ -1441,7 +1504,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- ============ 6. JADWAL GELOMBANG ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-gelombang" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Jadwal Gelombang Pendaftaran</h2>
         <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
@@ -1474,7 +1537,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       <!-- ============ 6b. JALUR PENDAFTARAN ============ -->
       <?php $katalogJalur = jalur_katalog(); ?>
       <?php $aktifSekarang = array_keys(jalur_aktif()); ?>
-      <section class="card p-5 sm:p-6">
+      <section id="sec-jalur" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Jalur Pendaftaran Aktif</h2>
         <p class="mt-1 text-[13px] text-ink-500">Centang jalur yang ditampilkan di formulir pendaftaran calon siswa. Minimal satu jalur harus aktif.</p>
 
@@ -1494,7 +1557,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- ============ 7. WHATSAPP GATEWAY (FONNTE) ============ -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-wa" class="pengaturan-seksi card p-5 sm:p-6">
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <h2 class="font-bold text-ink-900">WhatsApp Gateway (Fonnte)</h2>
           <?php
@@ -1629,7 +1692,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       }
       $waDiubah = wa_teks_ubah($waTampil);
       ?>
-      <section class="card p-5 sm:p-6">
+      <section id="sec-teks-wa" class="pengaturan-seksi card p-5 sm:p-6">
         <h2 class="font-bold text-ink-900">Teks Pesan WhatsApp ke Calon Murid</h2>
         <p class="mt-1 text-[13px] text-ink-500">
           Semua kalimat yang berangkat otomatis ke wali calon murid bisa diubah dari sini — tanpa menyentuh kode.
@@ -1686,7 +1749,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- 8. Payment Gateway (Midtrans) -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-midtrans" class="pengaturan-seksi card p-5 sm:p-6">
         <div class="flex flex-wrap items-center gap-3">
           <h2 class="font-bold text-ink-900">Payment Gateway (Midtrans)</h2>
           <?php if (midtrans_aktif() && $f['bayar_gateway_aktif']): ?>
@@ -1758,7 +1821,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- 9. Metode Pembayaran & Syarat & Ketentuan -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-bayar-snk" class="pengaturan-seksi card p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="font-bold text-ink-900">Metode Pembayaran &amp; Syarat &amp; Ketentuan</h2>
           <span class="badge badge-gray">Halaman Bayar Publik</span>
@@ -1833,7 +1896,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- 10. Daftar Berkas (Fase 5) -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-berkas" class="pengaturan-seksi card p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="font-bold text-ink-900">Daftar Berkas Persyaratan</h2>
           <span class="badge badge-gray">Fase 5</span>
@@ -1850,7 +1913,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       </section>
 
       <!-- 11. Petugas & Hak Akses -->
-      <section class="card p-5 sm:p-6">
+      <section id="sec-petugas" class="pengaturan-seksi card p-5 sm:p-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h2 class="font-bold text-ink-900">Petugas &amp; Hak Akses</h2>
           <span class="badge badge-gray">tabel users</span>
@@ -1985,6 +2048,65 @@ require __DIR__ . '/../../includes/partials/topbar.php';
       if (!hapus) return;
       hapus.closest('[data-faq-row]').remove();
     });
+  })();
+  (function () {
+    /* Navigasi lompat-seksi: chip aktif mengikuti posisi gulir. */
+    var nav = document.querySelector('.nav-seksi');
+    var daftar = document.getElementById('nav-seksi-daftar');
+    if (!nav || !daftar) return;
+    var tautan = Array.prototype.slice.call(nav.querySelectorAll('a[href^="#"]'));
+    var seksi = [];
+    tautan.forEach(function (a) {
+      var el = document.getElementById(a.getAttribute('href').slice(1));
+      if (el) seksi.push({ link: a, el: el });
+    });
+    if (!seksi.length) return;
+
+    function aktifkan(item) {
+      if (!item || item.link.classList.contains('aktif')) return;
+      tautan.forEach(function (a) {
+        a.classList.remove('aktif');
+        a.removeAttribute('aria-current');
+      });
+      item.link.classList.add('aktif');
+      item.link.setAttribute('aria-current', 'true');
+      var kiri = item.link.offsetLeft - (daftar.clientWidth - item.link.offsetWidth) / 2;
+      daftar.scrollLeft = Math.max(0, kiri);
+    }
+
+    var kunciSampai = 0;
+
+    tautan.forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var tujuan = document.getElementById(a.getAttribute('href').slice(1));
+        if (!tujuan) return;
+        e.preventDefault();
+        kunciSampai = Date.now() + 900;
+        tujuan.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (history.replaceState) history.replaceState(null, '', a.getAttribute('href'));
+        aktifkan({ link: a, el: tujuan });
+      });
+    });
+
+    function perbarui() {
+      if (Date.now() < kunciSampai) return;
+      var batas = 130;
+      var pilih = seksi[0];
+      seksi.forEach(function (s) {
+        if (s.el.getBoundingClientRect().top - batas <= 0) pilih = s;
+      });
+      /* Di dasar halaman seksi terakhir belum tentu melewati batas. */
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+        pilih = seksi[seksi.length - 1];
+      }
+      aktifkan(pilih);
+    }
+    ['wheel', 'touchstart', 'keydown'].forEach(function (ev) {
+      window.addEventListener(ev, function () { kunciSampai = 0; }, { passive: true });
+    });
+    window.addEventListener('scroll', perbarui, { passive: true });
+    window.addEventListener('resize', perbarui);
+    perbarui();
   })();
 </script>
 </body>

@@ -353,11 +353,11 @@ Urutan yang disarankan:
    sedangkan baris pendaftar, pembayaran, dan dokumen tetap ada (Data Pendaftar
    → filter **Terarsip**). Pemulihan per pendaftar: tombol **Pulihkan**.
 6. **Rombel** — di bagian **Rombel tahun baru**, kode sudah terisi otomatis
-   `kode-tahun` (71 → 71-27) dan opsi *nonaktifkan rombel lama* sudah tercentang;
-   periksa lalu tekan **Gandakan Semua**. Kosongkan kode satu baris bila rombel
-   itu tidak perlu dibuat, atau ubah kodenya bila sekolah memakai pola lain.
-   Kuota pendaftaran = `SUM(kuota)` kelas `is_aktif = 1`, jadi jangan biarkan
-   rombel lama dan baru aktif bersamaan.
+   `kode-tahun ajaran` (71 → 71-2027) dan opsi *nonaktifkan rombel lama* sudah
+   tercentang; periksa lalu tekan **Gandakan Semua**. Kosongkan kode satu baris
+   bila rombel itu tidak perlu dibuat, atau ubah kodenya bila sekolah memakai
+   pola lain. Kuota pendaftaran = `SUM(kuota)` kelas `is_aktif = 1`, jadi
+   jangan biarkan rombel lama dan baru aktif bersamaan.
 7. **Setelan baru** — ubah tahun ajaran, gelombang, tanggal, biaya, teks WA,
    dan **naikkan versi S&K** di Pengaturan Sistem agar persetujuan angkatan
    lama tidak dianggap berlaku.

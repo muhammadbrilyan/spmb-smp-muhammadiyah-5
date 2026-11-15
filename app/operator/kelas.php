@@ -21,7 +21,7 @@ function kelas_pesan_galat($kode, $nama, $kuota, $kecualiId = null)
 {
     $pesan = [];
     if ($kode === '' || !preg_match('/^[A-Z0-9][A-Z0-9-]{0,9}$/', $kode)) {
-        $pesan[] = 'Kode kelas wajib diisi (huruf/angka/tanda hubung, maks 10 karakter), contoh: 7A atau 71-27.';
+        $pesan[] = 'Kode kelas wajib diisi (huruf/angka/tanda hubung, maks 10 karakter), contoh: 7A atau 71-2027.';
     }
     if ($nama === '') {
         $pesan[] = 'Nama kelas wajib diisi.';

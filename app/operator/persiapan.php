@@ -138,7 +138,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 $R         = persiapan_ringkasan();
 $musim     = persiapan_tahun_musim();
 $kodeMusim = persiapan_tahun_kode_musim();
-$akhiranMusim = substr((string) $musim, -2);
+$akhiranMusim = (string) $musim;
 $rombel    = persiapan_rombel_aktif();
 
 $arsipPerTahun = q_all(
@@ -535,8 +535,8 @@ require __DIR__ . '/../../includes/partials/topbar.php';
                     </td>
                     <td class="py-3 pr-3">
                       <input type="text" name="rows[<?= (int) $i ?>][kode]" maxlength="10"
-                             value="<?= e(mb_substr((string) $k['kode'], 0, 7) . '-' . $akhiranMusim) ?>"
-                             class="w-24 rounded-xl border border-line bg-white px-3 py-2 text-sm font-mono uppercase">
+                             value="<?= e(mb_substr((string) $k['kode'], 0, max(1, 9 - mb_strlen($akhiranMusim))) . '-' . $akhiranMusim) ?>"
+                             class="w-28 rounded-xl border border-line bg-white px-3 py-2 text-sm font-mono uppercase">
                     </td>
                     <td class="py-3 pr-3">
                       <input type="text" name="rows[<?= (int) $i ?>][nama_kelas]" maxlength="100"
@@ -603,8 +603,10 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <span class="icon-box bg-[#EFF6FF] text-[#1E40AF] shrink-0"><?= icon('info', 'text-[20px]') ?></span>
         <div class="text-[13px] leading-relaxed text-ink-500 space-y-1.5">
           <p><strong class="text-ink-900">Urutan yang disarankan:</strong> selesaikan antrean &amp; ekspor laporan →
-            buat cadangan → arsipkan musim lama → gandakan rombel → perbarui tahun ajaran, tanggal, dan S&amp;K →
-            buka saklar pendaftaran.</p>
+            buat cadangan → tutup saklar pendaftaran → arsipkan musim lama → periksa hasil di
+            Data Pendaftar (filter Terarsip) → gandakan rombel (kode otomatis, mis. 71-2027) →
+            perbarui tahun ajaran, gelombang, tanggal, biaya, teks WA, dan S&amp;K →
+            buka saklar pendaftaran setelah daftar periksa tidak lagi merah.</p>
           <p>Tahun pada nomor pendaftaran mengikuti tahun kalender saat mendaftar, bukan tahun ajaran.
             Karena itu pendaftar musim 2027/2028 umumnya berkode <span class="font-mono">REG-2026-…</span>.</p>
           <p>Prosedur lengkap &amp; pemulihan: <a class="text-primary underline" href="<?= url('docs/DEPLOY.md') ?>" target="_blank" rel="noopener">docs/DEPLOY.md §3c</a>
