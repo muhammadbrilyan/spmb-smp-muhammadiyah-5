@@ -101,7 +101,7 @@ function wa_teks($v)
  * TIDAK mengirim pesan WhatsApp apa pun — dipakai untuk memberi umpan balik
  * langsung di Pengaturan Sistem (operator tidak bisa menebak apakah token benar).
  *
- * @param string|null $token token spesifik; null = token efektif (.env lalu DB)
+ * @param string|null $token token spesifik; null = token efektif (CMS lalu .env)
  * @return array{ok:bool,pesan:string,data:array}
  */
 function fonnte_cek_token($token = null)

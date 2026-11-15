@@ -164,9 +164,10 @@ Jalur nomor pendaftaran sengaja **tetap** wajib 4 digit.
 |---|---------|-----------|
 | I1 | Pengaturan Sistem → simpan formulir **tanpa mengetik token** | Token lama **tidak terhapus**; flash berbunyi "token … teruji: Token aktif — Device …, kuota …, kedaluwarsa …" |
 | I2 | Tempel token **salah** → simpan | Nilai tersimpan, flash **error**: "Token ditolak Fonnte (token invalid)" — bukan sukses hening |
-| I3 | `FONNTE_TOKEN` terisi di `.env`, kolom token CMS **kosong** | Kotak kuning "Token dari `.env` yang dipakai" + sidik jari `••••xxxx (n karakter)`; badge "Token aktif (dari .env)" |
-| I3b | `.env` dan kolom token CMS terisi **berbeda** | Kiriman memakai token **CMS**; kotak kuning menyebut token halaman ini yang dipakai dan nilai `.env` **diabaikan** |
-| I4 | Centang **Hapus token dari database** → simpan (dengan `.env` kosong) | `pengaturan_sekolah.fonnte_token` = NULL; badge jadi "Belum diatur"; kirim WA menolak "Token Fonnte belum diatur" |
+| I3 | `FONNTE_TOKEN` terisi di `.env`, kolom token CMS **kosong** | Badge "Token aktif (cadangan .env)"; hint menyebut sidik jari `••••xxxx (n karakter)` dan meminta token disimpan ke kolom CMS. Tidak ada kotak kuning |
+| I3b | `.env` dan kolom token CMS terisi **berbeda** | Kiriman memakai token **CMS**; hint hanya menampilkan token Pengaturan Sistem (tanpa peringatan `.env`) |
+| I4 | Tempel token Fonnte baru (mis. setelah nomor berganti) lalu **Simpan** | Flash "Pengaturan tersimpan — token baru teruji: …"; `pengaturan_sekolah.fonnte_token` berubah dan kiriman WA berikutnya langsung memakai token baru tanpa menyentuh `.env`. Tidak ada checkbox hapus token |
+| I4b | Simpan formulir dengan kolom token **kosong** (tidak mengetik ulang) | Token tersimpan tidak berubah/terhapus |
 | I5 | Intip `view-source` halaman pengaturan | Input `fonnte_token` / `midtrans_server_key` / `midtrans_client_key` **tanpa atribut `value`** (rahasia tidak tercetak ke HTML) |
 | I6 | Kirim kredensial akun siswa (`app/operator/akun.php`) | Terkirim; `wa_log.respons` tidak lagi berisi `invalid/empty body value` (penyebab lama: `typing=off`) |
 | I7 | Uji manual tanpa mengirim WA: `POST https://api.fonnte.com/device` header `Authorization: <token>` | `{"status":true,…}` utk token benar; `{"reason":"token invalid","status":false}` utk token salah |
@@ -202,7 +203,7 @@ Jalur nomor pendaftaran sengaja **tetap** wajib 4 digit.
 | L5 | Ubah **Biaya Masuk** atau **Biaya Formulir** di kartu Rincian Biaya SPMB | Baris rincian & nominal Angsuran 1/2 langsung ikut berubah di layar tanpa Simpan (lihat bagian Q) |
 | L6 | **Simpan** padahal DB tertinggal satu migrasi (buang kolom contoh: `ALTER TABLE pengaturan_sekolah DROP COLUMN pengingat_angsuran_wa`) | Toast merah menyebut "Struktur basis data belum lengkap (… Unknown column …) — jalankan database/migrations/"; **tidak ada** perubahan yang tersimpan separuh |
 | L7 | `php tools/cek-proyek.php` sesudah langkah L6 | Pemeriksaan 5 **GAGAL**: `1 kolom ada di seed tapi belum ada di DB: pengaturan_sekolah.pengingat_angsuran_wa`; pulihkan dengan `mysql -u root < database/migrations/20261031_pengingat_angsuran.sql` → 8 PASS |
-| L8 | Simpan dengan token Fonnte kosong di form (tidak mengetik ulang) | Token tersimpan **tidak terhapus**; penghapusan hanya lewat checkbox "Hapus token dari database" |
+| L8 | Simpan dengan token Fonnte kosong di form (tidak mengetik ulang) | Token tersimpan **tidak terhapus**; tidak ada checkbox hapus — mengganti token cukup dengan menempel nilai baru lalu Simpan (lihat I4) |
 | L9 | Kartu **Tanya Jawab (FAQ) Landing** (blok 3b, baru 2026-11-03) | Ada di antara "Running Text & Profil Singkat" dan "Rincian Biaya SPMB". Selama `pengaturan_sekolah.faq_list` masih NULL, barisnya sudah terisi contoh bawaan `includes/dummy.php` — persis yang tampil di section Pusat Bantuan halaman depan |
 | L10 | Ubah satu pertanyaan, **Tambah Pertanyaan**, hapus satu baris, lalu Simpan | `faq_list` terisi JSON `[{"q":…,"a":…}]`; landing `app/spmb/index.php` (#faq) menampilkan urutan yang sama, pertanyaan pertama ber-`open`, dan spasi berlebih/baris baru pada jawaban tergabung jadi satu paragraf |
 | L11 | Kosongkan **seluruh** baris FAQ lalu Simpan | Ditolak: "Isi minimal satu pertanyaan FAQ — section Pusat Bantuan tidak boleh kosong." Nilai `faq_list` lama tidak tertimpa |

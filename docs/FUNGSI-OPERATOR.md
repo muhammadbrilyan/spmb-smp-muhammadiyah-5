@@ -287,13 +287,15 @@ Satu `<form>` berisi **section 1–9** (termasuk sub-section 3b FAQ, 6b Jalur da
 | — | Field "tulis-saja" (`profil_singkat`, `deskripsi_sekolah`, `tagline`, `deskripsi_gelombang`) | ⚠️ Tersimpan tapi **tak pernah dibaca** |
 | — | **Unggah favicon** | 🚧 `favicon_url` dipakai `head.php` tapi tidak ada input-nya |
 
-Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
-- Prioritas baca token: **DB (kolom CMS) → `.env` (FONNTE_TOKEN) sebagai cadangan**. Sejak 2026-11-15
-  urutannya dibalik dari sebelumnya (`.env` menang) karena penolakan bukti bayar gagal "unknown token":
-  operator sudah menyimpan token baru di CMS, tetapi `.env` masih menyimpan token lama dan terus
-  dipakai. Halaman ini menampilkan kotak **kuning** + sidik jari (`••••xxxx`, 4 karakter terakhir)
-  bila kedua sumber terisi dengan nilai berbeda — kali ini menjelaskan bahwa nilai `.env`
-  **diabaikan**; kosongkan kolom token di halaman ini bila ingin kembali memakai `.env`.
+Catatan Section 7 (Fonnte) — perilaku sejak 2026-11-15:
+- Kolom **API Token Fonnte** adalah satu-satunya yang perlu disentuh operator: tempel token baru
+  lalu **Simpan**, dan semua kiriman WA langsung memakainya — termasuk saat nomor Fonnte berganti.
+  Tidak ada checkbox hapus dan tidak ada kotak kuning; nilai `FONNTE_TOKEN` di `.env` hanya
+  **cadangan senyap** bila kolom ini masih kosong (deploy baru), sehingga penggantian token tidak
+  memerlukan akses file server.
+- Kosong di form = **jangan ubah**: input type=password bisa terkirim kosong bila operator tidak
+  mengetik ulang, jadi token tersimpan tidak pernah terhapus tanpa sengaja. Untuk mengganti,
+  tempel nilai baru; tidak ada tombol hapus karena yang dibutuhkan hanya penggantian.
 - Baris **Kirim terakhir gagal/terkirim** di bawah Nomor WA Panitia & Bendahara membaca percobaan
   terakhir dari `wa_log` untuk **kedelapan** pemicu `notif_pemicu_wa()` — `BUKTI_BAYAR_MASUK` /
   `PEMBAYARAN_GATEWAY_*`, `PEMBAYARAN_DIVERIFIKASI` / `PEMBAYARAN_DITOLAK`, dan `PENDAFTAR_BARU` /
@@ -304,9 +306,10 @@ Catatan Section 7 (Fonnte) — perilaku sejak 2026-10-28:
   Endpoint ini **tidak** mengirim pesan WhatsApp. Status perangkat bisa berkedip: `/device`
   pernah mengembalikan `disconnect` sesaat setelah beberapa uji berturut-turut, lalu `connect`
   lagi — periksa ulang sebelum menyimpulkan nomor Fonnte bermasalah.
-- Input rahasia (token Fonnte, Server/Client Key Midtrans) tidak lagi dicetak ke atribut `value=`
-  dan **kosong = jangan ubah**; penghapusan harus eksplisit lewat checkbox *Hapus token*.
-  Sebelumnya submit mana pun dengan field tersebut kosong menghapus token yang tersimpan.
+- Input rahasia tidak dicetak ke atribut `value=` dan **kosong = jangan ubah**. Server/Client Key
+  Midtrans masih punya checkbox *Hapus*; token Fonnte tidak, karena penggantian token cukup dengan
+  menempel nilai baru. Sebelumnya submit mana pun dengan field tersebut kosong menghapus token
+  yang tersimpan.
 
 Catatan Section 7b (Teks Pesan WhatsApp) — sejak 2026-11-06:
 - Peta pesan → kunci katalog: instruksi bayar registrasi `instruksi_bayar` (`wa_pesan_instruksi()`),

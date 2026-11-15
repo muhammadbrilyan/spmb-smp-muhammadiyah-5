@@ -235,16 +235,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $f['angsuran_2_nominal'] = $totalAngsuran > 0 ? $totalAngsuran - $f['angsuran_1_nominal'] : 0;
 
     /* Kolom rahasia (token Fonnte & API key Midtrans).
-     * [PERBAIKAN 2026-10-28] Semula input type=password selalu ikut terkirim
-     * kosong bila operator tidak mengetik ulang nilainya (browser mengosongkan
-     * field password saat form di-submit ulang / autofill ditolak), dan
-     * `!== '' ? ... : null` membuat token tersimpan terhapus diam-diam.
-     * Aturan baru: kosong = jangan ubah; hapus hanya bila dicentang eksplisit. */
+     * Input type=password terkirim kosong bila operator tidak mengetik ulang
+     * nilainya (autofill ditolak / submit ulang), jadi kosong selalu berarti
+     * "jangan ubah" — bukan menghapus. Token Fonnte sengaja tanpa tombol hapus:
+     * yang dibutuhkan operator hanya mengganti token (mis. nomor Fonnte
+     * berganti), dan token baru langsung berlaku karena kolom ini dibaca
+     * sebelum cadangan `.env`. */
     $rahasia = [
-        'fonnte_token'        => 'fonnte_hapus',
         'midtrans_server_key' => 'midtrans_hapus',
         'midtrans_client_key' => 'midtrans_hapus',
     ];
+    if ($f['fonnte_token'] === '') {
+        $f['fonnte_token'] = (string) ($PENGATURAN['fonnte_token'] ?? '');
+    }
     foreach ($rahasia as $kunci => $flagHapus) {
         if ($f[$kunci] !== '') {
             continue; /* operator mengetik nilai baru */
@@ -882,14 +885,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
              * apakah token yang baru disimpan benar — kegagalan baru terlihat
              * berjam kemudian saat kirim kredensial siswa gagal. */
             unset($_SESSION['fonnte_dev']); /* Kesiapan Rilis memeriksa ulang perangkat */
-            $tokenBaru    = trim((string) ($_POST['fonnte_token'] ?? '')) !== '';
-            $tokenDariEnv = trim((string) $f['fonnte_token']) === '' && env_val('FONNTE_TOKEN', '') !== '';
-            $cekWa = ($f['fonnte_token'] !== '' || $tokenDariEnv)
+            $tokenBaru   = trim((string) ($_POST['fonnte_token'] ?? '')) !== '';
+            $dariEnvSaja = trim((string) $f['fonnte_token']) === '' && env_val('FONNTE_TOKEN', '') !== '';
+            $cekWa = ($f['fonnte_token'] !== '' || $dariEnvSaja)
                 ? fonnte_cek_token($tokenBaru ? $f['fonnte_token'] : null)
                 : ['ok' => false, 'pesan' => 'token masih kosong — kirim WA kredensial/notifikasi tidak akan jalan.'];
             $sumberWa = $tokenBaru
-                ? 'token yang baru disimpan'
-                : ($tokenDariEnv ? 'token dari .env (kolom CMS kosong)' : 'token tersimpan');
+                ? 'token baru'
+                : ($dariEnvSaja ? 'token cadangan .env' : 'token tersimpan');
             if ($cekWa['ok']) {
                 flash('sukses', 'Pengaturan tersimpan — ' . $sumberWa . ' teruji: ' . $cekWa['pesan'] . '.');
             } else {
@@ -1559,9 +1562,9 @@ require __DIR__ . '/../../includes/partials/topbar.php';
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <h2 class="font-bold text-ink-900">WhatsApp Gateway (Fonnte)</h2>
           <?php
-          /* Token efektif: kolom CMS lebih utama, .env hanya cadangan — token
-           * yang baru disimpan operator langsung dipakai (permintaan 2026-11-15
-           * setelah penolakan bukti bayar gagal karena .env menyimpan token lama). */
+          /* Satu sumber untuk operator: kolom di halaman ini. `.env` hanya
+           * cadangan senyap bila kolom masih kosong (deploy baru), jadi
+           * mengganti token cukup di sini — tanpa menyentuh file server. */
           $tokDb       = trim((string) $f['fonnte_token']);
           $tokEnv      = trim((string) env_val('FONNTE_TOKEN', ''));
           $tokEfektif  = $tokDb !== '' ? $tokDb : $tokEnv;
@@ -1569,7 +1572,7 @@ require __DIR__ . '/../../includes/partials/topbar.php';
           $dariEnv     = $tokDb === '' && $tokEnv !== '';
           ?>
           <?php if ($fonnteAktif): ?>
-            <span class="badge badge-green"><?= dot('green') ?> <?= $dariEnv ? 'Token aktif (dari .env)' : 'Token tersimpan' ?></span>
+            <span class="badge badge-green"><?= dot('green') ?> <?= $dariEnv ? 'Token aktif (cadangan .env)' : 'Token tersimpan' ?></span>
           <?php else: ?>
             <span class="badge badge-amber"><?= dot('amber') ?> Belum diatur</span>
           <?php endif; ?>
@@ -1582,36 +1585,25 @@ require __DIR__ . '/../../includes/partials/topbar.php';
             $t = trim((string) $t);
             return $t === '' ? 'kosong' : '••••' . substr($t, -4) . ' (' . strlen($t) . ' karakter)';
         };
-        /* Dua sumber terisi dengan nilai berbeda: kolom di atas yang menang,
-         * .env diabaikan. Dulu urutannya terbalik sehingga token baru yang
-         * disimpan di sini tidak berpengaruh (2026-11-15: WA penolakan bukti
-         * bayar gagal "unknown token" karena .env menyimpan token lama). */
-        $bentrokToken = $tokEnv !== '' && $tokDb !== '' && $tokEnv !== $tokDb;
         ?>
-        <?php if ($dariEnv || $bentrokToken): ?>
-          <div class="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-800">
-            <?php if ($bentrokToken): ?>
-              <strong>Token dari halaman ini yang dipakai</strong> — <?= e($sidik($tokDb)) ?>.
-              <span class="block mt-1">Nilai <code>FONNTE_TOKEN</code> di <code>.env</code> <strong>diabaikan</strong> — sidik jari <?= e($sidik($tokEnv)) ?>. Kosongkan kolom token di halaman ini bila ingin kembali memakai nilai dari <code>.env</code>.</span>
-            <?php else: ?>
-              <strong>Token dari <code>.env</code> yang dipakai</strong> — <?= e($sidik($tokEnv)) ?> (kolom di halaman ini masih kosong).
-              <span class="block mt-1">Setelah token disimpan di sini, nilai dari .env otomatis tidak dipakai lagi.</span>
-            <?php endif; ?>
-          </div>
-        <?php endif; ?>
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <label class="label" for="fonnte_token">API Token Fonnte</label>
             <input id="fonnte_token" name="fonnte_token" type="password" autocomplete="new-password" class="input font-mono"
                    placeholder="<?= $f['fonnte_token'] !== '' ? 'tersimpan ' . e('••••' . substr($f['fonnte_token'], -4) . ' (' . strlen($f['fonnte_token']) . ' karakter) — kosongkan bila tidak diubah') : 'tempel token Fonnte di sini' ?>">
             <p class="hint">
-              Sumber token efektif saat ini: <strong><?= $dariEnv ? '.env' : ($tokEfektif ? 'database' : 'belum ada') ?></strong> · <?= e($sidik($tokEfektif)) ?>.
-              Ketik/tempel hanya bila ingin mengganti; nilai kosong berarti tidak mengubah. Jangan bagikan token ini.
+              <?php if ($dariEnv): ?>
+                Belum ada token di halaman ini — sementara memakai token cadangan dari file <code>.env</code>
+                (<?= e($sidik($tokEnv)) ?>). Simpan token di kolom ini untuk memindahkannya ke Pengaturan Sistem.
+              <?php elseif ($tokEfektif): ?>
+                Token tersimpan di Pengaturan Sistem (<?= e($sidik($tokDb)) ?>) dan langsung dipakai untuk semua
+                kiriman WA. Ketik/tempel hanya bila ingin mengganti; nilai kosong berarti tidak mengubah.
+                Jangan bagikan token ini.
+              <?php else: ?>
+                Tempel token dari dasbor Fonnte (menu Settings → Token) lalu Simpan — token diuji ke
+                <code>/device</code> dan langsung berlaku, termasuk bila nomor Fonnte berganti.
+              <?php endif; ?>
             </p>
-            <label class="mt-2 flex items-center gap-2 text-[13px] text-ink-600">
-              <input type="checkbox" name="fonnte_hapus" value="1" class="w-4 h-4 accent-primary">
-              Hapus token dari database (hanya berlaku bila .env kosong)
-            </label>
           </div>
         </div>
 
